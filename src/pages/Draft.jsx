@@ -86,7 +86,7 @@ const Draft = () => {
   //       <button
   //         onClick={() =>
   //           (window.location.href =
-  //             "https://eepc-exporter-home-page-v2-whhx.vercel.app/auth/login")
+  //             "https://eepc-exporter-home-page-v2.vercel.app/auth/login")
   //         }
   //         style={{
   //           padding: "10px 20px",
