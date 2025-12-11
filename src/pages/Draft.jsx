@@ -86,7 +86,7 @@ const Draft = () => {
   //       <button
   //         onClick={() =>
   //           (window.location.href =
-  //             "http://localhost:3000/auth/login")
+  //             "https://eepc-exporter-home-page.vercel.app/auth/login")
   //         }
   //         style={{
   //           padding: "10px 20px",

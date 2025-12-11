@@ -39,14 +39,14 @@ const Login = () => {
           navigate("/edit", { state: { exporterData: payload, token: token } });
         } else {
           window.location.href =
-            // "http://localhost:3000/auth/login"
-            "http://localhost:3000/auth/login";
+            // "https://eepc-exporter-home-page.vercel.app/auth/login"
+            "https://eepc-exporter-home-page.vercel.app/auth/login";
         }
       });
     } else {
       window.location.href =
-        // "http://localhost:3000/auth/login"
-        "http://localhost:3000/auth/login";
+        // "https://eepc-exporter-home-page.vercel.app/auth/login"
+        "https://eepc-exporter-home-page.vercel.app/auth/login";
     }
   }, []);
 
