@@ -30,7 +30,7 @@ const FinalReview = () => {
         <p>
           In the meantime, you can learn more about us by visiting the <br />
           <a
-            href="https://eepc-mern-frontend.vercel.app/dashboard/exporter-home-page"
+            href="https://eepc-mern-frontend-v2.vercel.app/dashboard/exporter-home-page"
             target="_blank"
             rel="noopener noreferrer"
           >
