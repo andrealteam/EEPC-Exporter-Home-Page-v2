@@ -206,7 +206,7 @@ const Live = () => {
             className="renew-btn"
             onClick={() =>
               (window.location.href =
-                "https://eepc-exporter-home-page-v2.vercel.app/dashboard/exporter-home-page")
+                "https://eepc-exporter-home-page-v2-whhx.vercel.app/dashboard/exporter-home-page")
             }
           >
             Renew Now
