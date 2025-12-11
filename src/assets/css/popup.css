@@ -1,0 +1,209 @@
+.center-screen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh; /* Full screen height */
+}
+
+.login-container {
+  /* max-width: 500px; */
+  margin: 0 auto;
+  padding: 50px;
+  background-color: #fff;
+  border-radius: 20px;
+  box-shadow: rgba(100, 100, 111, 0.4) 0px 7px 29px 0px;
+}
+
+.login-container h3 {
+  text-align: center;
+  font-weight: 600;
+  color: #191919;
+  margin-bottom: 25px;
+}
+
+.login-container select,
+.login-container input,
+.login-container button {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.login-container input:focus-visible {
+  outline: 0;
+  box-sizing: 0;
+  border: 2px solid #1a83c6;
+}
+
+.login-container button {
+  background-color: #1a83c6;
+  color: white;
+  font-size: 16px;
+  margin-top: 25px;
+  padding: 10px 25px;
+  border-radius: 50px;
+  transition: 0.3s ease-in-out;
+}
+.login-container button:hover {
+  background-color: #1671a9;
+  color: #fff;
+}
+
+.login-container a {
+  /* display: block; */
+  text-align: center;
+  margin-top: 10px;
+  color: #1a83c6;
+  margin-left: 5px;
+}
+
+.login-container a:hover {
+  text-decoration: underline;
+}
+
+.login-container .error {
+  color: red;
+  font-size: 14px;
+}
+
+.input-group {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.input-group .input-group-text {
+  flex: 0 0 auto; /* Keeps the "M" span from growing or shrinking */
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.5;
+  color: #212529;
+  background-color: #e9ecef;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+}
+
+.input-group input {
+  flex: 1; /* Ensures the input takes up the remaining space */
+  border-left: none; /* Removes the border between the span and input */
+  padding: 0.375rem 0.75rem; /* Matching padding to keep consistency */
+  border-radius: 0 4px 4px 0; /* Rounding only the right corners */
+  font-size: 1rem; /* Same font size as input-group-text */
+  border: 1px solid #ced4da; /* Border for the input */
+}
+
+.custom-input-group input:focus-visible {
+  outline: none;
+  border: 2px solid #1a83c6;
+}
+
+.login-container textarea {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical; /* Allows vertical resize, or set to 'none' to disable */
+  min-height: 100px; /* Optional: Set a good base height */
+  box-sizing: border-box;
+}
+
+.login-container textarea:focus-visible {
+  outline: none;
+  border: 2px solid #1a83c6;
+}
+
+.popup-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 50px;
+  background-color: #fff;
+  border-radius: 20px;
+  box-shadow: rgba(100, 100, 111, 0.4) 0px 7px 29px 0px;
+}
+.popup-container h3 {
+  text-align: center;
+  font-weight: 600;
+  color: #191919;
+  margin-bottom: 25px;
+}
+.popup-container p {
+  text-align: center;
+  font-size: 17px;
+  margin-bottom: 20px;
+}
+.popup-container a {
+  color: #1a83c6;
+}
+
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.checkbox-container input[type="checkbox"] {
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.checkbox-container label {
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%; /* Prevent overflow but allow full width */
+}
+
+.checkbox-container select,
+.checkbox-container input,
+.checkbox-container button {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.checkbox-container button {
+  background-color: #1a83c6;
+  color: white;
+  font-size: 16px;
+  margin-top: 25px;
+  padding: 10px 25px;
+  border-radius: 50px;
+  transition: 0.3s ease-in-out;
+}
+
+.checkbox-container button:hover {
+  background-color: #1671a9;
+  color: #fff;
+}
+.registration-form-split {
+  display: flex;
+  gap: 76px;
+}
+.left-form-part {
+  width: 50%;
+}
+@media (max-width: 600px) {
+  .registration-form-split {
+    display: flex;
+    flex-direction: column;
+    gap: 0px;
+  }
+  .left-form-part {
+    width: 100%;
+  }
+  .center-screen {
+ 
+  height: 100%; /* Full screen height */
+}
+}

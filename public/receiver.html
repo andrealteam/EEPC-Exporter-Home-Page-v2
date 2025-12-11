@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Receiver</title>
+  </head>
+  <body>
+    <script>
+      window.addEventListener("message", (event) => {
+        if (
+          event.origin !== "https://www.eepcindia.org"
+          // "https://www.eepcindia.org"
+        ) {
+          console.warn("❌ Ignored message from", event.origin);
+          return;
+        }
+
+        const { type, payload } = event.data || {};
+
+        switch (type) {
+          case "LOGIN":
+            localStorage.setItem("sessionData", JSON.stringify(payload));
+            break;
+
+          case "LOGOUT":
+            localStorage.removeItem("sessionData");
+            break;
+
+          default:
+            console.warn("⚠️ Unknown message type:", type);
+        }
+      });
+    </script>
+  </body>
+</html>
