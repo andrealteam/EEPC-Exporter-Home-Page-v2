@@ -12,6 +12,17 @@ import "slick-carousel/slick/slick-theme.css";
 
 // import "./responsive.css";
 
+// Hard-redirect the legacy domain to the new v2 domain (preserve path/query)
+if (typeof window !== "undefined") {
+  const legacyHost = "eepc-exporter-home-page.vercel.app";
+  const targetOrigin = "https://eepc-exporter-home-page-v2.vercel.app";
+
+  if (window.location.host === legacyHost) {
+    const { pathname, search, hash } = window.location;
+    window.location.replace(`${targetOrigin}${pathname}${search}${hash}`);
+  }
+}
+
 // Initialize the router and query client
 const router = createBrowserRouter(routes);
 const queryClient = new QueryClient();
