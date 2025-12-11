@@ -31,7 +31,7 @@ const HeaderDraft = ({ memberId }) => {
     isError,
     error: headerError,
   } = useQuery({
-    queryKey: ["https://eepc-exporter-home-page.vercel.app", memberId],
+    queryKey: ["https://eepc-exporter-home-page-v2.vercel.app", memberId],
     queryFn: () => getHeader(memberId),
     enabled: !!memberId, // avoid firing before memberId exists
     placeholderData: {},
@@ -120,7 +120,7 @@ const HeaderDraft = ({ memberId }) => {
     if (res.status) {
       setLoading(false);
       toast.success(res?.message);
-      queryClient.invalidateQueries(["https://eepc-exporter-home-page.vercel.app", memberId]);
+      queryClient.invalidateQueries(["https://eepc-exporter-home-page-v2.vercel.app", memberId]);
       setOpenHeader(false);
     } else {
       setLoading(false);
