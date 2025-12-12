@@ -3,7 +3,6 @@ import { jwtVerify } from "jose";
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getSection } from "../services/draftApi";
-import { isTokenActive } from "../utils/auth";
 import HeaderPreview from "../components/preview/HeaderPreview";
 import BannerPreview from "../components/preview/BannerPreview";
 import AboutPreview from "../components/preview/AboutPreview";
@@ -40,12 +39,6 @@ const Preview = () => {
 
   const verifyToken = async (token) => {
     try {
-      // First check if token is in the active tokens list
-      if (!isTokenActive(token)) {
-        console.error('Token not found in active tokens');
-        return null;
-      }
-
       const { payload } = await jwtVerify(token, secret);
       if (!payload.memberId) return null;
       return { memberId: payload.memberId, ...payload };

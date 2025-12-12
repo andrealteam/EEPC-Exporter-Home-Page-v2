@@ -6,7 +6,6 @@ import toast from "react-hot-toast";
 import { getProducts, getWhoWeAre } from "../../services/draftApi";
 import { useQuery } from "@tanstack/react-query";
 import { useChangeTracker } from "../../contexts/ChangeTrackerContext";
-import { storeActiveToken } from "../../utils/auth";
 
 const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -49,9 +48,6 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
         .setProtectedHeader({ alg: "HS256" })
         .setExpirationTime("1h")
         .sign(secret);
-      
-      // Store the issued token
-      storeActiveToken(token);
       return token;
     } catch (error) {
       console.error("Token generation failed:", error);
