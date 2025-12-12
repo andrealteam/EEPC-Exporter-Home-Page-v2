@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 
 const ChangeTrackerContext = createContext();
 
@@ -21,19 +21,18 @@ export const ChangeTrackerProvider = ({ children }) => {
     setHasChanges(false);
   }, []);
 
-  // If the user edits anything on the page after a preview/publish,
-  // automatically mark the draft as having changes so the buttons re-enable.
-  React.useEffect(() => {
+  // Re-enable Preview/Publish after any text edit anywhere in the draft UI.
+  useEffect(() => {
     const handleAnyEdit = () => setHasChanges(true);
 
     const events = ['input', 'change', 'keyup', 'paste'];
     events.forEach((evt) =>
-      document.addEventListener(evt, handleAnyEdit, { capture: true })
+      document.addEventListener(evt, handleAnyEdit, true)
     );
 
     return () => {
       events.forEach((evt) =>
-        document.removeEventListener(evt, handleAnyEdit, { capture: true })
+        document.removeEventListener(evt, handleAnyEdit, true)
       );
     };
   }, []);
