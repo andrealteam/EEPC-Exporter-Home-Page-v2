@@ -19,6 +19,7 @@ import MapReviewLive from "../components/live/MapReviewLive";
 import CryptoJS from "crypto-js";
 
 const secretKey = "my-secret-key";
+const LOGIN_URL = "https://eepc-exporter-home-page-v2.vercel.app/auth/login";
 
 const Live = () => {
   // ✅ Persisted Set (shared across event calls)
@@ -75,6 +76,22 @@ const Live = () => {
       setIsAdmin(true);
     }
   }, [sectionData]);
+
+  // Close/redirect this tab when the user logs out (sessionData removed elsewhere).
+  useEffect(() => {
+    const handleLogout = (event) => {
+      if (event && event.key && event.key !== "sessionData") return;
+      if (localStorage.getItem("sessionData")) return;
+
+      window.close();
+      setTimeout(() => {
+        window.location.replace(LOGIN_URL);
+      }, 150);
+    };
+
+    window.addEventListener("storage", handleLogout);
+    return () => window.removeEventListener("storage", handleLogout);
+  }, []);
 
   useEffect(() => {
     const allowedOrigin =

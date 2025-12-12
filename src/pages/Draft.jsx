@@ -18,6 +18,8 @@ import { useQuery } from "@tanstack/react-query";
 import { getRejectionSection } from "../services/draftApi";
 import { ChangeTrackerProvider } from "../contexts/ChangeTrackerContext";
 
+const LOGIN_URL = "https://eepc-exporter-home-page-v2.vercel.app/auth/login";
+
 const Draft = () => {
   const location = useLocation();
   const memberId = location.state?.exporterData;
@@ -44,6 +46,12 @@ const Draft = () => {
       if (event.key === "sessionData") {
         const newData = event.newValue ? JSON.parse(event.newValue) : null;
         setCustomer(newData);
+        if (!newData) {
+          window.close();
+          setTimeout(() => {
+            window.location.replace(LOGIN_URL);
+          }, 150);
+        }
       }
     };
 

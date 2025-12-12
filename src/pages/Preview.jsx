@@ -16,6 +16,8 @@ import GalleryPreview from "../components/preview/GalleryPreview";
 import ParticipationPreview from "../components/preview/ParticipationPreview";
 import MapReview from "../components/draft/MapReview";
 
+const LOGIN_URL = "https://eepc-exporter-home-page-v2.vercel.app/auth/login";
+
 const Preview = () => {
   const [member, setMember] = useState(null);
   const { token } = useParams();
@@ -65,6 +67,22 @@ const Preview = () => {
 
     verifyAndSetMember();
   }, [token]);
+
+  // Close/redirect this tab when sessionData is removed in another tab.
+  useEffect(() => {
+    const handleLogout = (event) => {
+      if (event && event.key && event.key !== "sessionData") return;
+      if (localStorage.getItem("sessionData")) return;
+
+      window.close();
+      setTimeout(() => {
+        window.location.replace(LOGIN_URL);
+      }, 150);
+    };
+
+    window.addEventListener("storage", handleLogout);
+    return () => window.removeEventListener("storage", handleLogout);
+  }, []);
 
   if (!member) {
     return (
