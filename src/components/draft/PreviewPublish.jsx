@@ -183,7 +183,7 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
 
   return (
     <header className="header" style={{ position: "relative", paddingTop: "66px" }}>
-      <div className="update-btn" style={{ zIndex: 9999, top: "10px" }}>
+      <div className="update-btn" style={{ zIndex: 9999 }}>
         <button
           className={`edit-btn-2 btn-primary ${isPreviewDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
           disabled={isPreviewDisabled}
