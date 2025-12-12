@@ -83,31 +83,35 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
       setIsSubmitted(true);
       const token = await generateToken();
       if (!token) {
-        // If token generation failed, redirect to 404
         window.location.href = '/404';
         return;
       }
 
-      const hasProducts = productsData?.data?.length > 0;
+      // Check if productsData exists and has data
+      const hasProducts = productsData?.data?.length > 0 || 
+                         (Array.isArray(productsData) && productsData.length > 0) || 
+                         (productsData && Object.keys(productsData).length > 0);
+
       const hasAbout = 
-        Array.isArray(aboutData) ? aboutData.length > 0 : !!aboutData && Object.keys(aboutData).length > 0;
+        Array.isArray(aboutData) ? aboutData.length > 0 : 
+        (aboutData && Object.keys(aboutData).length > 0);
 
       if (!hasProducts || !hasAbout) {
-        throw new Error(aboutData ? 
-          "Please add at least 1 product before previewing." : 
+        throw new Error(
+          !hasProducts ? "Please add at least 1 product before previewing." : 
           "Please complete 'About Our Company' and 'Basic Information' sections first."
         );
       }
 
       const previewUrl = `${window.location.origin}/preview/${encodeURIComponent(token)}`;
       window.open(previewUrl, "_blank", 'noopener,noreferrer');
-      // Keep publish enabled after preview
       markAsChanged();
     } catch (error) {
       toast.error(error.message, {
         position: "top-center",
         autoClose: 3000,
       });
+      setIsSubmitted(false);
     }
   };
 
