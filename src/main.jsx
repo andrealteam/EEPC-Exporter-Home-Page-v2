@@ -3,8 +3,9 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min";
 import "react-loading-skeleton/dist/skeleton.css";
 import { Toaster } from "react-hot-toast";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { AuthProvider } from "./contexts/AuthContext";
 import routes from "./utils/routes.jsx";
 import "./index.css";
 import "slick-carousel/slick/slick.css";
@@ -23,8 +24,21 @@ if (typeof window !== "undefined") {
   }
 }
 
-// Initialize the router and query client
-const router = createBrowserRouter(routes);
+// Wrap routes with AuthProvider
+const AppWithAuth = () => (
+  <AuthProvider>
+    <Outlet />
+  </AuthProvider>
+);
+
+// Create router with auth wrapper
+const router = createBrowserRouter([
+  {
+    element: <AppWithAuth />,
+    children: routes,
+  },
+]);
+
 const queryClient = new QueryClient();
 
 // Render the app
