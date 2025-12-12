@@ -66,55 +66,55 @@ const Draft = () => {
   let rejectSection = rejectSectionData?.rejected_sections || [];
   let rejectMsg = rejectSectionData?.reject_message || "";
 
-  if (
-    customer?.member_name === undefined ||
-    customer?.member_name !== rejectSectionData?.company_name
-  ) {
-    return (
-      <div
-        style={{
-          height: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: "#f8fafc",
-          color: "#1e293b",
-          fontFamily: "Inter, sans-serif",
-        }}
-      >
-        <h2 style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>
-          Session Expired
-        </h2>
-        <p
-          style={{ fontSize: "1rem", color: "#64748b", marginBottom: "1.5rem" }}
-        >
-          Your session has expired or you are not authorized to access this
-          page.
-        </p>
-        <button
-          onClick={() =>
-            (window.location.href =
-              "https://eepc-exporter-home-page-v2.vercel.app/auth/login")
-          }
-          style={{
-            padding: "10px 20px",
-            backgroundColor: "#2563eb",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
-            fontSize: "1rem",
-            transition: "background-color 0.2s ease",
-          }}
-          onMouseOver={(e) => (e.target.style.backgroundColor = "#1d4ed8")}
-          onMouseOut={(e) => (e.target.style.backgroundColor = "#2563eb")}
-        >
-          Go to Login
-        </button>
-      </div>
-    );
-  }
+  // if (
+  //   customer?.member_name === undefined ||
+  //   customer?.member_name !== rejectSectionData?.company_name
+  // ) {
+  //   return (
+  //     <div
+  //       style={{
+  //         height: "100vh",
+  //         display: "flex",
+  //         flexDirection: "column",
+  //         justifyContent: "center",
+  //         alignItems: "center",
+  //         backgroundColor: "#f8fafc",
+  //         color: "#1e293b",
+  //         fontFamily: "Inter, sans-serif",
+  //       }}
+  //     >
+  //       <h2 style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>
+  //         Session Expired
+  //       </h2>
+  //       <p
+  //         style={{ fontSize: "1rem", color: "#64748b", marginBottom: "1.5rem" }}
+  //       >
+  //         Your session has expired or you are not authorized to access this
+  //         page.
+  //       </p>
+  //       <button
+  //         onClick={() =>
+  //           (window.location.href =
+  //             "https://eepc-exporter-home-page-v2.vercel.app/auth/login")
+  //         }
+  //         style={{
+  //           padding: "10px 20px",
+  //           backgroundColor: "#2563eb",
+  //           color: "white",
+  //           border: "none",
+  //           borderRadius: "8px",
+  //           cursor: "pointer",
+  //           fontSize: "1rem",
+  //           transition: "background-color 0.2s ease",
+  //         }}
+  //         onMouseOver={(e) => (e.target.style.backgroundColor = "#1d4ed8")}
+  //         onMouseOut={(e) => (e.target.style.backgroundColor = "#2563eb")}
+  //       >
+  //         Go to Login
+  //       </button>
+  //     </div>
+  //   );
+  // }
 
   return (
     <ChangeTrackerProvider>
