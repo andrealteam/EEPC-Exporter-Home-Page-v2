@@ -55,20 +55,10 @@ const Preview = () => {
     const session = localStorage.getItem("sessionData");
     if (!session) {
       setIsSessionValid(false);
-      window.location.replace("https://eepc-exporter-home-page-v2.vercel.app/auth/login");
+      window.location.href = "https://eepc-exporter-home-page-v2.vercel.app/auth/login";
       return;
     }
     setIsSessionValid(true);
-
-    // If the user logs out in another tab, react immediately.
-    const handleStorage = (e) => {
-      if (e.key === "sessionData" && !e.newValue) {
-        setIsSessionValid(false);
-        window.location.replace("https://eepc-exporter-home-page-v2.vercel.app/auth/login");
-      }
-    };
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
   useEffect(() => {
@@ -80,30 +70,11 @@ const Preview = () => {
 
       const payload = await verifyToken(token);
 
-      if (!payload?.memberId) {
+      if (payload?.memberId) {
+        setMember(payload);
+      } else {
         window.location.href = "https://www.eepcindia.org/*";
-        return;
       }
-
-      // Ensure the session belongs to the same member; otherwise redirect.
-      const session = localStorage.getItem("sessionData");
-      if (!session) {
-        window.location.replace("https://eepc-exporter-home-page-v2.vercel.app/auth/login");
-        return;
-      }
-
-      try {
-        const parsed = JSON.parse(session);
-        if (parsed?.member_id && String(parsed.member_id) !== String(payload.memberId)) {
-          window.location.replace("https://eepc-exporter-home-page-v2.vercel.app/auth/login");
-          return;
-        }
-      } catch (err) {
-        window.location.replace("https://eepc-exporter-home-page-v2.vercel.app/auth/login");
-        return;
-      }
-
-      setMember(payload);
     };
 
     verifyAndSetMember();
