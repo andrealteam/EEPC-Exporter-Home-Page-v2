@@ -28,7 +28,6 @@ const Live = () => {
     const stored = localStorage.getItem("sessionData");
     return stored ? JSON.parse(stored) : null;
   });
-  const [isSessionValid, setIsSessionValid] = useState(true);
 
   const { website_url } = useParams();
   const {
@@ -40,23 +39,6 @@ const Live = () => {
     queryFn: () => getLiveSection(website_url),
     enabled: !!website_url,
   });
-
-  // Block access when session is removed (logout) even on refresh.
-  useEffect(() => {
-    const session = localStorage.getItem("sessionData");
-    if (!session) {
-      setIsSessionValid(false);
-    }
-
-    const handleStorage = (e) => {
-      if (e.key === "sessionData" && !e.newValue) {
-        setIsSessionValid(false);
-      }
-    };
-
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
-  }, []);
 
   useEffect(() => {
     // const storedData = localStorage.getItem(website_url);
@@ -230,24 +212,6 @@ const Live = () => {
             Renew Now
           </button>
         </div>
-      </div>
-    );
-  }
-
-  if (!isSessionValid) {
-    return (
-      <div
-        style={{
-          height: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: "#f8f9fa",
-        }}
-      >
-        <h1 style={{ fontSize: "100px", margin: 0 }}>404</h1>
-        <p style={{ fontSize: "22px", margin: 0 }}>Page Not Found</p>
       </div>
     );
   }
