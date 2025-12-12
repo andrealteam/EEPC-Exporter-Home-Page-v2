@@ -40,10 +40,16 @@ const Preview = () => {
   const verifyToken = async (token) => {
     try {
       const { payload } = await jwtVerify(token, secret);
-      if (!payload.memberId) return null;
+      if (!payload.memberId) {
+        localStorage.removeItem('isValidToken');
+        return null;
+      }
+      // Store that we have a valid token
+      localStorage.setItem('isValidToken', 'true');
       return { memberId: payload.memberId, ...payload };
     } catch (err) {
       console.error("Token verification failed:", err);
+      localStorage.removeItem('isValidToken');
       return null;
     }
   };
@@ -85,6 +91,13 @@ const Preview = () => {
   }, []);
 
   if (!member) {
+    // If we've already determined the token is invalid, show 404
+    if (token && !localStorage.getItem('isValidToken')) {
+      // Force a hard navigation to 404
+      window.location.href = '/404';
+      return null;
+    }
+    
     return (
       <div
         style={{

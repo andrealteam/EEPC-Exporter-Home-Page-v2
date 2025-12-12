@@ -30,7 +30,10 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
   // Generate JWT token for preview
   const generateToken = async () => {
     if (!memberId) {
-      throw new Error("Missing memberId for token generation");
+      // If no memberId, clear any existing token and redirect
+      localStorage.removeItem('isValidToken');
+      window.location.href = '/404';
+      return null;
     }
 
     try {
@@ -48,6 +51,9 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
         .setProtectedHeader({ alg: "HS256" })
         .setExpirationTime("1h")
         .sign(secret);
+        
+      // Store that we have a valid token
+      localStorage.setItem('isValidToken', 'true');
       return token;
     } catch (error) {
       console.error("Token generation failed:", error);
@@ -74,13 +80,16 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
   // Handle preview button click
   const handlePreview = async () => {
     try {
-      const hasProducts = Array.isArray(productsData)
-        ? productsData.length > 0
-        : Array.isArray(productsData?.data)
-        ? productsData.data.length > 0
-        : !!productsData && Object.keys(productsData).length > 0;
+      setIsSubmitted(true);
+      const token = await generateToken();
+      if (!token) {
+        // If token generation failed, redirect to 404
+        window.location.href = '/404';
+        return;
+      }
 
-      const hasAbout =
+      const hasProducts = productsData?.data?.length > 0;
+      const hasAbout = 
         Array.isArray(aboutData) ? aboutData.length > 0 : !!aboutData && Object.keys(aboutData).length > 0;
 
       if (!hasProducts || !hasAbout) {
@@ -90,9 +99,8 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
         );
       }
 
-      const token = jwtToken || (await generateToken());
-      const previewUrl = `https://eepc-exporter-home-page-v2.vercel.app/preview/${encodeURIComponent(token)}`;
-      window.open(previewUrl, '_blank', 'noopener,noreferrer');
+      const previewUrl = `${window.location.origin}/preview/${encodeURIComponent(token)}`;
+      window.open(previewUrl, "_blank", 'noopener,noreferrer');
       // Keep publish enabled after preview
       markAsChanged();
     } catch (error) {
