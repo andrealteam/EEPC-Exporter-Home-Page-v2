@@ -18,7 +18,6 @@ import MapReview from "../components/draft/MapReview";
 
 const Preview = () => {
   const [member, setMember] = useState(null);
-  const [verifyError, setVerifyError] = useState(false);
   const { token } = useParams();
 
   const secret = new TextEncoder().encode("fgghw53ujf8836d");
@@ -57,7 +56,6 @@ const Preview = () => {
       const payload = await verifyToken(token);
 
       if (!payload?.memberId) {
-        setVerifyError(true);
         window.location.replace("https://eepc-exporter-home-page-v2.vercel.app/auth/login");
         return;
       }
@@ -65,28 +63,8 @@ const Preview = () => {
       setMember(payload);
     };
 
-    verifyAndSetMember().catch(() => {
-      setVerifyError(true);
-    });
+    verifyAndSetMember();
   }, [token]);
-
-  if (verifyError) {
-    return (
-      <div
-        style={{
-          height: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: "#f8f9fa",
-        }}
-      >
-        <h1 style={{ fontSize: "100px" }}>404</h1>
-        <p style={{ fontSize: "22px" }}>Invalid or expired preview link.</p>
-      </div>
-    );
-  }
 
   if (!member) {
     return (
