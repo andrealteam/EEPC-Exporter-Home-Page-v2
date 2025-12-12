@@ -93,8 +93,8 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
       const token = jwtToken || (await generateToken());
       const previewUrl = `${window.location.origin}/preview/${encodeURIComponent(token)}`;
       window.open(previewUrl, '_blank', 'noopener,noreferrer');
-      // Disable buttons after preview
-      resetAfterPreviewOrPublish();
+      // Keep publish enabled after preview
+      markAsChanged();
     } catch (error) {
       toast.error(error.message, {
         position: "top-center",
