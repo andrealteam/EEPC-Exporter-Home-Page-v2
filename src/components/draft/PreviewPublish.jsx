@@ -91,7 +91,7 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
       }
 
       const token = jwtToken || (await generateToken());
-      const previewUrl = `${window.location.origin}/preview/${encodeURIComponent(token)}`;
+      const previewUrl = `https://eepc-exporter-home-page-v2.vercel.app/preview/${encodeURIComponent(token)}`;
       window.open(previewUrl, '_blank', 'noopener,noreferrer');
       // Keep publish enabled after preview
       markAsChanged();

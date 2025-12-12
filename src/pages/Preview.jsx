@@ -18,7 +18,6 @@ import MapReview from "../components/draft/MapReview";
 
 const Preview = () => {
   const [member, setMember] = useState(null);
-  const [isSessionValid, setIsSessionValid] = useState(true);
   const { token } = useParams();
 
   const secret = new TextEncoder().encode("fgghw53ujf8836d");
@@ -36,10 +35,6 @@ const Preview = () => {
     onError: (err) => console.error("Error fetching sections:", err),
   });
 
-  if (!isSessionValid) {
-    return null; // redirect triggered in useEffect
-  }
-
   const verifyToken = async (token) => {
     try {
       const { payload } = await jwtVerify(token, secret);
@@ -52,28 +47,8 @@ const Preview = () => {
   };
 
   useEffect(() => {
-    const session = localStorage.getItem("sessionData");
-    if (!session) {
-      setIsSessionValid(false);
-      window.location.replace("https://eepc-exporter-home-page-v2.vercel.app/auth/login");
-      return;
-    }
-    setIsSessionValid(true);
-
-    // If the user logs out in another tab, react immediately.
-    const handleStorage = (e) => {
-      if (e.key === "sessionData" && !e.newValue) {
-        setIsSessionValid(false);
-        window.location.replace("https://eepc-exporter-home-page-v2.vercel.app/auth/login");
-      }
-    };
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
-  }, []);
-
-  useEffect(() => {
     const verifyAndSetMember = async () => {
-      if (!token || !isSessionValid) {
+      if (!token) {
         window.location.replace("https://eepc-exporter-home-page-v2.vercel.app/auth/login");
         return;
       }
@@ -85,31 +60,13 @@ const Preview = () => {
         return;
       }
 
-      // Ensure the session belongs to the same member; otherwise redirect.
-      const session = localStorage.getItem("sessionData");
-      if (!session) {
-        window.location.replace("https://eepc-exporter-home-page-v2.vercel.app/auth/login");
-        return;
-      }
-
-      try {
-        const parsed = JSON.parse(session);
-        if (parsed?.member_id && String(parsed.member_id) !== String(payload.memberId)) {
-          window.location.replace("https://eepc-exporter-home-page-v2.vercel.app/auth/login");
-          return;
-        }
-      } catch (err) {
-        window.location.replace("https://eepc-exporter-home-page-v2.vercel.app/auth/login");
-        return;
-      }
-
       setMember(payload);
     };
 
     verifyAndSetMember();
-  }, [token, isSessionValid]);
+  }, [token]);
 
-  if (!member || !isSessionValid) {
+  if (!member) {
     return (
       <div
         style={{
