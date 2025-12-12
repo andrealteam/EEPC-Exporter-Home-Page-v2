@@ -224,7 +224,7 @@ const AboutDraft = ({ memberId }) => {
             </div>
             <div class="container">
               <div class="row">
-                <div class="col-lg-6">
+                <div class="col-12">
                   <div class="company-card">
                     {/* <div class="main-title">
                       <div>
@@ -248,19 +248,21 @@ const AboutDraft = ({ memberId }) => {
                         <span>About our company</span>
                       </div>
                       <ReactQuill
+                        style={{ width: "100%" }}
                         value={editedBanner.about_content}
                         onChange={(value) => {
                           setEditedBanner((prev) => ({
                             ...prev,
                             about_content: value, // keep raw Quill value while typing
                           }));
+                          markAsChanged();
                         }}
                       />
 
                     </div>
                   </div>
                 </div>
-                <div class="col-lg-6">
+                <div class="col-12" style={{ marginTop: "30px" }}>
                   <div class="company-card">
                     <div class="table-card">
                       <div class="main-title">

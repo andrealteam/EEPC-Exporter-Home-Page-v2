@@ -28,6 +28,7 @@ const Live = () => {
     const stored = localStorage.getItem("sessionData");
     return stored ? JSON.parse(stored) : null;
   });
+  const [isSessionValid, setIsSessionValid] = useState(true);
 
   const { website_url } = useParams();
   const {
@@ -39,6 +40,20 @@ const Live = () => {
     queryFn: () => getLiveSection(website_url),
     enabled: !!website_url,
   });
+
+  if (!isSessionValid) {
+    return null; // redirect triggered above
+  }
+
+  useEffect(() => {
+    const session = localStorage.getItem("sessionData");
+    if (!session) {
+      setIsSessionValid(false);
+      window.location.href = "https://eepc-exporter-home-page-v2.vercel.app/auth/login";
+    } else {
+      setIsSessionValid(true);
+    }
+  }, []);
 
   useEffect(() => {
     // const storedData = localStorage.getItem(website_url);

@@ -18,6 +18,7 @@ import MapReview from "../components/draft/MapReview";
 
 const Preview = () => {
   const [member, setMember] = useState(null);
+  const [isSessionValid, setIsSessionValid] = useState(true);
   const { token } = useParams();
 
   const secret = new TextEncoder().encode("fgghw53ujf8836d");
@@ -35,6 +36,10 @@ const Preview = () => {
     onError: (err) => console.error("Error fetching sections:", err),
   });
 
+  if (!isSessionValid) {
+    return null; // redirect triggered in useEffect
+  }
+
   const verifyToken = async (token) => {
     try {
       const { payload } = await jwtVerify(token, secret);
@@ -47,25 +52,64 @@ const Preview = () => {
   };
 
   useEffect(() => {
+    const session = localStorage.getItem("sessionData");
+    if (!session) {
+      setIsSessionValid(false);
+      window.location.replace("https://eepc-exporter-home-page-v2.vercel.app/auth/login");
+      return;
+    }
+    setIsSessionValid(true);
+
+    // If the user logs out in another tab, react immediately.
+    const handleStorage = (e) => {
+      if (e.key === "sessionData" && !e.newValue) {
+        setIsSessionValid(false);
+        window.location.replace("https://eepc-exporter-home-page-v2.vercel.app/auth/login");
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  useEffect(() => {
     const verifyAndSetMember = async () => {
-      if (!token) {
+      if (!token || !isSessionValid) {
         window.location.href = "https://www.eepcindia.org/*";
         return;
       }
 
       const payload = await verifyToken(token);
 
-      if (payload?.memberId) {
-        setMember(payload);
-      } else {
+      if (!payload?.memberId) {
         window.location.href = "https://www.eepcindia.org/*";
+        return;
       }
+
+      // Ensure the session belongs to the same member; otherwise redirect.
+      const session = localStorage.getItem("sessionData");
+      if (!session) {
+        window.location.replace("https://eepc-exporter-home-page-v2.vercel.app/auth/login");
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(session);
+        if (parsed?.member_id && String(parsed.member_id) !== String(payload.memberId)) {
+          window.location.replace("https://eepc-exporter-home-page-v2.vercel.app/auth/login");
+          return;
+        }
+      } catch (err) {
+        window.location.replace("https://eepc-exporter-home-page-v2.vercel.app/auth/login");
+        return;
+      }
+
+      setMember(payload);
     };
 
     verifyAndSetMember();
-  }, [token]);
+  }, [token, isSessionValid]);
 
-  if (!member) {
+  if (!member || !isSessionValid) {
     return (
       <div
         style={{
