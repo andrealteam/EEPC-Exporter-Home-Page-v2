@@ -74,14 +74,14 @@ const Preview = () => {
   useEffect(() => {
     const verifyAndSetMember = async () => {
       if (!token || !isSessionValid) {
-        window.location.href = "https://www.eepcindia.org/*";
+        window.location.replace("https://eepc-exporter-home-page-v2.vercel.app/auth/login");
         return;
       }
 
       const payload = await verifyToken(token);
 
       if (!payload?.memberId) {
-        window.location.href = "https://www.eepcindia.org/*";
+        window.location.replace("https://eepc-exporter-home-page-v2.vercel.app/auth/login");
         return;
       }
 
