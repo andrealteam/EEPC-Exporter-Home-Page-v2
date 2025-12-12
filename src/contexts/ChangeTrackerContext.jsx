@@ -24,14 +24,17 @@ export const ChangeTrackerProvider = ({ children }) => {
   // If the user edits anything on the page after a preview/publish,
   // automatically mark the draft as having changes so the buttons re-enable.
   React.useEffect(() => {
-    const handleAnyInput = () => setHasChanges(true);
+    const handleAnyEdit = () => setHasChanges(true);
 
-    window.addEventListener('input', handleAnyInput, { capture: true });
-    window.addEventListener('change', handleAnyInput, { capture: true });
+    const events = ['input', 'change', 'keyup', 'paste'];
+    events.forEach((evt) =>
+      document.addEventListener(evt, handleAnyEdit, { capture: true })
+    );
 
     return () => {
-      window.removeEventListener('input', handleAnyInput, { capture: true });
-      window.removeEventListener('change', handleAnyInput, { capture: true });
+      events.forEach((evt) =>
+        document.removeEventListener(evt, handleAnyEdit, { capture: true })
+      );
     };
   }, []);
 
