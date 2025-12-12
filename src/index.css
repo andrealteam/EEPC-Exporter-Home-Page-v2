@@ -576,47 +576,27 @@ div.update-btn {
     margin: 0;
   }
   
-  /* Style for the edit button in header */
+  /* Edit button positioning */
   .header .update-btn {
-    position: static;
+    position: absolute;
+    top: 50px; /* Moved down to prevent overlap */
+    right: 15px;
     margin: 0;
-    background: transparent;
-    border: none;
-    padding: 5px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    order: 1; /* Ensure it stays at the end */
-  }
-  
-  .header .update-btn svg {
-    color: #0195a3;
-    font-size: 18px;
-  }
-  
-  /* Make the contact boxes align properly */
-  .header .d-flex {
+    z-index: 1000;
+    background: #f5f5f5;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
-    flex-wrap: nowrap;
-    gap: 10px;
-    padding-right: 10px;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   }
   
-  /* Add edit button after the last contact box */
-  .header .d-flex::after {
-    content: '';
-    display: inline-block;
-    width: 1px;
-    height: 20px;
-    background: #ddd;
-    margin: 0 5px;
-  }
-  
-  /* Header adjustments */
+  /* Add padding to header to prevent content from being hidden */
   .header {
+    padding-top: 50px;
     position: relative;
-    padding-top: 0;
   }
   
   .update-btn {
@@ -633,25 +613,8 @@ div.update-btn {
     padding: 8px 16px;
   }
   
-  /* Make sure header contact items stay in a row */
-  .header .d-flex {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    padding-bottom: 5px;
-  }
-  
-  /* Hide scrollbar but keep functionality */
-  .header .d-flex::-webkit-scrollbar {
-    display: none;
-  }
-  
-  /* Prevent wrapping of contact items */
-  .header .contact-box {
-    flex-shrink: 0;
-  }
-  
   /* Ensure preview/publish buttons stay side by side */
-  .header .update-btn:not(.edit-button) {
+  .header .update-btn {
     display: flex;
     flex-direction: row;
     justify-content: center;
