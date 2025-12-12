@@ -19,7 +19,6 @@ import MapReviewLive from "../components/live/MapReviewLive";
 import CryptoJS from "crypto-js";
 
 const secretKey = "my-secret-key";
-const LOGIN_URL = "https://eepc-exporter-home-page-v2.vercel.app/auth/login";
 
 const Live = () => {
   // ✅ Persisted Set (shared across event calls)
@@ -76,33 +75,6 @@ const Live = () => {
       setIsAdmin(true);
     }
   }, [sectionData]);
-
-  // If the user logs out in another tab, close or redirect this tab so the
-  // admin view is not accessible after logout.
-  useEffect(() => {
-    const handleForcedLogout = () => {
-      const activeSession = localStorage.getItem("sessionData");
-      if (!activeSession) {
-        // Try to close the tab; if the browser blocks it, redirect to login.
-        window.close();
-        setTimeout(() => {
-          window.location.replace(LOGIN_URL);
-        }, 150);
-      }
-    };
-
-    const storageListener = (event) => {
-      if (event.key === "sessionData" && event.newValue === null) {
-        handleForcedLogout();
-      }
-    };
-
-    window.addEventListener("storage", storageListener);
-    // Run once on mount in case the tab was opened with an already-cleared session
-    handleForcedLogout();
-
-    return () => window.removeEventListener("storage", storageListener);
-  }, []);
 
   useEffect(() => {
     const allowedOrigin =

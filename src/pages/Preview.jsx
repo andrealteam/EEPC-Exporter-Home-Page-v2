@@ -16,8 +16,6 @@ import GalleryPreview from "../components/preview/GalleryPreview";
 import ParticipationPreview from "../components/preview/ParticipationPreview";
 import MapReview from "../components/draft/MapReview";
 
-const LOGIN_URL = "https://eepc-exporter-home-page-v2.vercel.app/auth/login";
-
 const Preview = () => {
   const [member, setMember] = useState(null);
   const { token } = useParams();
@@ -67,26 +65,6 @@ const Preview = () => {
 
     verifyAndSetMember();
   }, [token]);
-
-  // Close/redirect the tab if the user logs out from another tab.
-  useEffect(() => {
-    const handleLogout = (event) => {
-      if (event && event.key !== "sessionData") return;
-      const session = localStorage.getItem("sessionData");
-      if (!session) {
-        window.close();
-        setTimeout(() => {
-          window.location.replace(LOGIN_URL);
-        }, 150);
-      }
-    };
-
-    window.addEventListener("storage", handleLogout);
-    // Also run once on mount in case the session is already cleared
-    handleLogout();
-
-    return () => window.removeEventListener("storage", handleLogout);
-  }, []);
 
   if (!member) {
     return (
