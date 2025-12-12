@@ -4,7 +4,6 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { loginMember } from "../services/authApi";
 import { jwtVerify } from "jose";
-import { isAuthenticated } from "../utils/auth";
 
 const Login = () => {
   const [role, setRole] = useState("member");
@@ -18,45 +17,38 @@ const Login = () => {
     formState: { errors, isSubmitting },
   } = useForm();
 
-  // Check if already authenticated
-  useEffect(() => {
-    if (isAuthenticated()) {
-      navigate('/sections');
-    }
-  }, [navigate]);
-
   // Convert secret string to a `Uint8Array`
   const secret = new TextEncoder().encode("fgghw53ujf8836d");
 
-  // Function to verify JWT token
-  const verifyToken = async (token) => {
+  async function verifyToken(token) {
     try {
       const { payload } = await jwtVerify(token, secret);
-      // Store token in localStorage for session management
-      localStorage.setItem('token', token);
       return payload;
-    } catch (error) {
-      console.error("Token verification failed:", error);
+    } catch (err) {
+      console.error("Token verification failed", err);
       return null;
     }
-  };
+  }
 
-  // Handle token from URL (if any)
   useEffect(() => {
     const token = new URLSearchParams(window.location.search).get("token");
     if (token) {
       verifyToken(token).then((payload) => {
         if (payload) {
-          // Store user data in localStorage
-          localStorage.setItem('user', JSON.stringify(payload));
-          navigate("/sections");
+          // sessionStorage.setItem("exporterData", JSON.stringify(payload));
+          navigate("/edit", { state: { exporterData: payload, token: token } });
         } else {
-          // Invalid token, redirect to login
-          window.location.href = "https://eepc-exporter-home-page-v2.vercel.app/auth/login";
+          window.location.href =
+            // "https://eepc-exporter-home-page-v2.vercel.app/auth/login"
+            "https://eepc-exporter-home-page-v2.vercel.app/auth/login";
         }
       });
+    } else {
+      window.location.href =
+        // "https://eepc-exporter-home-page-v2.vercel.app/auth/login"
+        "https://eepc-exporter-home-page-v2.vercel.app/auth/login";
     }
-  }, [navigate]);
+  }, []);
 
   // const onSubmit = async (data) => {
   //       const success = await loginMember(data.memberId, data.password);
