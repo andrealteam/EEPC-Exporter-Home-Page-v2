@@ -21,10 +21,12 @@ import {
 } from "@fortawesome/free-brands-svg-icons";
 import Loader from "../Loader";
 import Favicon from "../../utils/Favicon";
+import { useChangeTracker } from "../../contexts/ChangeTrackerContext";
 
 const HeaderDraft = ({ memberId }) => {
   const [openHeader, setOpenHeader] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { markAsChanged } = useChangeTracker();
     const {
     data: headerData = {},
     isLoading,
@@ -90,6 +92,7 @@ const HeaderDraft = ({ memberId }) => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setEditedHeader((prev) => ({ ...prev, [name]: value }));
+    markAsChanged(); // Mark as changed when any input is edited
   };
 
   const handleCancel = () => {
@@ -177,6 +180,7 @@ const HeaderDraft = ({ memberId }) => {
                               logo: event.target.result, // base64 preview
                               logoFile: file, // actual file to upload later
                             }));
+                            markAsChanged(); // Mark as changed when logo file is selected
                           };
                           reader.readAsDataURL(file);
                         }

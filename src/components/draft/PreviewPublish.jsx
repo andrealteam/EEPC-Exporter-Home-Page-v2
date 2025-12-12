@@ -5,11 +5,13 @@ import { postEditExporterHomePage, postLiveWebsite } from "../../services/liveAp
 import toast from "react-hot-toast";
 import { getProducts, getWhoWeAre } from "../../services/draftApi";
 import { useQuery } from "@tanstack/react-query";
+import { useChangeTracker } from "../../contexts/ChangeTrackerContext";
 
 const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [jwtToken, setJwtToken] = useState('');
   const navigate = useNavigate();
+  const { hasChanges, resetAfterPreviewOrPublish } = useChangeTracker();
 
   // Fetch products data
   const { data: productsData, isLoading: isProductsLoading } = useQuery({
@@ -91,6 +93,8 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
       const token = jwtToken || (await generateToken());
       const previewUrl = `${window.location.origin}/preview/${encodeURIComponent(token)}`;
       window.open(previewUrl, '_blank', 'noopener,noreferrer');
+      // Disable buttons after preview
+      resetAfterPreviewOrPublish();
     } catch (error) {
       toast.error(error.message, {
         position: "top-center",
@@ -135,6 +139,8 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
 
       if (liveRes?.status) {
         toast.success(liveRes.message);
+        // Disable buttons after publish
+        resetAfterPreviewOrPublish();
         navigate("/final-review", { replace: true });
       } else {
         throw new Error(liveRes?.message || "Error publishing website");
@@ -149,9 +155,9 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
   };
 
   const isLoading = isProductsLoading || isAboutLoading;
-  // Allow user to click even if data is missing; we'll show validation toasts instead.
-  const isPreviewDisabled = isLoading;
-  const isPublishDisabled = isLoading;
+  // Disable buttons if loading OR if no changes have been made
+  const isPreviewDisabled = isLoading || !hasChanges;
+  const isPublishDisabled = isLoading || !hasChanges;
 
   if (isLoading) {
     return (

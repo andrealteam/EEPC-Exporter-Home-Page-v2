@@ -16,6 +16,7 @@ import MapReview from "../components/draft/MapReview";
 import RejectSectionBanner from "../components/draft/RejectSectionBanner";
 import { useQuery } from "@tanstack/react-query";
 import { getRejectionSection } from "../services/draftApi";
+import { ChangeTrackerProvider } from "../contexts/ChangeTrackerContext";
 
 const Draft = () => {
   const location = useLocation();
@@ -108,7 +109,7 @@ const Draft = () => {
   // }
 
   return (
-    <>
+    <ChangeTrackerProvider>
       <div className="container">
         {rejectMsg.length > 0 && (
           <RejectSectionBanner
@@ -149,7 +150,7 @@ const Draft = () => {
         <MapReview memberId={memberId.memberId} />
       </div>
       <FooterDraft memberId={memberId.memberId} />
-    </>
+    </ChangeTrackerProvider>
   );
 };
 

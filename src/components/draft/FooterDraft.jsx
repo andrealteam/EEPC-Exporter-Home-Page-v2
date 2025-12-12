@@ -58,6 +58,7 @@ const colorMap = {
 };
 
 const FooterDraft = ({ memberId }) => {
+  const { markAsChanged } = useChangeTracker();
   const [openViewEdit, setOpenViewEdit] = useState(false);
   const {
     data: footerData = {},
@@ -129,6 +130,7 @@ const FooterDraft = ({ memberId }) => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setEditedBanner((prev) => ({ ...prev, [name]: value }));
+    markAsChanged();
   };
 
 

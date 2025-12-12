@@ -13,6 +13,7 @@ import { faPen, faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import toast from "react-hot-toast";
 import Skeleton from "react-loading-skeleton";
+import { useChangeTracker } from "../../contexts/ChangeTrackerContext";
 
 export const demoTestimonials = [
   {
@@ -96,6 +97,7 @@ export const demoTestimonials = [
 ];
 
 const Testimonials = ({ memberId }) => {
+  const { markAsChanged } = useChangeTracker();
   const {
     data: headerData,
     isLoading,
@@ -143,6 +145,7 @@ const Testimonials = ({ memberId }) => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setEditedHeader((prev) => ({ ...prev, [name]: value }));
+    markAsChanged();
   };
 
   const handleSave = async () => {

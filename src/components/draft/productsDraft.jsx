@@ -36,6 +36,7 @@ import Accordion from "react-bootstrap/Accordion";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Loader from "../Loader";
 import { isValid, parseISO, isAfter, isBefore } from "date-fns";
+import { useChangeTracker } from "../../contexts/ChangeTrackerContext";
 
 const categories = ["Pumps", "Valves", "Category 3"];
 
@@ -100,6 +101,7 @@ const staticProducts = {
 };
 
 const ProductsDraft = ({ memberId }) => {
+  const { markAsChanged } = useChangeTracker();
   const fileInputRef = useRef(null);
   const [viewModal, setViewModal] = useState(null);
   const [viewEditModal, setViewEditModal] = useState(null);
@@ -284,6 +286,7 @@ const ProductsDraft = ({ memberId }) => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setEditedBanner((prev) => ({ ...prev, [name]: value }));
+    markAsChanged();
   };
 
   const handleFileChange = (e) => {

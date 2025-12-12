@@ -25,6 +25,7 @@ import {
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import toast from "react-hot-toast";
+import { useChangeTracker } from "../../contexts/ChangeTrackerContext";
 import {
   faFacebook,
   faInstagram,
@@ -69,6 +70,7 @@ const colorMap = {
 };
 
 const BannerDraft = ({ memberId }) => {
+  const { markAsChanged } = useChangeTracker();
   const [openViewEdit, setOpenViewEdit] = useState(false);
   const [playVideo, setPlayVideo] = useState(false);
   const [sectionItem, setSectionItem] = useState(false);
@@ -310,6 +312,7 @@ const BannerDraft = ({ memberId }) => {
     const { name, value } = e.target;
     setEditedBanner((prev) => ({ ...prev, [name]: value }));
     setPlayVideo(false);
+    markAsChanged();
   };
 
   // function to extract YouTube video ID
@@ -440,12 +443,13 @@ const BannerDraft = ({ memberId }) => {
                   Industrial Valves and Hydraulic Solutions. */}
                   <ReactQuill
                     value={editedBanner.since_text}
-                    onChange={(value) =>
+                    onChange={(value) => {
                       setEditedBanner((prev) => ({
                         ...prev,
                         since_text: value,
-                      }))
-                    }
+                      }));
+                      markAsChanged();
+                    }}
                   />
                 </p>
               </div>
@@ -588,6 +592,7 @@ const BannerDraft = ({ memberId }) => {
                         ...prev,
                         brochure: file,
                       }));
+                      markAsChanged();
                     }
                   }}
                 />

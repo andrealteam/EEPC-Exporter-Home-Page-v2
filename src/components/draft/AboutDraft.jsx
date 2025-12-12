@@ -29,6 +29,7 @@ import {
 import DOMPurify from "dompurify";
 import toast from "react-hot-toast";
 import Loader from "../Loader";
+import { useChangeTracker } from "../../contexts/ChangeTrackerContext";
 
 let demoAboutContent = `<p>
   We are a leading company in our industry, committed to providing top-quality products and services to our customers worldwide. Our mission is to innovate and excel in everything we do, ensuring customer satisfaction and fostering long-term relationships.
@@ -54,6 +55,7 @@ let demoAboutContent = `<p>
 `;
 
 const AboutDraft = ({ memberId }) => {
+  const { markAsChanged } = useChangeTracker();
   const [openViewEdit, setOpenViewEdit] = useState(false);
   const [sectionItem, setSectionItem] = useState(false);
   const [deleteUndoMOdal, setDeleteUndoModal] = useState(false);
@@ -172,6 +174,7 @@ const AboutDraft = ({ memberId }) => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setEditedBanner((prev) => ({ ...prev, [name]: value }));
+    markAsChanged();
   };
 
   // Convert HTML to plain text to count words
@@ -230,12 +233,13 @@ const AboutDraft = ({ memberId }) => {
                        
                         <ReactQuill
                           value={editedBanner.about_content}
-                          onChange={(value) =>
+                          onChange={(value) => {
                             setEditedBanner((prev) => ({
                               ...prev,
                               about_content: value,
-                            }))
-                          }
+                            }));
+                            markAsChanged();
+                          }}
                         />
                       </div>
                     </div> */}
