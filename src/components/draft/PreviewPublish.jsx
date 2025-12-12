@@ -11,7 +11,7 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [jwtToken, setJwtToken] = useState('');
   const navigate = useNavigate();
-  const { hasChanges, resetAfterPreviewOrPublish } = useChangeTracker();
+  const { hasChanges, resetAfterPreviewOrPublish, markAsChanged } = useChangeTracker();
 
   // Fetch products data
   const { data: productsData, isLoading: isProductsLoading } = useQuery({
@@ -155,7 +155,7 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
   };
 
   const isLoading = isProductsLoading || isAboutLoading;
-  // Disable buttons if loading OR if no changes have been made
+  // Enable buttons when there are changes, regardless of previous preview/publish
   const isPreviewDisabled = isLoading || !hasChanges;
   const isPublishDisabled = isLoading || !hasChanges;
 
