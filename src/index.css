@@ -2184,24 +2184,6 @@ button:hover .button-text {
   }
 }
 
-/* Modal button styles for mobile */
-@media (max-width: 767px) {
-  .modal-body .btn {
-    min-width: 120px;
-    margin: 8px 4px;
-    padding: 8px 16px;
-    font-size: 14px;
-  }
-  .modal-body .d-flex {
-    flex-direction: column;
-    align-items: center;
-    gap: 12px !important;
-  }
-  .modal-body .btn-secondary {
-    margin-right: 0;
-  }
-}
-
 @media (max-width: 600px) {
   .contact-box {
     margin-left: 10px;
