@@ -91,7 +91,8 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
       }
 
       const token = jwtToken || (await generateToken());
-      const previewUrl = `https://eepc-exporter-home-page-v2.vercel.app/preview/${encodeURIComponent(token)}`;
+      // Open preview on the same origin so it works in dev/prod without 404.
+      const previewUrl = `${window.location.origin}/preview/${encodeURIComponent(token)}`;
       window.open(previewUrl, '_blank', 'noopener,noreferrer');
       // Keep publish enabled after preview
       markAsChanged();

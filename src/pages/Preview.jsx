@@ -18,7 +18,6 @@ import MapReview from "../components/draft/MapReview";
 
 const Preview = () => {
   const [member, setMember] = useState(null);
-  const [isSessionValid, setIsSessionValid] = useState(true);
   const { token } = useParams();
 
   const secret = new TextEncoder().encode("fgghw53ujf8836d");
@@ -47,36 +46,17 @@ const Preview = () => {
     }
   };
 
-  // Ensure session exists; if removed (logout), show 404 immediately.
-  useEffect(() => {
-    const session = localStorage.getItem("sessionData");
-    if (!session) {
-      setIsSessionValid(false);
-      setMember(null);
-    }
-
-    const handleStorage = (e) => {
-      if (e.key === "sessionData" && !e.newValue) {
-        setIsSessionValid(false);
-        setMember(null);
-      }
-    };
-
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
-  }, []);
-
   useEffect(() => {
     const verifyAndSetMember = async () => {
-      if (!token || !isSessionValid) {
-        setMember(null);
+      if (!token) {
+        window.location.replace("https://eepc-exporter-home-page-v2.vercel.app/auth/login");
         return;
       }
 
       const payload = await verifyToken(token);
 
       if (!payload?.memberId) {
-        setMember(null);
+        window.location.replace("https://eepc-exporter-home-page-v2.vercel.app/auth/login");
         return;
       }
 
@@ -84,9 +64,9 @@ const Preview = () => {
     };
 
     verifyAndSetMember();
-  }, [token, isSessionValid]);
+  }, [token]);
 
-  if (!member || !isSessionValid) {
+  if (!member) {
     return (
       <div
         style={{
@@ -95,11 +75,10 @@ const Preview = () => {
           flexDirection: "column",
           justifyContent: "center",
           alignItems: "center",
-          backgroundColor: "#f8f9fa",
         }}
       >
-        <h1 style={{ fontSize: "100px" }}>404</h1>
-        <p style={{ fontSize: "22px" }}>Page Not Found</p>
+        <div className="spinner-border text-primary mb-3" role="status"></div>
+        <p>Verifying your access token...</p>
       </div>
     );
   }

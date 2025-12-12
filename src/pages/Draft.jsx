@@ -22,7 +22,6 @@ const Draft = () => {
   const location = useLocation();
   const memberId = location.state?.exporterData;
   const token = location.state?.token;
-  const [isSessionValid, setIsSessionValid] = useState(true);
 
   const {
     data: rejectSectionData,
@@ -40,23 +39,15 @@ const Draft = () => {
     return stored ? JSON.parse(stored) : null;
   });
 
-  // Invalidate immediately when the session is removed (logout).
   useEffect(() => {
-    const session = localStorage.getItem("sessionData");
-    if (!session) {
-      setIsSessionValid(false);
-    }
-
     const handleStorageChange = (event) => {
-      if (event.key === "sessionData" && !event.newValue) {
-        setIsSessionValid(false);
-      }
       if (event.key === "sessionData") {
         const newData = event.newValue ? JSON.parse(event.newValue) : null;
         setCustomer(newData);
       }
     };
 
+    // Listen for localStorage changes
     window.addEventListener("storage", handleStorageChange);
 
     return () => {
@@ -116,30 +107,6 @@ const Draft = () => {
   //     </div>
   //   );
   // }
-
-  if (!isSessionValid) {
-    return (
-      <div
-        style={{
-          height: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: "#f8fafc",
-          color: "#1e293b",
-          fontFamily: "Inter, sans-serif",
-        }}
-      >
-        <h2 style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>
-          404
-        </h2>
-        <p style={{ fontSize: "1rem", color: "#64748b", marginBottom: "1.5rem" }}>
-          Page Not Found
-        </p>
-      </div>
-    );
-  }
 
   return (
     <ChangeTrackerProvider>
