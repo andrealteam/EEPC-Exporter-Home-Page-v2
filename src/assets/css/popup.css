@@ -203,7 +203,18 @@
     width: 100%;
   }
   .center-screen {
- 
-  height: 100%; /* Full screen height */
-}
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 100px; /* Increased from 20px to 100px to move the form down */
+    min-height: 100vh;
+    box-sizing: border-box;
+  }
+  .login-container {
+    width: 100%;
+    max-width: 400px;
+    margin: 0;
+    padding: 30px 20px;
+    margin-top: 20px; /* Added margin to create more space from the top */
+  }
 }

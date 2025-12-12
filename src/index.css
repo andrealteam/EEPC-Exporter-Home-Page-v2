@@ -2175,6 +2175,31 @@ button:hover .button-text {
   .contact-box {
     margin-left: 10px;
   }
+  
+  /* Member profile card responsive styles */
+  .company-card, .table-card {
+    margin: 5px !important;
+    padding: 15px !important;
+    width: calc(100% - 10px) !important;
+    box-sizing: border-box;
+  }
+  
+  .event-card {
+    margin: 5px 5px 20px 5px !important;
+    width: calc(100% - 10px) !important;
+  }
+  
+  /* Ensure proper spacing between cards on mobile */
+  .row > [class*='col-'] {
+    padding-left: 5px !important;
+    padding-right: 5px !important;
+  }
+  
+  /* Adjust card content padding on mobile */
+  .company-card .main-title,
+  .table-card .main-title {
+    padding: 0 10px;
+  }
 
   .navbar-brand img {
     height: 40px;
