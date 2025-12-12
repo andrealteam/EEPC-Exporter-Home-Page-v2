@@ -23,17 +23,29 @@ const HeaderPreview = ({ memberId }) => {
     enabled: !!memberId, // avoid hitting API with undefined id
     placeholderData: {},
   });
+  
+  // Check if logo is a valid user-uploaded logo (not a default/static logo)
+  const isValidLogo = (logo) => {
+    if (!logo) return false;
+    // Exclude known static/default logos
+    const staticLogos = ['1749814674.webp'];
+    const logoFileName = logo.split('/').pop() || logo;
+    return !staticLogos.includes(logoFileName) && logo.trim() !== '';
+  };
+
+  const hasValidLogo = isValidLogo(headerData?.logo);
+
   if (isLoading) {
     return <Skeleton height={80} />;
   }
   return (
     <header className="header" style={{ position: "relative" }}>
-      {headerData?.logo && <Favicon iconUrl={baseFileURL + headerData?.logo} />}
+      {hasValidLogo && <Favicon iconUrl={baseFileURL + headerData?.logo} />}
 
       <nav className="navbar navbar-expand-lg">
         <div className="container-fluid">
           {/* Logo */}
-          {headerData?.logo && (
+          {hasValidLogo && (
             <a className="navbar-brand" href="#">
               {isLoading ? (
                 <Skeleton width={120} />

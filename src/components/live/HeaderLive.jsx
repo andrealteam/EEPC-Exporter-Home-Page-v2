@@ -42,7 +42,17 @@ const HeaderLive = ({ website_url }) => {
   // If data is not available (null/undefined), don't render
   if (!headerData) return null;
 
-  const logoUrl = headerData?.logo
+  // Check if logo is a valid user-uploaded logo (not a default/static logo)
+  const isValidLogo = (logo) => {
+    if (!logo) return false;
+    // Exclude known static/default logos
+    const staticLogos = ['1749814674.webp'];
+    const logoFileName = logo.split('/').pop() || logo;
+    return !staticLogos.includes(logoFileName) && logo.trim() !== '';
+  };
+
+  const hasValidLogo = isValidLogo(headerData?.logo);
+  const logoUrl = hasValidLogo
     ? `${baseFileURL.replace(/\/$/, "")}/${headerData.logo.replace(/^\//, "")}`
     : null;
 
