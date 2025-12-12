@@ -579,24 +579,9 @@ div.update-btn {
   /* Edit button positioning */
   .header .update-btn {
     position: absolute;
-    top: 50px; /* Moved down to prevent overlap */
-    right: 15px;
+    top: 10px;
+    right: 10px;
     margin: 0;
-    z-index: 1000;
-    background: #f5f5f5;
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  }
-  
-  /* Add padding to header to prevent content from being hidden */
-  .header {
-    padding-top: 50px;
-    position: relative;
   }
   
   .update-btn {
