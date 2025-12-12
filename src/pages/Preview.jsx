@@ -18,6 +18,7 @@ import MapReview from "../components/draft/MapReview";
 
 const Preview = () => {
   const [member, setMember] = useState(null);
+  const [isSessionValid, setIsSessionValid] = useState(true);
   const { token } = useParams();
 
   const secret = new TextEncoder().encode("fgghw53ujf8836d");
@@ -46,7 +47,22 @@ const Preview = () => {
     }
   };
 
+  // Watch for token + session; if session disappears (logout) show 404.
   useEffect(() => {
+    const checkSession = () => {
+      const session = localStorage.getItem("sessionData");
+      if (!session) {
+        setIsSessionValid(false);
+        return null;
+      }
+      try {
+        return JSON.parse(session);
+      } catch (err) {
+        setIsSessionValid(false);
+        return null;
+      }
+    };
+
     const verifyAndSetMember = async () => {
       if (!token) {
         window.location.replace("https://eepc-exporter-home-page-v2.vercel.app/auth/login");
@@ -60,13 +76,30 @@ const Preview = () => {
         return;
       }
 
+      const sessionData = checkSession();
+      if (!sessionData || (sessionData?.member_id && String(sessionData.member_id) !== String(payload.memberId))) {
+        setIsSessionValid(false);
+        setMember(null);
+        return;
+      }
+
+      setIsSessionValid(true);
       setMember(payload);
     };
 
     verifyAndSetMember();
+
+    const handleStorage = (e) => {
+      if (e.key === "sessionData" && !e.newValue) {
+        setIsSessionValid(false);
+        setMember(null);
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
   }, [token]);
 
-  if (!member) {
+  if (!member || !isSessionValid) {
     return (
       <div
         style={{
