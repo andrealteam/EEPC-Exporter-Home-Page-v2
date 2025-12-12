@@ -1,13 +1,11 @@
-import React, { useEffect, useRef, useState, useContext } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Link, useLocation, useNavigate, Navigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { loginMember } from "../services/authApi";
 import { jwtVerify } from "jose";
-import { useAuth } from "../contexts/AuthContext";
 
 const Login = () => {
-  const { login, isAuthenticated } = useAuth();
   const [role, setRole] = useState("member");
   const location = useLocation();
   const navigate = useNavigate();
@@ -15,14 +13,9 @@ const Login = () => {
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm();
-
-  // Redirect if already authenticated
-  if (isAuthenticated) {
-    const from = location.state?.from?.pathname || "/sections";
-    return <Navigate to={from} replace />;
-  }
 
   // Convert secret string to a `Uint8Array`
   const secret = new TextEncoder().encode("fgghw53ujf8836d");
@@ -42,119 +35,87 @@ const Login = () => {
     if (token) {
       verifyToken(token).then((payload) => {
         if (payload) {
-          login({ token, ...payload });
-          const from = location.state?.from?.pathname || "/sections";
-          navigate(from, { replace: true });
+          // sessionStorage.setItem("exporterData", JSON.stringify(payload));
+          navigate("/edit", { state: { exporterData: payload, token: token } });
         } else {
-          toast.error("Invalid or expired token");
-          navigate("/auth", { replace: true });
+          window.location.href =
+            // "https://eepc-exporter-home-page-v2.vercel.app/auth/login"
+            "https://eepc-exporter-home-page-v2.vercel.app/auth/login";
         }
       });
+    } else {
+      window.location.href =
+        // "https://eepc-exporter-home-page-v2.vercel.app/auth/login"
+        "https://eepc-exporter-home-page-v2.vercel.app/auth/login";
     }
-  }, [login, navigate, location.state]);
+  }, []);
 
-  const onSubmit = async (data) => {
-    try {
-      const result = await loginMember(data.memberId, data.password);
-      if (result.is_valid) {
-        login({
-          memberId: data.memberId,
-          memberName: result.member_name,
-          is_valid: result.is_valid,
-          // Add any other user data you need
-        });
-        toast.success("Login successful");
-        const from = location.state?.from?.pathname || "/sections";
-        navigate(from, { replace: true });
-      } else {
-        toast.error(result.message || "Login failed. Please check your credentials.");
-      }
-    } catch (error) {
-      console.error("Login error:", error);
-      toast.error("An error occurred during login. Please try again.");
-    }
-  };
+  // const onSubmit = async (data) => {
+  //       const success = await loginMember(data.memberId, data.password);
+  //       console.log("success check",success)
+  //     if (success.is_valid) {
+  //       toast.success("Login successful");
+  //       sessionStorage.setItem("exporterData", JSON.stringify(success.is_valid));
 
-  const renderFormFields = () => {
-    switch (role) {
-      case "member":
-        return (
-          <>
-            <div className="form-group">
-              <label htmlFor="memberId">Member ID</label>
-              <div className="input-group">
-                <span className="input-group-text">M</span>
-                <input
-                  type="text"
-                  id="memberId"
-                  className={`form-control ${errors.memberId ? 'is-invalid' : ''}`}
-                  {...register("memberId", {
-                    required: "Member ID is required",
-                  })}
-                  disabled={isSubmitting}
-                />
-              </div>
-              {errors.memberId && <div className="invalid-feedback d-block">{errors.memberId.message}</div>}
-            </div>
-            <div className="form-group">
-              <label htmlFor="password">Password</label>
-              <input
-                type="password"
-                id="password"
-                className={`form-control ${errors.password ? 'is-invalid' : ''}`}
-                {...register("password", { 
-                  required: "Password is required",
-                  minLength: {
-                    value: 6,
-                    message: "Password must be at least 6 characters"
-                  }
-                })}
-                disabled={isSubmitting}
-              />
-              {errors.password && <div className="invalid-feedback d-block">{errors.password.message}</div>}
-            </div>
-          </>
-        );
-      default:
-        return null;
-    }
-  };
+  //       navigate("/edit", { state: { exporterData: success.is_valid } });
+
+  //     } else {
+  //       toast.error("Login failed. Please check your credentials.");
+  //     }
+  //   };
+
+  // const renderFormFields = () => {
+  //     switch (role) {
+  //       case "member":
+  //         return (
+  //           <>
+  //             <div>
+  //               <label htmlFor="memberId">Member ID</label>
+  //               <div className="input-group">
+  //                 <span className="input-group-text">M</span>
+  //                 <input
+  //                   type="text"
+  //                   id="memberId"
+  //                   {...register("memberId", {
+  //                     required: "Member ID is required",
+  //                   })}
+  //                 />
+  //               </div>
+  //               {errors.memberId && <p>{errors.memberId.message}</p>}
+  //             </div>
+  //             <div>
+  //               <label htmlFor="password">Password</label>
+  //               <input
+  //                 type="password"
+  //                 id="password"
+  //                 {...register("password", { required: "Password is required" })}
+  //               />
+  //               {errors.password && <p>{errors.password.message}</p>}
+  //             </div>
+
+  //           </>
+  //         );
+
+  //       default:
+  //         return null;
+  //     }
+  // };
 
   return (
-    <div className="container">
-      <div className="row justify-content-center">
-        <div className="col-md-6 col-lg-4">
-          <div className="card mt-5">
-            <div className="card-body">
-              <h2 className="text-center mb-4">Login</h2>
-              <form onSubmit={handleSubmit(onSubmit)}>
-                {renderFormFields()}
-                <div className="d-grid gap-2">
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                        Logging in...
-                      </>
-                    ) : (
-                      'Login'
-                    )}
-                  </button>
-                </div>
-                <div className="text-center mt-3">
-                  <Link to="/register" className="text-decoration-none">
-                    Don't have an account? Register
-                  </Link>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="center-screen">
+      {/* <div className="login-container">
+                <div className="">
+      <h2>Login</h2>
+      
+
+      <form onSubmit={handleSubmit(onSubmit)}>
+        {renderFormFields()}
+        <button type="submit" className="btn" disabled={isSubmitting}>
+          {isSubmitting ? "Logging in..." : "Login"}
+        </button>
+      </form>
+    </div>
+    </div> */}
     </div>
   );
 };
