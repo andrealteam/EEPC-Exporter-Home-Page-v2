@@ -110,8 +110,7 @@ const Preview = () => {
           backgroundColor: "#f8f9fa",
         }}
       >
-        <h1 style={{ fontSize: "100px" }}>404</h1>
-        <p style={{ fontSize: "22px" }}>Page Not Found</p>
+        <p style={{ fontSize: "20px" }}>Content not available right now. Please try again.</p>
       </div>
     );
   }

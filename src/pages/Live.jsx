@@ -230,13 +230,9 @@ const Live = () => {
           justifyContent: "center",
           alignItems: "center",
           backgroundColor: "#f8f9fa",
-          color: "#333",
-          fontFamily: "Arial, sans-serif",
-          textAlign: "center",
         }}
       >
-        <h1 style={{ fontSize: "100px", margin: 0 }}>404</h1>
-        <p style={{ fontSize: "24px", marginBottom: "20px" }}>Page Not Found</p>
+        <p style={{ fontSize: "20px", margin: 0 }}>Content not available right now. Please try again.</p>
       </div>
     );
   }
