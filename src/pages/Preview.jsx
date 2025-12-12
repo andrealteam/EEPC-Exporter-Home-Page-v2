@@ -81,9 +81,6 @@ const Preview = () => {
     };
 
     window.addEventListener("storage", handleLogout);
-    // Handle the case where the tab opens after the user already logged out.
-    handleLogout();
-
     return () => window.removeEventListener("storage", handleLogout);
   }, []);
 

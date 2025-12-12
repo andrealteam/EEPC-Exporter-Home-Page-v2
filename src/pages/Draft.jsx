@@ -58,14 +58,6 @@ const Draft = () => {
     // Listen for localStorage changes
     window.addEventListener("storage", handleStorageChange);
 
-    // Also guard when the tab is opened after logout.
-    if (!localStorage.getItem("sessionData")) {
-      window.close();
-      setTimeout(() => {
-        window.location.replace(LOGIN_URL);
-      }, 150);
-    }
-
     return () => {
       window.removeEventListener("storage", handleStorageChange);
     };
