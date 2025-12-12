@@ -224,7 +224,7 @@ const AboutDraft = ({ memberId }) => {
             </div>
             <div class="container">
               <div class="row">
-                <div class="col-lg-6">
+                <div class="col-12">
                   <div class="company-card">
                     {/* <div class="main-title">
                       <div>
@@ -262,7 +262,7 @@ const AboutDraft = ({ memberId }) => {
                     </div>
                   </div>
                 </div>
-                <div class="col-lg-6">
+                <div class="col-12" style={{ marginTop: "30px" }}>
                   <div class="company-card">
                     <div class="table-card">
                       <div class="main-title">

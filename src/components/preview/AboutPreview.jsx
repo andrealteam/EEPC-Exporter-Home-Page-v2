@@ -49,7 +49,7 @@ const AboutPreview = ({ memberId }) => {
   return (
     <section style={{ position: "relative", paddingTop: "60px" }}>
       <div class="row">
-        <div class="col-lg-6">
+        <div class="col-12">
           <div class="company-card">
             <div style={{ display: "flex", flexDirection: "column" }}>
               <div className="main-title">
@@ -96,7 +96,7 @@ const AboutPreview = ({ memberId }) => {
             </div>
           </div>
         </div>
-        <div class="col-lg-6">
+        <div class="col-12" style={{ marginTop: "30px" }}>
           <div class="company-card">
             <div class="table-card">
               <div class="main-title">
