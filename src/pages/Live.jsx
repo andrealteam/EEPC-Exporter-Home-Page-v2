@@ -1,13 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { getLiveSection } from "../services/liveApi";
+import CryptoJS from "crypto-js";
+import { checkAuth, clearAuth, isEditMode } from "../utils/auth";
+
+// Components
 import HeaderLive from "../components/live/HeaderLive";
 import BannerLive from "../components/live/BannerLive";
 import AboutLive from "../components/live/AboutLive";
 import WhoWeAreLive from "../components/live/WhoWeAreLive";
 import ProductsLive from "../components/live/ProductsLive";
 import FooterLive from "../components/live/FooterLive";
-import { useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { getLiveSection } from "../services/liveApi";
 import CertificateLive from "../components/live/CertificateLive";
 import AwardsLive from "../components/live/AwardsLive";
 import TestimonialLive from "../components/live/TestimonialLive";
@@ -16,19 +20,70 @@ import ParticipationLIve from "../components/live/ParticipationLIve";
 import ChatWidget from "../components/live/ChatWidget";
 import WhatsAppPopUp from "../components/live/WhatsAppPopUp";
 import MapReviewLive from "../components/live/MapReviewLive";
-import CryptoJS from "crypto-js";
 
 const secretKey = "my-secret-key";
 const LOGIN_URL = "https://eepc-exporter-home-page-v2.vercel.app/auth/login";
+const AUTH_CHECK_INTERVAL = 30000; // 30 seconds
 
 const Live = () => {
-  // ✅ Persisted Set (shared across event calls)
-  const companySetRef = useRef(new Set());
+  const [isAuthenticated, setIsAuthenticated] = useState(checkAuth());
   const [isAdmin, setIsAdmin] = useState(false);
+  const companySetRef = useRef(new Set());
+  
+  // Handle customer state and authentication
   const [customer, setCustomer] = useState(() => {
     const stored = localStorage.getItem("sessionData");
     return stored ? JSON.parse(stored) : null;
   });
+
+  // Handle authentication state changes and cross-tab sync
+  useEffect(() => {
+    const handleAuthChange = () => {
+      const authStatus = checkAuth();
+      setIsAuthenticated(authStatus);
+      
+      // If in edit mode and not authenticated, redirect to login
+      if (isEditMode() && !authStatus) {
+        clearAuth();
+        window.location.href = '/auth/login';
+      }
+    };
+
+    // Initial auth check
+    handleAuthChange();
+
+    // Listen for storage changes (like logout from other tabs)
+    const handleStorageChange = (e) => {
+      if (e.key === 'sessionData' || e.key === 'isValidToken' || e.key === null) {
+        handleAuthChange();
+      }
+    };
+
+    // Set up storage event listener
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Check auth periodically
+    const authInterval = setInterval(handleAuthChange, AUTH_CHECK_INTERVAL);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(authInterval);
+    };
+  }, []);
+
+  // Handle customer data changes
+  useEffect(() => {
+    if (customer) {
+      const isAuth = checkAuth();
+      setIsAuthenticated(isAuth);
+      
+      if (isEditMode() && !isAuth) {
+        window.location.href = '/auth/login';
+        return;
+      }
+    }
+  }, [customer]);
 
   const { website_url } = useParams();
   const {
@@ -209,7 +264,20 @@ const Live = () => {
   }, [sectionData]);
 
   // Still loading, show nothing or loader
-  if (isLoading) return null;
+  // Show loading state or redirect based on auth status
+  if (isLoading) {
+    if (isEditMode() && !isAuthenticated) {
+      // If we're still loading but we know we need to be logged in, show a loading state
+      return (
+        <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  }
 
   // console.log("sectionError", sectionError);
 
