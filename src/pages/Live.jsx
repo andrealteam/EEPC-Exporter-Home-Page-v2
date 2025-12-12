@@ -90,6 +90,9 @@ const Live = () => {
     };
 
     window.addEventListener("storage", handleLogout);
+    // Also handle the case where the tab opens after the user already logged out.
+    handleLogout();
+
     return () => window.removeEventListener("storage", handleLogout);
   }, []);
 
