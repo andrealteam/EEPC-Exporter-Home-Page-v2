@@ -28,24 +28,24 @@ const HeaderPreview = ({ memberId }) => {
   }
   return (
     <header className="header" style={{ position: "relative" }}>
-      <Favicon iconUrl={baseFileURL + headerData?.logo} />
+      {headerData?.logo && <Favicon iconUrl={baseFileURL + headerData?.logo} />}
 
       <nav className="navbar navbar-expand-lg">
         <div className="container-fluid">
           {/* Logo */}
-          <a className="navbar-brand" href="#">
-            {isLoading ? (
-              <Skeleton width={120} />
-            ) : (
-              headerData?.logo && (
+          {headerData?.logo && (
+            <a className="navbar-brand" href="#">
+              {isLoading ? (
+                <Skeleton width={120} />
+              ) : (
                 <img
                   src={baseFileURL + headerData?.logo}
                   alt="Logo"
                   width="120"
                 />
-              )
-            )}
-          </a>
+              )}
+            </a>
+          )}
 
           {/* Right-side contact info */}
           <div className="d-flex ms-auto">

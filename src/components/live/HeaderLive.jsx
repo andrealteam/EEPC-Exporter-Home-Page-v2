@@ -53,13 +53,15 @@ const HeaderLive = ({ website_url }) => {
       <nav className="navbar navbar-expand-lg">
         <div className="container-fluid">
           {/* Logo */}
-          <a className="navbar-brand" href="#">
-            {isLoading ? (
-              <Skeleton width={120} />
-            ) : (
-              logoUrl && <img src={logoUrl} alt="Logo" width="120" />
-            )}
-          </a>
+          {logoUrl && (
+            <a className="navbar-brand" href="#">
+              {isLoading ? (
+                <Skeleton width={120} />
+              ) : (
+                <img src={logoUrl} alt="Logo" width="120" />
+              )}
+            </a>
+          )}
 
           {/* Right-side contact info */}
           <div className="d-flex ms-auto">
