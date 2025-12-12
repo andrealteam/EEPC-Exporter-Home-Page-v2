@@ -525,13 +525,41 @@ div.update-btn {
 /* Mobile responsive styles for update buttons */
 @media (max-width: 767px) {
   .update-btn {
-    flex-direction: column;
-    align-items: flex-end;
+    flex-direction: row;
+    align-items: center;
     gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
   .update-btn button {
-    width: 120px;
-    margin: 3px 0;
+    width: auto;
+    min-width: 120px;
+    margin: 5px;
+    padding: 8px 16px;
+  }
+  
+  /* Ensure preview/publish buttons stay side by side */
+  .header .update-btn {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 15px;
+    padding: 10px;
+  }
+  
+  /* Social/Contact icons side by side */
+  .social-icons {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin: 10px 0;
+  }
+  
+  .social-icons a, 
+  .social-icons button {
+    margin: 0 5px;
   }
 }
 /* Fade-out animation */
