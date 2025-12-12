@@ -42,9 +42,9 @@ const HeaderLive = ({ website_url }) => {
   // If data is not available (null/undefined), don't render
   if (!headerData) return null;
 
-  const logoUrl =
-    headerData?.logo &&
-    `${baseFileURL.replace(/\/$/, "")}/${headerData.logo.replace(/^\//, "")}`;
+  const logoUrl = headerData?.logo
+    ? `${baseFileURL.replace(/\/$/, "")}/${headerData.logo.replace(/^\//, "")}`
+    : null;
 
   return (
     <header className="header" style={{ position: "relative" }}>
@@ -58,7 +58,11 @@ const HeaderLive = ({ website_url }) => {
               {isLoading ? (
                 <Skeleton width={120} />
               ) : (
-                <img src={logoUrl} alt="Logo" width="120" />
+                <img 
+                  src={logoUrl} 
+                  alt="Logo" 
+                  width="120"
+                />
               )}
             </a>
           )}

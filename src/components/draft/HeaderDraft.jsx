@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { demoLogo } from "../../utils/constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Skeleton from "react-loading-skeleton";
@@ -184,20 +185,18 @@ const HeaderDraft = ({ memberId }) => {
                     <span>📁 Choose Image</span>
                   </label>
 
-                  {(editedHeader.logo || headerData?.logo) && (
-                    <img
-                      src={
-                        editedHeader.logo || 
-                        (headerData?.logo ? `${baseFileURL}${headerData.logo}` : null)
-                      }
-                      alt="Logo"
-                      width="120"
-                      style={{ marginTop: "10px" }}
-                      onError={(e) => {
-                        e.target.style.display = "none";
-                      }}
-                    />
-                  )}
+                  <img
+                    src={
+                      editedHeader.logo || 
+                      (headerData?.logo ? `${baseFileURL}${headerData.logo}` : demoLogo)
+                    }
+                    alt="Logo"
+                    width="120"
+                    style={{ marginTop: "10px" }}
+                    onError={(e) => {
+                      e.target.src = demoLogo;
+                    }}
+                  />
                 </div>
 
                 {/* Editable Contact Info */}
@@ -255,7 +254,7 @@ const HeaderDraft = ({ memberId }) => {
         </>
       ) : (
         <header className="header" style={{ position: "relative" }}>
-          {headerData?.logo && <Favicon iconUrl={baseFileURL + headerData?.logo} />}
+          <Favicon iconUrl={headerData?.logo ? baseFileURL + headerData?.logo : demoLogo} />
 
           <button
             className="update-btn"
@@ -271,19 +270,20 @@ const HeaderDraft = ({ memberId }) => {
           <nav className="navbar navbar-expand-lg">
             <div className="container-fluid">
               {/* Logo */}
-              {headerData?.logo && (
-                <a className="navbar-brand" href="#">
-                  {isLoading ? (
-                    <Skeleton width={120} />
-                  ) : (
-                    <img
-                      src={baseFileURL + headerData?.logo}
-                      alt="Logo"
-                      width="120"
-                    />
-                  )}
-                </a>
-              )}
+              <a className="navbar-brand" href="#">
+                {isLoading ? (
+                  <Skeleton width={120} />
+                ) : (
+                  <img
+                    src={headerData?.logo ? baseFileURL + headerData?.logo : demoLogo}
+                    alt="Logo"
+                    width="120"
+                    onError={(e) => {
+                      e.target.src = demoLogo;
+                    }}
+                  />
+                )}
+              </a>
 
               {/* Right-side contact info */}
               <div
