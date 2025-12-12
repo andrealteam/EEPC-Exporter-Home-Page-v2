@@ -523,7 +523,67 @@ div.update-btn {
 }
 
 /* Mobile responsive styles for update buttons */
+@media (max-width: 991px) {
+  .header .d-flex {
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+  }
+  
+  .contact-box {
+    flex: 0 0 auto;
+    margin: 0 5px;
+  }
+  
+  .contact-box .call-text {
+    display: none; /* Hide text on mobile, show only icons */
+  }
+  
+  .contact-box i {
+    font-size: 20px;
+    color: #0195a3;
+  }
+  
+  /* Ensure edit button is properly aligned */
+  .header .update-btn {
+    position: static;
+    margin-left: 10px;
+  }
+  
+  /* Show icons in a row */
+  .header .d-flex {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
 @media (max-width: 767px) {
+  .contact-box {
+    flex-direction: row;
+    text-align: center;
+    gap: 8px;
+    padding: 5px 8px;
+    background: #f5f5f5;
+    border-radius: 4px;
+  }
+  
+  .header .d-flex {
+    justify-content: flex-end;
+    padding-right: 40px; /* Space for edit button */
+  }
+  
+  .contact-box i {
+    margin: 0;
+  }
+  
+  /* Edit button positioning */
+  .header .update-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    margin: 0;
+  }
+  
   .update-btn {
     flex-direction: row;
     align-items: center;
