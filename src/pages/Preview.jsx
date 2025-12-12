@@ -18,7 +18,6 @@ import MapReview from "../components/draft/MapReview";
 
 const Preview = () => {
   const [member, setMember] = useState(null);
-  const [sessionChecked, setSessionChecked] = useState(false);
   const { token } = useParams();
 
   const secret = new TextEncoder().encode("fgghw53ujf8836d");
@@ -48,24 +47,7 @@ const Preview = () => {
   };
 
   useEffect(() => {
-    const getSession = () => {
-      const raw = localStorage.getItem("sessionData");
-      if (!raw) return null;
-      try {
-        return JSON.parse(raw);
-      } catch {
-        return null;
-      }
-    };
-
     const verifyAndSetMember = async () => {
-      const session = getSession();
-      if (!session) {
-        setSessionChecked(true);
-        setMember(null);
-        return;
-      }
-
       if (!token) {
         window.location.replace("https://eepc-exporter-home-page-v2.vercel.app/auth/login");
         return;
@@ -78,30 +60,13 @@ const Preview = () => {
         return;
       }
 
-      // optional match check: if session has member_id, require it to match token
-      if (session?.member_id && String(session.member_id) !== String(payload.memberId)) {
-        setSessionChecked(true);
-        setMember(null);
-        return;
-      }
-
       setMember(payload);
-      setSessionChecked(true);
     };
 
     verifyAndSetMember();
-
-    const handleStorage = (e) => {
-      if (e.key === "sessionData" && !e.newValue) {
-        setMember(null);
-        setSessionChecked(true);
-      }
-    };
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
   }, [token]);
 
-  if (!sessionChecked) {
+  if (!member) {
     return (
       <div
         style={{
@@ -114,24 +79,6 @@ const Preview = () => {
       >
         <div className="spinner-border text-primary mb-3" role="status"></div>
         <p>Verifying your access token...</p>
-      </div>
-    );
-  }
-
-  if (!member) {
-    return (
-      <div
-        style={{
-          height: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: "#f8f9fa",
-        }}
-      >
-        <h1 style={{ fontSize: "100px" }}>404</h1>
-        <p style={{ fontSize: "22px" }}>Page Not Found</p>
       </div>
     );
   }
