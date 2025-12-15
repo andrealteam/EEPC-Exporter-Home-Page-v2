@@ -45,29 +45,45 @@ const Draft = () => {
         
         // If no session data, not authorized
         if (!sessionData) {
+          console.log("No session data found");
+          setIsAuthorized(false);
+          return false;
+        }
+
+        // Check if token is expired
+        const currentTime = Date.now() / 1000;
+        if (sessionData.exp && sessionData.exp < currentTime) {
+          console.log("Token expired");
+          localStorage.removeItem("sessionData");
           setIsAuthorized(false);
           return false;
         }
 
         // If we have memberId in URL, verify it matches the session
         if (memberId?.memberId && sessionData.member_id !== memberId.memberId) {
+          console.log("Member ID mismatch");
           setIsAuthorized(false);
           return false;
         }
 
         // If we have token in URL, verify it matches the session
         if (token && sessionData.token !== token) {
+          console.log("Token mismatch");
           setIsAuthorized(false);
           return false;
         }
 
-        // If we have company name in rejectSectionData, verify it matches
-        if (rejectSectionData?.company_name && 
-            sessionData.member_name !== rejectSectionData.company_name) {
-          setIsAuthorized(false);
-          return false;
+        // Only check company name if rejectSectionData is loaded
+        if (rejectSectionData?.company_name) {
+          if (sessionData.member_name !== rejectSectionData.company_name) {
+            console.log("Company name mismatch");
+            setIsAuthorized(false);
+            return false;
+          }
         }
 
+        // If we got here, all checks passed
+        console.log("Authentication successful");
         setIsAuthorized(true);
         return true;
       } catch (error) {
@@ -123,49 +139,61 @@ const Draft = () => {
 
   // Show unauthorized/expired session message
   if (!isAuthorized) {
-    return (
-      <div
-        style={{
+    const [showError, setShowError] = useState(false);
+    
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        setShowError(true);
+      }, 300);
+      
+      return () => clearTimeout(timer);
+    }, []);
+    
+    if (!showError) {
+      return (
+        <div style={{
           height: "100vh",
           display: "flex",
-          flexDirection: "column",
           justifyContent: "center",
           alignItems: "center",
-          backgroundColor: "#f8fafc",
-          color: "#1e293b",
-          fontFamily: "Inter, sans-serif",
-        }}
-      >
-        <h2 style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>
-          Session Expired
-        </h2>
-        <p
-          style={{ fontSize: "1rem", color: "#64748b", marginBottom: "1.5rem" }}
-        >
-          Your session has expired or you are not authorized to access this page.
-        </p>
-        <button
-          onClick={() => {
-            // Clear any existing session data
-            localStorage.removeItem("sessionData");
-            // Redirect to login
-            window.location.href = LOGIN_URL;
-          }}
+          backgroundColor: "#f8fafc"
+        }}>
+          <p>Checking authentication status...</p>
+        </div>
+      );
+    }
+    
+    return (
+      <div style={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#f8fafc",
+        color: "#1e293b",
+        fontFamily: "Inter, sans-serif",
+        padding: "20px",
+        textAlign: "center"
+      }}>
+        <h2 style={{ marginBottom: "20px" }}>Session Expired</h2>
+        <p style={{ marginBottom: "20px" }}>Your session has expired or you don't have permission to access this page.</p>
+        <a 
+          href={LOGIN_URL}
           style={{
+            display: "inline-block",
             padding: "10px 20px",
             backgroundColor: "#2563eb",
             color: "white",
-            border: "none",
+            textDecoration: "none",
             borderRadius: "8px",
-            cursor: "pointer",
-            fontSize: "1rem",
             transition: "background-color 0.2s ease",
           }}
           onMouseOver={(e) => (e.target.style.backgroundColor = "#1d4ed8")}
           onMouseOut={(e) => (e.target.style.backgroundColor = "#2563eb")}
         >
           Go to Login
-        </button>
+        </a>
       </div>
     );
   }
