@@ -17,7 +17,7 @@ import { ChangeTrackerProvider } from "../contexts/ChangeTrackerContext";
 const LOGIN_URL =
   "https://eepc-exporter-home-page-v2.vercel.app/auth/login";
 
-/* 🔒 HARD LOCK */
+/* 🔒 LOCK EDITING */
 const lockEditing = () => {
   document.querySelectorAll("input, textarea, select").forEach((el) => {
     el.disabled = true;
@@ -38,6 +38,7 @@ const Draft = () => {
   const memberId = location.state?.exporterData;
   const token = location.state?.token;
 
+  const hadSessionRef = useRef(false);
   const isLockedRef = useRef(false);
 
   /* 🔐 API DATA */
@@ -47,51 +48,61 @@ const Draft = () => {
     enabled: !!memberId,
   });
 
-  /* 🔍 SESSION CHECK FUNCTION */
-  const checkSession = () => {
+  /* 🧠 INITIAL SESSION CHECK (NO LOCK HERE) */
+  useEffect(() => {
     const session = localStorage.getItem("sessionData");
-    if (!session && !isLockedRef.current) {
-      isLockedRef.current = true;
-      lockEditing();
-      setTimeout(() => {
-        window.location.replace(LOGIN_URL);
-      }, 300);
+    if (session) {
+      hadSessionRef.current = true;
     }
+  }, []);
+
+  /* 🚨 LOGOUT DETECTOR (ONLY AFTER LOGIN) */
+  const handleLogout = () => {
+    if (!hadSessionRef.current) return;
+    if (isLockedRef.current) return;
+
+    isLockedRef.current = true;
+    lockEditing();
+
+    setTimeout(() => {
+      window.location.replace(LOGIN_URL);
+    }, 300);
   };
 
   /* ✅ CROSS-TAB LOGOUT */
   useEffect(() => {
     const onStorage = (e) => {
       if (e.key === "sessionData" && !e.newValue) {
-        checkSession();
+        handleLogout();
       }
     };
+
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  /* ✅ SAME-TAB LOGOUT + TAB SWITCH */
+  /* ✅ SAME TAB / VISIBILITY / FOCUS */
   useEffect(() => {
-    const onFocus = () => checkSession();
-    const onVisibility = () => {
-      if (document.visibilityState === "visible") {
-        checkSession();
+    const checkSession = () => {
+      const session = localStorage.getItem("sessionData");
+      if (!session) {
+        handleLogout();
       }
     };
 
-    window.addEventListener("focus", onFocus);
-    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("focus", checkSession);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        checkSession();
+      }
+    });
+
+    const interval = setInterval(checkSession, 2000);
 
     return () => {
-      window.removeEventListener("focus", onFocus);
-      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("focus", checkSession);
+      clearInterval(interval);
     };
-  }, []);
-
-  /* ✅ HEARTBEAT (FINAL GUARANTEE) */
-  useEffect(() => {
-    const interval = setInterval(checkSession, 1500);
-    return () => clearInterval(interval);
   }, []);
 
   const rejectSection =
