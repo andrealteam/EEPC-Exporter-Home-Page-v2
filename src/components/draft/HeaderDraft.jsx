@@ -264,12 +264,12 @@ const HeaderDraft = ({ memberId }) => {
             className="update-btn"
             style={{
               position: 'fixed',
-              top: '15px',
-              right: '60px',
+              top: '105px', // Positioned below the logout button
+              right: '15px',
               width: '36px',
               height: '36px',
               borderRadius: '50%',
-              background: '#2563eb',
+              background: '#10b981', // Green color
               color: 'white',
               border: '2px solid white',
               display: 'flex',
@@ -284,6 +284,14 @@ const HeaderDraft = ({ memberId }) => {
                 right: '70px',
                 width: '40px',
                 height: '40px'
+              },
+              '&:hover': {
+                background: '#059669', // Darker green on hover
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+              },
+              '&:active': {
+                transform: 'translateY(0)'
               }
             }}
             onClick={() => setOpenHeader(true)}

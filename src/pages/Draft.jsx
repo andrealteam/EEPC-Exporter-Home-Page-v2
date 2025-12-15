@@ -371,24 +371,32 @@ const Draft = () => {
             id="logout-button-main"
             onClick={handleLogout}
             style={{
-              position: "fixed",
-              top: "60px",
-              right: "15px",
+              position: 'fixed',
+              top: '60px',
+              right: '15px',
               zIndex: 10000,
-              width: "36px",
-              height: "36px",
-              padding: "6px",
-              background: "#ff4444",
-              color: "white",
-              border: "2px solid white",
-              borderRadius: "50%",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-              transition: "all 0.2s ease",
-              fontFamily: "Arial, sans-serif",
+              width: '36px',
+              height: '36px',
+              padding: '6px',
+              background: '#10b981', // Green color to match the theme
+              color: 'white',
+              border: '2px solid white',
+              borderRadius: '50%',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+              transition: 'all 0.2s ease',
+              fontFamily: 'Arial, sans-serif',
+              '&:hover': {
+                background: '#059669', // Darker green on hover
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+              },
+              '&:active': {
+                transform: 'translateY(0)'
+              },
               '@media (min-width: 768px)': {
                 top: '20px',
                 right: '20px',
