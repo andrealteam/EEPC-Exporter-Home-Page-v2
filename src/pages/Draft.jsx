@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { HeaderDraft } from "../components";
 import BannerDraft from "../components/draft/BannerDraft";
 import AboutDraft from "../components/draft/AboutDraft";
@@ -135,6 +135,7 @@ const isSessionValid = () => {
 };
 
 const Draft = () => {
+  const navigate = useNavigate();
   const location = useLocation();
   const memberId = location.state?.exporterData;
   const token = location.state?.token;
@@ -174,9 +175,14 @@ const Draft = () => {
         setIsLoggedIn(true);
         unlockEditing();
       } else {
-        console.log("❌ No session found");
+        console.log("❌ No session found, redirecting to login...");
         setIsLoggedIn(false);
         lockEditing();
+        // Redirect to login page after a short delay to show the locked state
+        const timer = setTimeout(() => {
+          navigate(LOGIN_URL, { state: { from: location.pathname } });
+        }, 1000);
+        return () => clearTimeout(timer);
       }
       setSessionChecked(true);
     }
@@ -192,9 +198,11 @@ const Draft = () => {
         setIsLoggedIn(true);
         unlockEditing();
       } else {
-        console.log("❌ Session is invalid - Locking editing");
+        console.log("❌ Session is invalid - Locking editing and redirecting to login...");
         setIsLoggedIn(false);
         lockEditing();
+        // Redirect to login page after a short delay to show the locked state
+        navigate(LOGIN_URL, { state: { from: location.pathname } });
       }
     };
     
