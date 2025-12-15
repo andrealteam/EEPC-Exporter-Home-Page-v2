@@ -365,49 +365,87 @@ const Draft = () => {
   return (
     <ChangeTrackerProvider>
       <div className="container">
-        {/* Only Logout Button (Visible when logged in) */}
+        {/* Logout Button with Logo (Visible when logged in) */}
         {isLoggedIn && (
-          <button
-            id="logout-button-main"
-            onClick={handleLogout}
+          <div 
+            className="logout-container"
             style={{
               position: "fixed",
               top: "20px",
               right: "20px",
               zIndex: 10000,
-              padding: "10px 20px",
-              background: "#ff4444",
-              color: "white",
-              border: "none",
-              borderRadius: "6px",
-              cursor: "pointer",
-              fontWeight: "bold",
-              fontSize: "14px",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-              transition: "all 0.2s ease",
-              fontFamily: "Arial, sans-serif"
-            }}
-            onMouseOver={(e) => {
-              e.target.style.background = "#ff3333";
-              e.target.style.transform = "translateY(-1px)";
-              e.target.style.boxShadow = "0 4px 12px rgba(0,0,0,0.3)";
-            }}
-            onMouseOut={(e) => {
-              e.target.style.background = "#ff4444";
-              e.target.style.transform = "translateY(0)";
-              e.target.style.boxShadow = "0 2px 8px rgba(0,0,0,0.2)";
-            }}
-            onMouseDown={(e) => {
-              e.target.style.background = "#ff2222";
-              e.target.style.transform = "translateY(1px)";
-            }}
-            onMouseUp={(e) => {
-              e.target.style.background = "#ff3333";
-              e.target.style.transform = "translateY(-1px)";
+              display: "flex",
+              gap: "10px",
+              alignItems: "center"
             }}
           >
-            🔓 Logout
-          </button>
+            <button
+              id="logout-button-main"
+              onClick={handleLogout}
+              style={{
+                padding: "8px",
+                background: "#ff4444",
+                color: "white",
+                border: "none",
+                borderRadius: "50%",
+                width: "40px",
+                height: "40px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+                transition: "all 0.2s ease",
+              }}
+              onMouseOver={(e) => {
+                e.target.style.background = "#ff3333";
+                e.target.style.transform = "translateY(-1px)";
+                e.target.style.boxShadow = "0 4px 12px rgba(0,0,0,0.3)";
+              }}
+              onMouseOut={(e) => {
+                e.target.style.background = "#ff4444";
+                e.target.style.transform = "translateY(0)";
+                e.target.style.boxShadow = "0 2px 8px rgba(0,0,0,0.2)";
+              }}
+              aria-label="Logout"
+              title="Logout"
+            >
+              <svg 
+                width="20" 
+                height="20" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+              >
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+            </button>
+            <style jsx global>{`
+              @media (max-width: 768px) {
+                .update-btn {
+                  position: fixed !important;
+                  top: 15px !important;
+                  right: 70px !important;
+                  z-index: 9999 !important;
+                  display: flex;
+                  gap: 10px;
+                  align-items: center;
+                }
+                .logout-container {
+                  top: 15px !important;
+                  right: 15px !important;
+                }
+                .header {
+                  padding-top: 90px !important;
+                }
+              }
+            `}</style>
+          </div>
         )}
 
         {/* Login button when not logged in */}
