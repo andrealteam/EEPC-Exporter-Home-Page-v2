@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { HeaderDraft } from "../components";
 import BannerDraft from "../components/draft/BannerDraft";
 import AboutDraft from "../components/draft/AboutDraft";
@@ -21,32 +21,6 @@ import { ChangeTrackerProvider } from "../contexts/ChangeTrackerContext";
 const LOGIN_URL = "https://eepc-exporter-home-page-v2-whhx.vercel.app/auth/login";
 const SESSION_KEY = 'draft_editor_session';
 const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
-
-// Clear all authentication cookies
-const clearAuthCookies = () => {
-  const cookies = [
-    'auth_token',
-    'member_id',
-    'user_id',
-    'emp_code',
-    'emp_name',
-    'emp_office',
-    'guest_name',
-    'role',
-    'loggedInUserName'
-  ];
-
-  // Remove cookies with domain and path to ensure they're properly cleared
-  cookies.forEach(cookie => {
-    document.cookie = `${cookie}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
-    // Also try with the domain starting with . for subdomain compatibility
-    document.cookie = `${cookie}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${window.location.hostname};`;
-  });
-
-  // Clear local storage and session storage
-  localStorage.clear();
-  sessionStorage.clear();
-};
 
 /* 🔒 LOCK EDITING FUNCTION - FIXED */
 const lockEditing = () => {
@@ -161,7 +135,6 @@ const isSessionValid = () => {
 };
 
 const Draft = () => {
-  const navigate = useNavigate();
   const location = useLocation();
   const memberId = location.state?.exporterData;
   const token = location.state?.token;
@@ -201,25 +174,9 @@ const Draft = () => {
         setIsLoggedIn(true);
         unlockEditing();
       } else {
-        console.log("❌ No valid session found, clearing auth and redirecting to login...");
+        console.log("❌ No session found");
         setIsLoggedIn(false);
         lockEditing();
-        
-        // Clear all auth cookies and storage
-        clearAuthCookies();
-        clearSession();
-        
-        // Redirect to login page after a short delay to show the locked state
-        const timer = setTimeout(() => {
-          navigate(LOGIN_URL, { 
-            state: { 
-              from: location.pathname,
-              sessionExpired: true
-            } 
-          });
-        }, 1000);
-        
-        return () => clearTimeout(timer);
       }
       setSessionChecked(true);
     }
@@ -235,25 +192,9 @@ const Draft = () => {
         setIsLoggedIn(true);
         unlockEditing();
       } else {
-        console.log("❌ Session is invalid - Clearing auth and redirecting to login...");
+        console.log("❌ Session is invalid - Locking editing");
         setIsLoggedIn(false);
         lockEditing();
-        
-        // Clear all auth cookies and storage
-        clearAuthCookies();
-        clearSession();
-        
-        // Redirect to login page after a short delay to show the locked state
-        const timer = setTimeout(() => {
-          navigate(LOGIN_URL, { 
-            state: { 
-              from: location.pathname,
-              sessionExpired: true
-            } 
-          });
-        }, 1000);
-        
-        return () => clearTimeout(timer);
       }
     };
     
