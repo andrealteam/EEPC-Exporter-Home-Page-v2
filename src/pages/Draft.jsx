@@ -20,6 +20,7 @@ import { ChangeTrackerProvider } from "../contexts/ChangeTrackerContext";
 
 const LOGIN_URL = "https://eepc-exporter-home-page-v2-whhx.vercel.app/auth/login";
 const SESSION_KEY = 'draft_editor_session';
+const LOGOUT_FLAG = 'draft_editor_logged_out';
 const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 
 /* 🔒 LOCK EDITING FUNCTION - FIXED */
@@ -126,10 +127,17 @@ const getSession = () => {
 
 const clearSession = () => {
   localStorage.removeItem(SESSION_KEY);
-  console.log("✅ Session cleared");
+  localStorage.setItem(LOGOUT_FLAG, 'true');
+  console.log("✅ Session cleared and logout flag set");
 };
 
 const isSessionValid = () => {
+  // Check if user explicitly logged out
+  if (localStorage.getItem(LOGOUT_FLAG) === 'true') {
+    console.log("❌ Session invalid: User logged out");
+    return false;
+  }
+  
   const session = getSession();
   return session !== null;
 };
@@ -160,6 +168,8 @@ const Draft = () => {
     // Check if we have token and memberId in location state
     if (token && memberId?.memberId) {
       console.log("✅ Token and memberId received, creating session...");
+      // Clear logout flag on successful login
+      localStorage.removeItem(LOGOUT_FLAG);
       createSession(token, memberId.memberId);
       setIsLoggedIn(true);
       
@@ -169,12 +179,14 @@ const Draft = () => {
     } else {
       // Check for existing session
       const existingSession = getSession();
-      if (existingSession) {
+      const isLoggedOut = localStorage.getItem(LOGOUT_FLAG) === 'true';
+      
+      if (existingSession && !isLoggedOut) {
         console.log("✅ Existing session found");
         setIsLoggedIn(true);
         unlockEditing();
       } else {
-        console.log("❌ No session found");
+        console.log("❌ No valid session found");
         setIsLoggedIn(false);
         lockEditing();
       }
@@ -186,8 +198,9 @@ const Draft = () => {
   useEffect(() => {
     const checkSession = () => {
       const isValid = isSessionValid();
+      const isLoggedOut = localStorage.getItem(LOGOUT_FLAG) === 'true';
       
-      if (isValid) {
+      if (isValid && !isLoggedOut) {
         console.log("✅ Session is valid - Editing enabled");
         setIsLoggedIn(true);
         unlockEditing();
