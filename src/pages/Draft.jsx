@@ -449,7 +449,7 @@ const Draft = () => {
             onClick={handleLoginClick}
             style={{
               position: "fixed",
-              top: "20px",
+              top: "150px",
               right: "20px",
               zIndex: 10000,
               padding: "10px 20px",
