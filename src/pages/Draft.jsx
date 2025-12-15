@@ -1,12 +1,16 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { HeaderDraft } from "../components";
 import BannerDraft from "../components/draft/BannerDraft";
 import AboutDraft from "../components/draft/AboutDraft";
+import WhoWeAreDraft from "../components/draft/WhoWeAreDraft";
 import ProductsDraft from "../components/draft/productsDraft";
 import FooterDraft from "../components/draft/FooterDraft";
 import PreviewPublish from "../components/draft/PreviewPublish";
+import CertificateDraft from "../components/draft/CertificateDraft";
 import Testimonials from "../components/draft/Testimonials";
+import AwardsDraft from "../components/draft/AwardsDraft";
+import GalleryDraft from "../components/draft/GalleryDraft";
 import ParticipationDraft from "../components/draft/ParticipationDraft";
 import MapReview from "../components/draft/MapReview";
 import RejectSectionBanner from "../components/draft/RejectSectionBanner";
@@ -16,8 +20,10 @@ import { ChangeTrackerProvider } from "../contexts/ChangeTrackerContext";
 
 const LOGIN_URL = "https://eepc-exporter-home-page-v2.vercel.app/auth/login";
 
-/* 🔒 LOCK EDITING - Enhanced function */
+/* 🔒 LOCK EDITING FUNCTION */
 const lockEditing = () => {
+  console.log("Locking editing...");
+  
   // Disable all form inputs
   document.querySelectorAll("input, textarea, select").forEach((el) => {
     el.disabled = true;
@@ -44,66 +50,58 @@ const lockEditing = () => {
   // Visual indicators
   document.body.style.pointerEvents = "none";
   document.body.style.userSelect = "none";
-  document.body.style.opacity = "0.7";
+  document.body.style.opacity = "0.9";
   document.body.style.cursor = "not-allowed";
 
-  // Add a visual overlay
-  const overlayId = "lock-editing-overlay";
-  if (!document.getElementById(overlayId)) {
-    const overlay = document.createElement("div");
-    overlay.id = overlayId;
-    overlay.style.position = "fixed";
-    overlay.style.top = "0";
-    overlay.style.left = "0";
-    overlay.style.width = "100%";
-    overlay.style.height = "100%";
-    overlay.style.zIndex = "9999";
-    overlay.style.pointerEvents = "none";
-    overlay.style.backgroundColor = "rgba(0,0,0,0.02)";
-    document.body.appendChild(overlay);
-  }
-
-  // Add a notification message
-  const messageId = "lock-editing-message";
-  if (!document.getElementById(messageId)) {
-    const message = document.createElement("div");
-    message.id = messageId;
-    message.innerHTML = `
+  // Add a notification banner at top
+  const bannerId = "session-expired-banner";
+  if (!document.getElementById(bannerId)) {
+    const banner = document.createElement("div");
+    banner.id = bannerId;
+    banner.innerHTML = `
       <div style="
         position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: white;
-        padding: 20px 30px;
-        border-radius: 8px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-        z-index: 10000;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: #ff4444;
+        color: white;
+        padding: 12px;
         text-align: center;
-        border: 2px solid #ff4444;
-        pointer-events: auto;
+        z-index: 10000;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-left: 20px;
+        padding-right: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
       ">
-        <h3 style="color: #ff4444; margin-bottom: 10px;">Session Expired</h3>
-        <p style="margin-bottom: 15px;">Your session has expired. You cannot edit anything.</p>
+        <div style="font-weight: bold;">Session Expired - View Only Mode</div>
         <button onclick="window.location.href='${LOGIN_URL}'" 
                 style="
-                  background: #ff4444;
-                  color: white;
+                  background: white;
+                  color: #ff4444;
                   border: none;
-                  padding: 8px 16px;
+                  padding: 6px 16px;
                   border-radius: 4px;
                   cursor: pointer;
+                  font-weight: bold;
                 ">
-          Go to Login
+          Login Again
         </button>
       </div>
     `;
-    document.body.appendChild(message);
+    document.body.prepend(banner);
+    
+    // Add margin to body to account for banner
+    document.body.style.marginTop = "50px";
   }
 };
 
-/* 🔓 UNLOCK EDITING */
+/* 🔓 UNLOCK EDITING FUNCTION */
 const unlockEditing = () => {
+  console.log("Unlocking editing...");
+  
   document.querySelectorAll("input, textarea, select").forEach((el) => {
     el.disabled = false;
     el.readOnly = false;
@@ -126,13 +124,11 @@ const unlockEditing = () => {
   document.body.style.userSelect = "";
   document.body.style.opacity = "";
   document.body.style.cursor = "";
+  document.body.style.marginTop = "";
 
-  // Remove overlay and message
-  const overlay = document.getElementById("lock-editing-overlay");
-  if (overlay) overlay.remove();
-
-  const message = document.getElementById("lock-editing-message");
-  if (message) message.remove();
+  // Remove banner
+  const banner = document.getElementById("session-expired-banner");
+  if (banner) banner.remove();
 };
 
 const Draft = () => {
@@ -140,137 +136,134 @@ const Draft = () => {
   const memberId = location.state?.exporterData;
   const token = location.state?.token;
 
-  const hadSessionRef = useRef(false);
-  const isLockedRef = useRef(false);
-  const [hasInitialized, setHasInitialized] = useState(false);
-
-  /* 🔐 API DATA */
-  const { data: rejectSectionData } = useQuery({
+  const {
+    data: rejectSectionData,
+    error: sectionError,
+    isLoading,
+  } = useQuery({
     queryKey: ["get-reject-section", memberId],
     queryFn: () => getRejectionSection(memberId),
     enabled: !!memberId,
   });
+  
+  const [customer, setCustomer] = useState(() => {
+    const stored = localStorage.getItem("sessionData");
+    return stored ? JSON.parse(stored) : null;
+  });
+  const [isEditingLocked, setIsEditingLocked] = useState(false);
 
-  /* 🔍 INITIAL SESSION CHECK - ONLY SET FLAGS, DON'T LOCK IMMEDIATELY */
   useEffect(() => {
-    const session = localStorage.getItem("sessionData");
+    // Check initial state
+    const checkAndSetEditing = () => {
+      const hasValidSession = customer?.member_name && 
+                            customer?.member_name === rejectSectionData?.company_name;
+      
+      if (hasValidSession) {
+        unlockEditing();
+        setIsEditingLocked(false);
+      } else {
+        lockEditing();
+        setIsEditingLocked(true);
+      }
+    };
     
-    if (session) {
-      hadSessionRef.current = true;
-      // User has session, ensure editing is unlocked
-      unlockEditing();
-    } else {
-      // No session initially, but don't lock yet
-      hadSessionRef.current = false;
+    // Initial check
+    if (rejectSectionData) {
+      checkAndSetEditing();
     }
-    
-    setHasInitialized(true);
-  }, []);
+  }, [customer, rejectSectionData]);
 
-  /* 🚨 LOGOUT HANDLER - ONLY LOCK WHEN USER ACTUALLY LOGS OUT */
-  const handleLogout = () => {
-    if (isLockedRef.current) return;
-    
-    console.log("Logging out and locking editing...");
-    isLockedRef.current = true;
-    
-    // Clear session data
-    localStorage.removeItem("sessionData");
-    
-    // Lock editing
-    lockEditing();
-    
-    // Optional: Redirect to login after delay
-    setTimeout(() => {
-      window.location.replace(LOGIN_URL);
-    }, 5000); // 5 seconds to see the message
-  };
-
-  /* ✅ CROSS-TAB LOGOUT DETECTION */
   useEffect(() => {
-    const onStorage = (e) => {
-      if (e.key === "sessionData") {
-        if (!e.newValue && hadSessionRef.current) {
-          // Session was cleared in another tab
-          handleLogout();
-        } else if (e.newValue) {
-          // Session was added in another tab
-          hadSessionRef.current = true;
-          isLockedRef.current = false;
-          unlockEditing();
+    const handleStorageChange = (event) => {
+      if (event.key === "sessionData") {
+        const newData = event.newValue ? JSON.parse(event.newValue) : null;
+        setCustomer(newData);
+        
+        if (!newData) {
+          // Session removed - lock editing but don't redirect immediately
+          lockEditing();
+          setIsEditingLocked(true);
+          
+          // Optional: Auto-redirect after delay
+          setTimeout(() => {
+            window.location.replace(LOGIN_URL);
+          }, 5000);
+        } else {
+          // New session added - check if it's valid for this draft
+          const isValid = newData.member_name === rejectSectionData?.company_name;
+          if (isValid) {
+            unlockEditing();
+            setIsEditingLocked(false);
+          } else {
+            lockEditing();
+            setIsEditingLocked(true);
+          }
         }
       }
     };
 
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
+    // Listen for localStorage changes
+    window.addEventListener("storage", handleStorageChange);
 
-  /* ✅ SAME TAB / VISIBILITY / FOCUS CHECK */
-  useEffect(() => {
-    const checkSession = () => {
-      const session = localStorage.getItem("sessionData");
+    // Also check periodically
+    const interval = setInterval(() => {
+      const stored = localStorage.getItem("sessionData");
+      const currentCustomer = stored ? JSON.parse(stored) : null;
       
-      // Only check if we had a session before
-      if (!session && hadSessionRef.current) {
-        console.log("Session lost - locking editing");
-        handleLogout();
+      if (!currentCustomer && !isEditingLocked) {
+        lockEditing();
+        setIsEditingLocked(true);
       }
-      // If session exists now, make sure editing is unlocked
-      else if (session && isLockedRef.current) {
-        console.log("Session restored - unlocking editing");
-        hadSessionRef.current = true;
-        isLockedRef.current = false;
-        unlockEditing();
-      }
-    };
-
-    // Check on focus
-    window.addEventListener("focus", checkSession);
-    
-    // Check on visibility change
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible") {
-        checkSession();
-      }
-    });
-
-    // Periodic check (every 2 seconds) - only if we have initialized
-    let interval;
-    if (hasInitialized) {
-      interval = setInterval(checkSession, 2000);
-    }
+    }, 2000);
 
     return () => {
-      window.removeEventListener("focus", checkSession);
-      if (interval) clearInterval(interval);
+      window.removeEventListener("storage", handleStorageChange);
+      clearInterval(interval);
     };
-  }, [hasInitialized]);
+  }, [rejectSectionData, isEditingLocked]);
 
-  /* 🔄 Also check session when component mounts/updates */
+  // Check permission when component renders
   useEffect(() => {
-    if (hasInitialized) {
-      const session = localStorage.getItem("sessionData");
+    if (customer && rejectSectionData) {
+      const hasPermission = customer.member_name === rejectSectionData.company_name;
       
-      if (session && isLockedRef.current) {
-        // Session exists but editing is locked - unlock it
-        console.log("Unlocking editing - session exists");
-        isLockedRef.current = false;
+      if (!hasPermission) {
+        // User doesn't have permission - lock editing
+        lockEditing();
+        setIsEditingLocked(true);
+      } else {
+        // User has permission - unlock editing
         unlockEditing();
-      } else if (!session && hadSessionRef.current) {
-        // Had session before but now it's gone - lock it
-        console.log("Locking editing - session lost");
-        handleLogout();
+        setIsEditingLocked(false);
       }
     }
-  }, [hasInitialized]);
+  }, [customer, rejectSectionData]);
 
-  const rejectSection = rejectSectionData?.rejected_sections || [];
-  const rejectMsg = rejectSectionData?.reject_message || "";
+  let rejectSection = rejectSectionData?.rejected_sections || [];
+  let rejectMsg = rejectSectionData?.reject_message || "";
 
   return (
     <ChangeTrackerProvider>
       <div className="container">
+        {/* Show a message if in view-only mode */}
+        {isEditingLocked && (
+          <div style={{
+            position: "fixed",
+            top: "60px",
+            right: "20px",
+            background: "#ff4444",
+            color: "white",
+            padding: "8px 16px",
+            borderRadius: "4px",
+            zIndex: 9999,
+            fontSize: "14px",
+            fontWeight: "bold",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.2)"
+          }}>
+            View Only Mode
+          </div>
+        )}
+
         {rejectMsg.length > 0 && (
           <RejectSectionBanner
             rejectionNumbers={rejectSection}
@@ -279,22 +272,38 @@ const Draft = () => {
         )}
 
         <PreviewPublish
-          memberId={memberId?.memberId}
+          memberId={memberId.memberId}
           token={token}
-          website_url={memberId?.website_url}
+          website_url={memberId.website_url}
           rejectionNumbers={rejectSection}
+          isLocked={isEditingLocked} // Pass lock status to PreviewPublish
         />
 
-        <HeaderDraft memberId={memberId?.memberId} />
-        <ParticipationDraft memberId={memberId?.memberId} />
-        <BannerDraft memberId={memberId?.memberId} />
-        <AboutDraft memberId={memberId?.memberId} />
-        <ProductsDraft memberId={memberId?.memberId} />
-        <Testimonials memberId={memberId?.memberId} />
-        <MapReview memberId={memberId?.memberId} />
-      </div>
+        {/* 1 */}
+        <HeaderDraft memberId={memberId.memberId} />
 
-      <FooterDraft memberId={memberId?.memberId} />
+        <ParticipationDraft memberId={memberId.memberId} />
+
+        {/* 2 */}
+        <BannerDraft memberId={memberId.memberId} />
+
+        {/* <CertificateDraft memberId={memberId.memberId} /> */}
+        {/* <AwardsDraft memberId={memberId.memberId} /> */}
+        {/* <Testimonials memberId={memberId.memberId} /> */}
+        {/* <GalleryDraft memberId={memberId.memberId} /> */}
+
+        {/* 4 */}
+        <AboutDraft memberId={memberId.memberId} />
+        {/* <WhoWeAreDraft memberId={memberId.memberId} /> */}
+
+        {/* 5 */}
+        <ProductsDraft memberId={memberId.memberId} />
+
+        <Testimonials memberId={memberId.memberId} />
+
+        <MapReview memberId={memberId.memberId} />
+      </div>
+      <FooterDraft memberId={memberId.memberId} />
     </ChangeTrackerProvider>
   );
 };
