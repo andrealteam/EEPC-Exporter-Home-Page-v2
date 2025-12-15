@@ -173,50 +173,56 @@ const Draft = () => {
   useEffect(() => {
     console.log("=== Draft Component Mounted ===");
     
-    // Check if we have token and memberId in location state
+    // Clear any existing session first to prevent conflicts
+    const existingSession = getSession();
+    
+    // Check if we have token and memberId in location state (new login)
     if (token && memberId?.memberId) {
-      console.log("✅ Token and memberId received, creating session...");
+      console.log("✅ Token and memberId received, creating new session...");
       createSession(token, memberId.memberId);
       setIsLoggedIn(true);
-      
-      // Unlock editing immediately
       unlockEditing();
-      setSessionChecked(true);
-    } else {
-      // Check for existing session
-      const existingSession = getSession();
+    } 
+    // Check for existing valid session
+    else if (existingSession && isSessionValid()) {
+      console.log("✅ Existing valid session found");
+      setIsLoggedIn(true);
+      unlockEditing();
+    } 
+    // No valid session
+    else {
+      console.log("❌ No valid session found");
       if (existingSession) {
-        console.log("✅ Existing session found");
-        // Verify session is still valid
-        if (isSessionValid()) {
-          setIsLoggedIn(true);
-          unlockEditing();
-        } else {
-          console.log("❌ Session expired");
-          setIsLoggedIn(false);
-          lockEditing();
-          clearSession();
-        }
-      } else {
-        console.log("❌ No session found");
-        setIsLoggedIn(false);
-        lockEditing();
+        console.log("❌ Session expired or invalid");
+        clearSession();
       }
-      setSessionChecked(true);
+      setIsLoggedIn(false);
+      lockEditing();
+    }
+    
+    setSessionChecked(true);
+    
+    // Clear location state to prevent auto-login on refresh
+    if (window.history.replaceState) {
+      window.history.replaceState(null, '', window.location.pathname);
     }
   }, [token, memberId]);
 
   // Set up session checking
   useEffect(() => {
     const checkSession = () => {
-      const isValid = isSessionValid();
+      const session = getSession();
+      const isValid = session && isSessionValid();
       
       if (isValid) {
         console.log("✅ Session is valid - Editing enabled");
         setIsLoggedIn(true);
         unlockEditing();
       } else {
-        console.log("❌ Session is invalid - Locking editing");
+        console.log("❌ Session is invalid or expired - Locking editing");
+        if (session) {
+          clearSession();
+        }
         setIsLoggedIn(false);
         lockEditing();
       }
@@ -284,17 +290,17 @@ const Draft = () => {
   const handleLogout = () => {
     console.log("=== Logout initiated ===");
     
-    // Clear session
+    // Clear session and update state
     clearSession();
-    
-    // Lock editing immediately
-    lockEditing();
     setIsLoggedIn(false);
+    lockEditing();
     
-    // Clear any location state to prevent auto-login on refresh
-    window.history.replaceState({}, document.title);
+    // Clear any location state and redirect to login
+    if (window.history.replaceState) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
     
-    // Redirect to login immediately
+    // Force a full page reload to reset all component states
     window.location.href = LOGIN_URL;
   };
 
