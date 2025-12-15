@@ -22,25 +22,11 @@ import {
 import Loader from "../Loader";
 import Favicon from "../../utils/Favicon";
 import { useChangeTracker } from "../../contexts/ChangeTrackerContext";
-import { useNavigate } from "react-router-dom";
 
 const HeaderDraft = ({ memberId }) => {
   const [openHeader, setOpenHeader] = useState(false);
   const [loading, setLoading] = useState(false);
   const { markAsChanged } = useChangeTracker();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    // Clear all authentication data
-    localStorage.removeItem('sessionData');
-    localStorage.removeItem('isValidToken');
-    
-    // Clear any other relevant data
-    localStorage.removeItem('changeTracker');
-    
-    // Navigate to login page
-    window.location.href = 'https://eepc-exporter-home-page-v2.vercel.app/auth/login';
-  };
     const {
     data: headerData = {},
     isLoading,
@@ -367,33 +353,6 @@ const HeaderDraft = ({ memberId }) => {
                     </a>
                   </div>
                 </div> */}
-                
-                {/* Logout Button */}
-                <div className="d-flex align-items-center ms-3">
-                  <button 
-                    onClick={handleLogout}
-                    className="btn btn-outline-danger btn-sm"
-                    style={{
-                      padding: '5px 15px',
-                      borderRadius: '4px',
-                      border: '1px solid #dc3545',
-                      color: '#dc3545',
-                      background: 'transparent',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease'
-                    }}
-                    onMouseOver={(e) => {
-                      e.target.style.background = '#dc3545';
-                      e.target.style.color = 'white';
-                    }}
-                    onMouseOut={(e) => {
-                      e.target.style.background = 'transparent';
-                      e.target.style.color = '#dc3545';
-                    }}
-                  >
-                    Logout
-                  </button>
-                </div>
               </div>
             </div>
           </nav>
