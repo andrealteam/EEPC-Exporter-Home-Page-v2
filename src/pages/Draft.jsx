@@ -257,12 +257,7 @@ const Draft = () => {
   }, []);
 
   // Handle logout
-  const handleLogout = (e) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    
+  const handleLogout = () => {
     console.log("=== Logout initiated ===");
     
     // Clear session
@@ -272,19 +267,16 @@ const Draft = () => {
     lockEditing();
     setIsLoggedIn(false);
     
-    // Redirect to login page
-    window.location.href = LOGIN_URL;
+    // Redirect to login after a short delay
+    setTimeout(() => {
+      window.location.href = LOGIN_URL;
+    }, 1000);
   };
 
   // Handle login button click
-  const handleLoginClick = (e) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
+  const handleLoginClick = () => {
     console.log("Login button clicked, redirecting to:", LOGIN_URL);
     window.location.href = LOGIN_URL;
-    return false;
   };
 
   // Handle tab/window close
@@ -352,7 +344,7 @@ const Draft = () => {
         {isLoggedIn && (
           <button
             id="logout-button-main"
-            onClick={(e) => handleLogout(e)}
+            onClick={handleLogout}
             style={{
               position: "fixed",
               top: "20px",
@@ -397,7 +389,7 @@ const Draft = () => {
         {!isLoggedIn && (
           <button
             id="login-button-main"
-            onClick={(e) => handleLoginClick(e)}
+            onClick={handleLoginClick}
             style={{
               position: "fixed",
               top: "20px",
