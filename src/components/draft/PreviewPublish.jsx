@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { SignJWT } from "jose";
-import { useNavigate, useLocation } from "react-router-dom";
-import { checkAuth, clearAuth } from "../../utils/auth";
+import { useNavigate } from "react-router-dom";
 import { postEditExporterHomePage, postLiveWebsite } from "../../services/liveApi";
 import toast from "react-hot-toast";
 import { getProducts, getWhoWeAre } from "../../services/draftApi";
@@ -12,37 +11,7 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [jwtToken, setJwtToken] = useState('');
   const navigate = useNavigate();
-  const location = useLocation();
   const { hasChanges, resetAfterPreviewOrPublish, markAsChanged } = useChangeTracker();
-  
-  // Check authentication status
-  const isAuthenticated = checkAuth();
-  
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!isAuthenticated) {
-      clearAuth();
-      if (!window.location.pathname.includes('/auth/login')) {
-        window.location.href = '/auth/login';
-      }
-    }
-  }, [isAuthenticated]);
-
-  // Check authentication status on component mount and when location changes
-  useEffect(() => {
-    const authStatus = checkAuth();
-    setIsAuthenticated(authStatus);
-    
-    if (!authStatus) {
-      clearAuth();
-      // Redirect to login after a short delay to allow state to update
-      const timer = setTimeout(() => {
-        window.location.href = "/auth/login";
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [location]);
-
 
   // Fetch products data
   const { data: productsData, isLoading: isProductsLoading } = useQuery({
@@ -111,12 +80,6 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
   // Handle preview button click
   const handlePreview = async () => {
     try {
-      if (!checkAuth()) {
-        clearAuth();
-        window.location.href = '/auth/login';
-        return;
-      }
-      
       setIsSubmitted(true);
       const token = await generateToken();
       if (!token) {
@@ -154,12 +117,6 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
 
   // Handle publish button click
   const handlePublish = () => {
-    if (!checkAuth()) {
-      clearAuth();
-      window.location.href = '/auth/login';
-      return;
-    }
-
     const hasProducts = Array.isArray(productsData)
       ? productsData.length > 0
       : Array.isArray(productsData?.data)
@@ -184,12 +141,6 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
   // Confirm and handle publishing
   const confirmPublish = async () => {
     try {
-      if (!isAuthenticated) {
-        clearAuth();
-        window.location.href = '/auth/login';
-        return;
-      }
-      
       setIsSubmitted(false);
       const token = jwtToken || (await generateToken());
       
@@ -216,7 +167,7 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
   };
 
   const isLoading = isProductsLoading || isAboutLoading;
-  // Disable buttons when loading or no changes
+  // Enable buttons when there are changes, regardless of previous preview/publish
   const isPreviewDisabled = isLoading || !hasChanges;
   const isPublishDisabled = isLoading || !hasChanges;
 

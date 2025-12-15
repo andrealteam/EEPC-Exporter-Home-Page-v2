@@ -1,103 +1,30 @@
-import { checkAuth } from "./auth";
-
-// Pages
-import Login from "../pages/Login";
-import Register from "../pages/Register";
-import Verify from "../pages/Verify";
-import Draft from "../pages/Draft";
-import Live from "../pages/Live";
-import Review from "../pages/Review";
-import Section from "../pages/Section";
-import Preview from "../pages/Preview";
+import {
+  Draft,
+  Live,
+  PageNotFound,
+  Register,
+  Review,
+  Section,
+  Unauthorized,
+  Verify,
+} from "../pages";
 import FinalReview from "../pages/FinalReview";
-import Unauthorized from "../pages/Unauthorized";
-import PageNotFound from "../pages/PageNotFound";
+import Login from "../pages/Login";
+import Preview from "../pages/Preview";
 
-// Protected route wrapper
-const ProtectedRoute = ({ children }) => {
-  const isAuthenticated = checkAuth();
-  
-  if (!isAuthenticated) {
-    // Store the intended URL before redirecting to login
-    sessionStorage.setItem('redirectAfterLogin', window.location.pathname);
-    window.location.href = '/auth/login';
-    return null;
-  }
-  
-  return children;
-};
-
-// Define routes array
-export const routes = [
-  // Public routes
-  {
-    path: "/auth/login",
-    element: <Login />,
-  },
-  {
-    path: "/register",
-    element: <Register />,
-  },
-  {
-    path: "/preview/:token",
-    element: <Preview />,
-  },
-  {
-    path: "/:website_url",
-    element: <Live />,
-  },
-  {
-    path: "/unauthorized",
-    element: <Unauthorized />,
-  },
-  
-  // Protected routes
-  {
-    path: "/",
-    element: (
-      <ProtectedRoute>
-        <Verify />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/sections",
-    element: (
-      <ProtectedRoute>
-        <Section />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/review",
-    element: (
-      <ProtectedRoute>
-        <Review />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/final-review",
-    element: (
-      <ProtectedRoute>
-        <FinalReview />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/edit",
-    element: (
-      <ProtectedRoute>
-        <Draft />
-      </ProtectedRoute>
-    ),
-  },
-  
-  // 404 - Keep this last
-  {
-    path: "*",
-    element: <PageNotFound />,
-  },
+const routes = [
+  { path: "/auth", element: <Login /> },
+  { path: "/sections", element: <Section /> },
+  { path: "/", element: <Verify /> },
+  { path: "/register", element: <Register /> },
+  { path: "/login", element: <Register /> },
+  { path: "/review", element: <Review /> },
+  { path: "/final-review", element: <FinalReview /> },
+  { path: "/edit", element: <Draft /> },
+  { path: "/preview/:token", element: <Preview /> },
+  { path: "/:website_url", element: <Live /> },
+  { path: "/unauthorized", element: <Unauthorized /> },
+  { path: "/*", element: <PageNotFound /> },
 ];
 
 export default routes;
