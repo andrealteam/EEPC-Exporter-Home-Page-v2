@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { SignJWT } from "jose";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { checkAuth, clearAuth } from "../../utils/auth";
 import { postEditExporterHomePage, postLiveWebsite } from "../../services/liveApi";
 import toast from "react-hot-toast";
 import { getProducts, getWhoWeAre } from "../../services/draftApi";
@@ -10,8 +11,49 @@ import { useChangeTracker } from "../../contexts/ChangeTrackerContext";
 const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [jwtToken, setJwtToken] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { hasChanges, resetAfterPreviewOrPublish, markAsChanged } = useChangeTracker();
+
+  // Check authentication status on component mount and when location changes
+  useEffect(() => {
+    const authStatus = checkAuth();
+    setIsAuthenticated(authStatus);
+    
+    if (!authStatus) {
+      clearAuth();
+      // Redirect to login after a short delay to allow state to update
+      const timer = setTimeout(() => {
+        window.location.href = "/auth/login";
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [location]);
+
+  // If not authenticated, show disabled state
+  if (!isAuthenticated) {
+    return (
+      <header className="header" style={{ position: "relative", paddingTop: "66px" }}>
+        <div className="update-btn" style={{ zIndex: 9999 }}>
+          <button
+            className="edit-btn-2 btn-primary opacity-50 cursor-not-allowed"
+            disabled={true}
+            title="Please log in to enable preview"
+          >
+            Preview
+          </button>
+          <button
+            className="edit-btn-1 btn-primary opacity-50 cursor-not-allowed"
+            disabled={true}
+            title="Please log in to enable publish"
+          >
+            Publish
+          </button>
+        </div>
+      </header>
+    );
+  }
 
   // Fetch products data
   const { data: productsData, isLoading: isProductsLoading } = useQuery({
@@ -80,6 +122,12 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
   // Handle preview button click
   const handlePreview = async () => {
     try {
+      if (!isAuthenticated) {
+        clearAuth();
+        window.location.href = '/auth/login';
+        return;
+      }
+      
       setIsSubmitted(true);
       const token = await generateToken();
       if (!token) {
@@ -117,6 +165,12 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
 
   // Handle publish button click
   const handlePublish = () => {
+    if (!isAuthenticated) {
+      clearAuth();
+      window.location.href = '/auth/login';
+      return;
+    }
+
     const hasProducts = Array.isArray(productsData)
       ? productsData.length > 0
       : Array.isArray(productsData?.data)
@@ -141,6 +195,12 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
   // Confirm and handle publishing
   const confirmPublish = async () => {
     try {
+      if (!isAuthenticated) {
+        clearAuth();
+        window.location.href = '/auth/login';
+        return;
+      }
+      
       setIsSubmitted(false);
       const token = jwtToken || (await generateToken());
       
@@ -167,9 +227,9 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
   };
 
   const isLoading = isProductsLoading || isAboutLoading;
-  // Enable buttons when there are changes, regardless of previous preview/publish
-  const isPreviewDisabled = isLoading || !hasChanges;
-  const isPublishDisabled = isLoading || !hasChanges;
+  // Disable buttons when not authenticated, loading, or no changes
+  const isPreviewDisabled = !isAuthenticated || isLoading || !hasChanges;
+  const isPublishDisabled = !isAuthenticated || isLoading || !hasChanges;
 
   if (isLoading) {
     return (

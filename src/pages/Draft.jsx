@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { HeaderDraft } from "../components";
+import { checkAuth, clearAuth } from "../utils/auth";
 import BannerDraft from "../components/draft/BannerDraft";
 import AboutDraft from "../components/draft/AboutDraft";
 import WhoWeAreDraft from "../components/draft/WhoWeAreDraft";
@@ -22,8 +23,43 @@ const LOGIN_URL = "https://eepc-exporter-home-page-v2.vercel.app/auth/login";
 
 const Draft = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const memberId = location.state?.exporterData;
   const token = location.state?.token;
+
+  // Check authentication status on component mount and when location changes
+  useEffect(() => {
+    const authStatus = checkAuth();
+    setIsAuthenticated(authStatus);
+    
+    if (!authStatus) {
+      clearAuth();
+      // Redirect to login after a short delay to allow state to update
+      const timer = setTimeout(() => {
+        window.location.href = LOGIN_URL;
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [location]);
+
+  // If not authenticated, show loading or redirect message
+  if (!isAuthenticated) {
+    return (
+      <div style={{
+        height: '100vh',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        flexDirection: 'column',
+        backgroundColor: '#f8fafc',
+        color: '#1e293b',
+        fontFamily: 'Inter, sans-serif'
+      }}>
+        <h2>Redirecting to login...</h2>
+      </div>
+    );
+  }
 
   const {
     data: rejectSectionData,
@@ -43,10 +79,11 @@ const Draft = () => {
 
   useEffect(() => {
     const handleStorageChange = (event) => {
-      if (event.key === "sessionData") {
+      if (event.key === "sessionData" || event.key === null) {
         const newData = event.newValue ? JSON.parse(event.newValue) : null;
         setCustomer(newData);
         if (!newData) {
+          clearAuth();
           window.close();
           setTimeout(() => {
             window.location.replace(LOGIN_URL);
@@ -57,9 +94,17 @@ const Draft = () => {
 
     // Listen for localStorage changes
     window.addEventListener("storage", handleStorageChange);
+    // Also check auth status periodically
+    const authCheckInterval = setInterval(() => {
+      if (!checkAuth()) {
+        clearAuth();
+        window.location.href = LOGIN_URL;
+      }
+    }, 30000); // Check every 30 seconds
 
     return () => {
       window.removeEventListener("storage", handleStorageChange);
+      clearInterval(authCheckInterval);
     };
   }, []);
 
