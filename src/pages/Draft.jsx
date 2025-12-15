@@ -342,7 +342,7 @@ const Draft = () => {
           Your session has expired or you are not authorized to access this page.
         </p>
         <button
-          onClick={() => window.location.href = LOGIN_URL}
+          onClick={() => window.location.href = "https://eepc-exporter-home-page-v2-whhx.vercel.app/auth/login"}
           style={{
             padding: "10px 20px",
             backgroundColor: "#2563eb",
