@@ -365,7 +365,7 @@ const Draft = () => {
   return (
     <ChangeTrackerProvider>
       <div className="container">
-        {/* Only Logout Button (Visible when logged in) */}
+        {/* Logout Button with Icon (Visible when logged in) */}
         {isLoggedIn && (
           <button
             id="logout-button-main"
@@ -375,21 +375,24 @@ const Draft = () => {
               top: "20px",
               right: "20px",
               zIndex: 10000,
-              padding: "10px 20px",
+              width: "40px",
+              height: "40px",
+              padding: "8px",
               background: "#ff4444",
               color: "white",
               border: "none",
-              borderRadius: "6px",
+              borderRadius: "50%",
               cursor: "pointer",
-              fontWeight: "bold",
-              fontSize: "14px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
               boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
               transition: "all 0.2s ease",
               fontFamily: "Arial, sans-serif"
             }}
             onMouseOver={(e) => {
               e.target.style.background = "#ff3333";
-              e.target.style.transform = "translateY(-1px)";
+              e.target.style.transform = "translateY(-2px)";
               e.target.style.boxShadow = "0 4px 12px rgba(0,0,0,0.3)";
             }}
             onMouseOut={(e) => {
@@ -397,16 +400,29 @@ const Draft = () => {
               e.target.style.transform = "translateY(0)";
               e.target.style.boxShadow = "0 2px 8px rgba(0,0,0,0.2)";
             }}
-            onMouseDown={(e) => {
-              e.target.style.background = "#ff2222";
-              e.target.style.transform = "translateY(1px)";
-            }}
-            onMouseUp={(e) => {
-              e.target.style.background = "#ff3333";
-              e.target.style.transform = "translateY(-1px)";
-            }}
+            title="Logout"
+            aria-label="Logout"
           >
-            🔓 Logout
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              width="20" 
+              height="20" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+              style={{
+                display: "block",
+                width: "100%",
+                height: "100%"
+              }}
+            >
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
           </button>
         )}
 
