@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import React, { useEffect, useState, useCallback } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { HeaderDraft } from "../components";
 import BannerDraft from "../components/draft/BannerDraft";
 import AboutDraft from "../components/draft/AboutDraft";
@@ -19,11 +19,27 @@ import { getRejectionSection } from "../services/draftApi";
 import { ChangeTrackerProvider } from "../contexts/ChangeTrackerContext";
 
 const LOGIN_URL = "https://eepc-exporter-home-page-v2.vercel.app/auth/login";
+const AUTH_CHECK_INTERVAL = 30000; // 30 seconds
 
 const Draft = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const memberId = location.state?.exporterData;
   const token = location.state?.token;
+
+  const checkAuth = useCallback(() => {
+    const sessionData = localStorage.getItem("sessionData");
+    if (!sessionData) {
+      // Clear any existing intervals
+      if (window.authCheckInterval) {
+        clearInterval(window.authCheckInterval);
+      }
+      // Redirect to login
+      window.location.replace(LOGIN_URL);
+      return false;
+    }
+    return true;
+  }, []);
 
   const {
     data: rejectSectionData,
@@ -38,16 +54,30 @@ const Draft = () => {
 
   const [customer, setCustomer] = useState(() => {
     const stored = localStorage.getItem("sessionData");
-    return stored ? JSON.parse(stored) : null;
+    if (!stored) {
+      window.location.replace(LOGIN_URL);
+      return null;
+    }
+    return JSON.parse(stored);
   });
 
   useEffect(() => {
+    // Initial auth check
+    if (!checkAuth()) return;
+
+    // Set up periodic auth check
+    window.authCheckInterval = setInterval(checkAuth, AUTH_CHECK_INTERVAL);
+
     const handleStorageChange = (event) => {
       if (event.key === "sessionData") {
         const newData = event.newValue ? JSON.parse(event.newValue) : null;
         setCustomer(newData);
         if (!newData) {
-          window.close();
+          // Clear the interval
+          if (window.authCheckInterval) {
+            clearInterval(window.authCheckInterval);
+          }
+          // Close the tab after a short delay
           setTimeout(() => {
             window.location.replace(LOGIN_URL);
           }, 150);
@@ -58,63 +88,63 @@ const Draft = () => {
     // Listen for localStorage changes
     window.addEventListener("storage", handleStorageChange);
 
+    // Cleanup function
     return () => {
+      if (window.authCheckInterval) {
+        clearInterval(window.authCheckInterval);
+      }
       window.removeEventListener("storage", handleStorageChange);
     };
-  }, []);
+  }, [checkAuth]);
 
   let rejectSection = rejectSectionData?.rejected_sections || [];
   let rejectMsg = rejectSectionData?.reject_message || "";
 
-  // if (
-  //   customer?.member_name === undefined ||
-  //   customer?.member_name !== rejectSectionData?.company_name
-  // ) {
-  //   return (
-  //     <div
-  //       style={{
-  //         height: "100vh",
-  //         display: "flex",
-  //         flexDirection: "column",
-  //         justifyContent: "center",
-  //         alignItems: "center",
-  //         backgroundColor: "#f8fafc",
-  //         color: "#1e293b",
-  //         fontFamily: "Inter, sans-serif",
-  //       }}
-  //     >
-  //       <h2 style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>
-  //         Session Expired
-  //       </h2>
-  //       <p
-  //         style={{ fontSize: "1rem", color: "#64748b", marginBottom: "1.5rem" }}
-  //       >
-  //         Your session has expired or you are not authorized to access this
-  //         page.
-  //       </p>
-  //       <button
-  //         onClick={() =>
-  //           (window.location.href =
-  //             "https://eepc-exporter-home-page-v2.vercel.app/auth/login")
-  //         }
-  //         style={{
-  //           padding: "10px 20px",
-  //           backgroundColor: "#2563eb",
-  //           color: "white",
-  //           border: "none",
-  //           borderRadius: "8px",
-  //           cursor: "pointer",
-  //           fontSize: "1rem",
-  //           transition: "background-color 0.2s ease",
-  //         }}
-  //         onMouseOver={(e) => (e.target.style.backgroundColor = "#1d4ed8")}
-  //         onMouseOut={(e) => (e.target.style.backgroundColor = "#2563eb")}
-  //       >
-  //         Go to Login
-  //       </button>
-  //     </div>
-  //   );
-  // }
+  if (!customer || customer?.member_name === undefined || customer?.member_name !== rejectSectionData?.company_name) {
+    return (
+      <div
+        style={{
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "#f8fafc",
+          color: "#1e293b",
+          fontFamily: "Inter, sans-serif",
+        }}
+      >
+        <h2 style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>
+          Session Expired
+        </h2>
+        <p
+          style={{ fontSize: "1rem", color: "#64748b", marginBottom: "1.5rem" }}
+        >
+          Your session has expired or you are not authorized to access this page.
+          Redirecting to login...
+        </p>
+        <button
+          onClick={() => {
+            window.location.href = LOGIN_URL;
+          }}
+          style={{
+            padding: "10px 20px",
+            backgroundColor: "#2563eb",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer",
+            fontSize: "1rem",
+            transition: "background-color 0.2s ease",
+          }}
+          onMouseOver={(e) => (e.target.style.backgroundColor = "#1d4ed8")}
+          onMouseOut={(e) => (e.target.style.backgroundColor = "#2563eb")}
+        >
+          Go to Login
+        </button>
+      </div>
+    );
+  }
 
   return (
     <ChangeTrackerProvider>
