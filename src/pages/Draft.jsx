@@ -20,7 +20,6 @@ import { ChangeTrackerProvider } from "../contexts/ChangeTrackerContext";
 
 const LOGIN_URL = "https://eepc-exporter-home-page-v2-whhx.vercel.app/auth/login";
 const SESSION_KEY = 'draft_editor_session';
-const LOGOUT_FLAG = 'draft_editor_logged_out';
 const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 
 /* 🔒 LOCK EDITING FUNCTION - FIXED */
@@ -127,35 +126,10 @@ const getSession = () => {
 
 const clearSession = () => {
   localStorage.removeItem(SESSION_KEY);
-  // Store logout time to handle race conditions
-  localStorage.setItem(LOGOUT_FLAG, Date.now().toString());
-  console.log("✅ Session cleared and logout flag set");
-  
-  // Trigger storage event to sync across tabs
-  const event = new StorageEvent('storage', {
-    key: LOGOUT_FLAG,
-    newValue: Date.now().toString(),
-    oldValue: null,
-    storageArea: localStorage
-  });
-  window.dispatchEvent(event);
+  console.log("✅ Session cleared");
 };
 
 const isSessionValid = () => {
-  // Check if user explicitly logged out
-  const logoutTime = localStorage.getItem(LOGOUT_FLAG);
-  if (logoutTime) {
-    // If logout was less than 1 hour ago, consider session invalid
-    const logoutTimestamp = parseInt(logoutTime, 10);
-    if (Date.now() - logoutTimestamp < 3600000) { // 1 hour window
-      console.log("❌ Session invalid: User logged out");
-      return false;
-    } else {
-      // Clear old logout flag if it's been more than 1 hour
-      localStorage.removeItem(LOGOUT_FLAG);
-    }
-  }
-  
   const session = getSession();
   return session !== null;
 };
@@ -183,29 +157,9 @@ const Draft = () => {
   useEffect(() => {
     console.log("=== Draft Component Mounted ===");
     
-    // Check if user is logged out in another tab
-    const checkLoggedOut = () => {
-      const logoutTime = localStorage.getItem(LOGOUT_FLAG);
-      if (logoutTime) {
-        const logoutTimestamp = parseInt(logoutTime, 10);
-        if (Date.now() - logoutTimestamp < 3600000) { // 1 hour window
-          console.log("❌ Session invalid: User logged out in another tab");
-          setIsLoggedIn(false);
-          lockEditing();
-          setSessionChecked(true);
-          return true;
-        } else {
-          localStorage.removeItem(LOGOUT_FLAG);
-        }
-      }
-      return false;
-    };
-    
     // Check if we have token and memberId in location state
     if (token && memberId?.memberId) {
       console.log("✅ Token and memberId received, creating session...");
-      // Clear logout flag on successful login
-      localStorage.removeItem(LOGOUT_FLAG);
       createSession(token, memberId.memberId);
       setIsLoggedIn(true);
       
@@ -215,14 +169,12 @@ const Draft = () => {
     } else {
       // Check for existing session
       const existingSession = getSession();
-      const isLoggedOut = localStorage.getItem(LOGOUT_FLAG) === 'true';
-      
-      if (existingSession && !isLoggedOut) {
+      if (existingSession) {
         console.log("✅ Existing session found");
         setIsLoggedIn(true);
         unlockEditing();
       } else {
-        console.log("❌ No valid session found");
+        console.log("❌ No session found");
         setIsLoggedIn(false);
         lockEditing();
       }
@@ -234,9 +186,8 @@ const Draft = () => {
   useEffect(() => {
     const checkSession = () => {
       const isValid = isSessionValid();
-      const isLoggedOut = localStorage.getItem(LOGOUT_FLAG) === 'true';
       
-      if (isValid && !isLoggedOut) {
+      if (isValid) {
         console.log("✅ Session is valid - Editing enabled");
         setIsLoggedIn(true);
         unlockEditing();
@@ -255,18 +206,9 @@ const Draft = () => {
     
     // Listen for storage changes (cross-tab logout)
     const handleStorageChange = (e) => {
-      if (e.key === SESSION_KEY || e.key === LOGOUT_FLAG) {
+      if (e.key === SESSION_KEY) {
         console.log("Session storage changed, checking...");
-        // Force a re-check of the session state
-        const isValid = isSessionValid();
-        if (!isValid) {
-          setIsLoggedIn(false);
-          lockEditing();
-        } else if (e.key === SESSION_KEY && e.newValue) {
-          // Only set to logged in if we have a valid session
-          setIsLoggedIn(true);
-          unlockEditing();
-        }
+        checkSession();
       }
     };
     
@@ -333,10 +275,7 @@ const Draft = () => {
 
   // Handle login button click
   const handleLoginClick = () => {
-    console.log("Login button clicked, cleaning up and redirecting to:", LOGIN_URL);
-    // Clear any existing session data before redirecting to login
-    localStorage.removeItem(SESSION_KEY);
-    localStorage.removeItem(LOGOUT_FLAG);
+    console.log("Login button clicked, redirecting to:", LOGIN_URL);
     window.location.href = LOGIN_URL;
   };
 
