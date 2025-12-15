@@ -92,7 +92,7 @@ const createSession = (token, memberId) => {
   };
   
   localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
-  console.log("✅ Session created");
+  console.log("✅ Session created for member:", memberId);
   return sessionData;
 };
 
@@ -152,8 +152,8 @@ const isSessionValid = () => {
 
 const Draft = () => {
   const location = useLocation();
-  const memberId = location.state?.exporterData;
-  const token = location.state?.token;
+  const [memberId, setMemberId] = useState(location.state?.exporterData);
+  const [token, setToken] = useState(location.state?.token);
 
   const {
     data: rejectSectionData,
@@ -181,6 +181,8 @@ const Draft = () => {
     if (token && memberId?.memberId) {
       console.log("✅ Token and memberId received, creating/updating session...");
       createSession(token, memberId.memberId);
+      setMemberId({ memberId: memberId.memberId });
+      setToken(token);
       setIsLoggedIn(true);
       unlockEditing();
       setSessionChecked(true);
@@ -188,6 +190,9 @@ const Draft = () => {
     // If we have a valid existing session
     else if (isValidSession) {
       console.log("✅ Existing valid session found, restoring edit mode...");
+      // Update state from session
+      setMemberId({ memberId: existingSession.memberId });
+      setToken(existingSession.token);
       setIsLoggedIn(true);
       unlockEditing();
       setSessionChecked(true);
@@ -202,6 +207,11 @@ const Draft = () => {
       setIsLoggedIn(false);
       lockEditing();
       setSessionChecked(true);
+      
+      // Redirect to login if we're not already there
+      if (!window.location.pathname.includes('login')) {
+        window.location.href = LOGIN_URL;
+      }
     }
     
     // Clear location state to prevent showing token in URL after refresh
