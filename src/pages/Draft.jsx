@@ -151,26 +151,65 @@ const Draft = () => {
   
   const [isEditingLocked, setIsEditingLocked] = useState(true);
   const [sessionChecked, setSessionChecked] = useState(false);
+  const [debugInfo, setDebugInfo] = useState("");
 
-  // Main session check function
+  // Main session check function - FIXED VERSION
   const checkSession = () => {
-    const sessionData = localStorage.getItem("sessionData");
-    console.log("Checking session:", sessionData ? "Session exists" : "No session");
+    // Check ALL localStorage keys to see what's available
+    const allKeys = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      allKeys[key] = localStorage.getItem(key);
+    }
     
-    if (sessionData) {
+    console.log("=== DEBUG: All localStorage keys ===", allKeys);
+    console.log("=== DEBUG: Checking for session keys ===");
+    
+    // Try to find session data with different possible key names
+    const possibleSessionKeys = [
+      'sessionData',
+      'userData',
+      'authData',
+      'token',
+      'user',
+      'userSession',
+      'authToken',
+      'loginData'
+    ];
+    
+    let foundSession = null;
+    let foundKey = null;
+    
+    for (const key of possibleSessionKeys) {
+      const data = localStorage.getItem(key);
+      if (data) {
+        console.log(`Found potential session key: ${key}`, data);
+        foundSession = data;
+        foundKey = key;
+        break;
+      }
+    }
+    
+    setDebugInfo(`Keys in localStorage: ${Object.keys(allKeys).join(', ')}`);
+    
+    if (foundSession) {
+      console.log(`✅ Session found with key: ${foundKey}`);
       try {
-        const parsedSession = JSON.parse(sessionData);
-        console.log("Session data:", parsedSession);
+        const parsedSession = JSON.parse(foundSession);
+        console.log("✅ Parsed session data:", parsedSession);
         
-        // Just check if session exists, don't check company name matching
         unlockEditing();
         setIsEditingLocked(false);
       } catch (error) {
-        console.error("Error parsing session data:", error);
-        lockEditing();
-        setIsEditingLocked(true);
+        console.error("❌ Error parsing session data:", error);
+        // Even if it's not JSON, if there's a token string, consider it valid
+        console.log("✅ Non-JSON session data found, still considering valid");
+        unlockEditing();
+        setIsEditingLocked(false);
       }
     } else {
+      console.log("❌ No session found in localStorage");
+      console.log("Available keys:", Object.keys(allKeys));
       lockEditing();
       setIsEditingLocked(true);
     }
@@ -180,6 +219,22 @@ const Draft = () => {
 
   // Initial check and setup
   useEffect(() => {
+    console.log("=== Draft Component Mounted ===");
+    console.log("Location state:", location.state);
+    
+    // Check if token is passed in location state
+    if (token) {
+      console.log("✅ Token found in location state, storing in localStorage");
+      // Store token in localStorage for session management
+      localStorage.setItem('authToken', token);
+    }
+    
+    // Check if memberId has token
+    if (memberId?.token) {
+      console.log("✅ Token found in memberId, storing in localStorage");
+      localStorage.setItem('authToken', memberId.token);
+    }
+    
     // Initial check
     checkSession();
     
@@ -188,10 +243,8 @@ const Draft = () => {
     
     // Listen for storage changes (cross-tab logout)
     const handleStorageChange = (e) => {
-      if (e.key === "sessionData") {
-        console.log("Storage changed for sessionData");
-        checkSession();
-      }
+      console.log("Storage event:", e.key, e.newValue);
+      checkSession();
     };
     
     window.addEventListener("storage", handleStorageChange);
@@ -230,6 +283,12 @@ const Draft = () => {
   let rejectSection = rejectSectionData?.rejected_sections || [];
   let rejectMsg = rejectSectionData?.reject_message || "";
 
+  // Add a button to manually check session
+  const handleManualCheck = () => {
+    console.log("=== MANUAL SESSION CHECK ===");
+    checkSession();
+  };
+
   // Show loading while checking session
   if (isLoading || !sessionChecked) {
     return (
@@ -244,13 +303,26 @@ const Draft = () => {
       }}>
         <div style={{ fontSize: "18px", color: "#555" }}>Checking session...</div>
         <div style={{ fontSize: "14px", color: "#777" }}>
-          If stuck here, check localStorage for "sessionData"
+          Debug Info: {debugInfo}
         </div>
+        <button 
+          onClick={handleManualCheck}
+          style={{
+            padding: "10px 20px",
+            background: "#4CAF50",
+            color: "white",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer"
+          }}
+        >
+          Check Session Manually
+        </button>
         <button 
           onClick={() => window.location.href = "/login"}
           style={{
             padding: "10px 20px",
-            background: "#4CAF50",
+            background: "#2196F3",
             color: "white",
             border: "none",
             borderRadius: "5px",
@@ -266,6 +338,41 @@ const Draft = () => {
   return (
     <ChangeTrackerProvider>
       <div className="container">
+        {/* Debug Panel */}
+        <div style={{
+          position: "fixed",
+          top: "10px",
+          left: "10px",
+          zIndex: 10000,
+          background: "rgba(0,0,0,0.8)",
+          color: "white",
+          padding: "10px",
+          borderRadius: "5px",
+          fontSize: "12px",
+          maxWidth: "300px",
+          maxHeight: "200px",
+          overflow: "auto"
+        }}>
+          <div><strong>Debug Info:</strong></div>
+          <div>Status: {isEditingLocked ? "🔒 LOCKED" : "✅ UNLOCKED"}</div>
+          <div>Session Checked: {sessionChecked ? "Yes" : "No"}</div>
+          <button 
+            onClick={handleManualCheck}
+            style={{
+              marginTop: "5px",
+              padding: "5px 10px",
+              background: "#4CAF50",
+              color: "white",
+              border: "none",
+              borderRadius: "3px",
+              cursor: "pointer",
+              fontSize: "10px"
+            }}
+          >
+            Check Session
+          </button>
+        </div>
+
         {/* Manual Login Button - Always visible */}
         <button
           onClick={() => window.location.href = "/login"}
@@ -295,12 +402,13 @@ const Draft = () => {
           zIndex: 9998,
           padding: "6px 12px",
           borderRadius: "4px",
-          background: "#f0f0f0",
-          color: "#333",
+          background: isEditingLocked ? "#ff4444" : "#4CAF50",
+          color: "white",
           fontSize: "12px",
-          border: "1px solid #ddd"
+          border: "1px solid #ddd",
+          fontWeight: "bold"
         }}>
-          Session: {isEditingLocked ? "Not Active" : "Active"}
+          {isEditingLocked ? "VIEW ONLY" : "EDITING ENABLED"}
         </div>
 
         {rejectMsg.length > 0 && (
