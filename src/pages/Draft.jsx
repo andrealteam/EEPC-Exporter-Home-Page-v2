@@ -24,52 +24,105 @@ const Draft = () => {
   const location = useLocation();
   const memberId = location.state?.exporterData;
   const token = location.state?.token;
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const {
     data: rejectSectionData,
     error: sectionError,
-    isLoading,
+    isLoading: isSectionLoading,
   } = useQuery({
-    queryKey: ["get-reject-section", memberId],
-    queryFn: () => getRejectionSection(memberId),
-    enabled: !!memberId,
-  });
-  const [userData, setUserData] = useState(null);
-
-  const [customer, setCustomer] = useState(() => {
-    const stored = localStorage.getItem("sessionData");
-    return stored ? JSON.parse(stored) : null;
+    queryKey: ["get-reject-section", memberId?.memberId],
+    queryFn: () => getRejectionSection(memberId?.memberId),
+    enabled: !!memberId?.memberId,
   });
 
+  // Check authentication status on component mount and when memberId/token changes
   useEffect(() => {
-    const handleStorageChange = (event) => {
-      if (event.key === "sessionData") {
-        const newData = event.newValue ? JSON.parse(event.newValue) : null;
-        setCustomer(newData);
-        if (!newData) {
-          window.close();
-          setTimeout(() => {
-            window.location.replace(LOGIN_URL);
-          }, 150);
+    const checkAuth = () => {
+      try {
+        const sessionData = JSON.parse(localStorage.getItem("sessionData") || "null");
+        
+        // If no session data, not authorized
+        if (!sessionData) {
+          setIsAuthorized(false);
+          return false;
         }
+
+        // If we have memberId in URL, verify it matches the session
+        if (memberId?.memberId && sessionData.member_id !== memberId.memberId) {
+          setIsAuthorized(false);
+          return false;
+        }
+
+        // If we have token in URL, verify it matches the session
+        if (token && sessionData.token !== token) {
+          setIsAuthorized(false);
+          return false;
+        }
+
+        // If we have company name in rejectSectionData, verify it matches
+        if (rejectSectionData?.company_name && 
+            sessionData.member_name !== rejectSectionData.company_name) {
+          setIsAuthorized(false);
+          return false;
+        }
+
+        setIsAuthorized(true);
+        return true;
+      } catch (error) {
+        console.error("Auth check error:", error);
+        setIsAuthorized(false);
+        return false;
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    // Listen for localStorage changes
+    // Initial check
+    const isValid = checkAuth();
+
+    // Set up storage event listener for cross-tab logout
+    const handleStorageChange = (event) => {
+      if (event.key === "sessionData" || event.key === null) {
+        checkAuth();
+      }
+    };
+
     window.addEventListener("storage", handleStorageChange);
+
+    // Check auth when page becomes visible
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkAuth();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       window.removeEventListener("storage", handleStorageChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
+  }, [memberId, token, rejectSectionData]);
 
-  let rejectSection = rejectSectionData?.rejected_sections || [];
-  let rejectMsg = rejectSectionData?.reject_message || "";
+  // Show loading state while checking auth
+  if (isLoading || isSectionLoading) {
+    return (
+      <div style={{
+        height: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#f8fafc",
+      }}>
+        <div>Loading...</div>
+      </div>
+    );
+  }
 
-  if (
-    customer?.member_name === undefined ||
-    customer?.member_name !== rejectSectionData?.company_name
-  ) {
+  // Show unauthorized/expired session message
+  if (!isAuthorized) {
     return (
       <div
         style={{
@@ -89,14 +142,15 @@ const Draft = () => {
         <p
           style={{ fontSize: "1rem", color: "#64748b", marginBottom: "1.5rem" }}
         >
-          Your session has expired or you are not authorized to access this
-          page.
+          Your session has expired or you are not authorized to access this page.
         </p>
         <button
-          onClick={() =>
-            (window.location.href =
-              "https://eepc-exporter-home-page-v2.vercel.app/auth/login")
-          }
+          onClick={() => {
+            // Clear any existing session data
+            localStorage.removeItem("sessionData");
+            // Redirect to login
+            window.location.href = LOGIN_URL;
+          }}
           style={{
             padding: "10px 20px",
             backgroundColor: "#2563eb",
@@ -116,13 +170,14 @@ const Draft = () => {
     );
   }
 
+  // Show the main content if authorized
   return (
     <ChangeTrackerProvider>
       <div className="container">
-        {rejectMsg.length > 0 && (
+        {rejectSectionData?.reject_message && (
           <RejectSectionBanner
-            rejectionNumbers={rejectSection}
-            rejectMsg={rejectMsg}
+            rejectionNumbers={rejectSectionData.reject_section || []}
+            rejectMsg={rejectSectionData.reject_message}
           />
         )}
 
@@ -130,31 +185,15 @@ const Draft = () => {
           memberId={memberId.memberId}
           token={token}
           website_url={memberId.website_url}
-          rejectionNumbers={rejectSection}
+          rejectionNumbers={rejectSectionData?.reject_section || []}
         />
 
-        {/* 1 */}
         <HeaderDraft memberId={memberId.memberId} />
-
         <ParticipationDraft memberId={memberId.memberId} />
-
-        {/* 2 */}
         <BannerDraft memberId={memberId.memberId} />
-
-        {/* <CertificateDraft memberId={memberId.memberId} /> */}
-        {/* <AwardsDraft memberId={memberId.memberId} /> */}
-        {/* <Testimonials memberId={memberId.memberId} /> */}
-        {/* <GalleryDraft memberId={memberId.memberId} /> */}
-
-        {/* 4 */}
         <AboutDraft memberId={memberId.memberId} />
-        {/* <WhoWeAreDraft memberId={memberId.memberId} /> */}
-
-        {/* 5 */}
         <ProductsDraft memberId={memberId.memberId} />
-
         <Testimonials memberId={memberId.memberId} />
-
         <MapReview memberId={memberId.memberId} />
       </div>
       <FooterDraft memberId={memberId.memberId} />
