@@ -173,38 +173,41 @@ const Draft = () => {
   useEffect(() => {
     console.log("=== Draft Component Mounted ===");
     
-    // Clear any existing session first to prevent conflicts
+    // Check for existing valid session first
     const existingSession = getSession();
+    const isValidSession = existingSession && isSessionValid();
     
-    // Check if we have token and memberId in location state (new login)
+    // If we have token and memberId in location state (new login)
     if (token && memberId?.memberId) {
-      console.log("✅ Token and memberId received, creating new session...");
+      console.log("✅ Token and memberId received, creating/updating session...");
       createSession(token, memberId.memberId);
       setIsLoggedIn(true);
       unlockEditing();
+      setSessionChecked(true);
     } 
-    // Check for existing valid session
-    else if (existingSession && isSessionValid()) {
-      console.log("✅ Existing valid session found");
+    // If we have a valid existing session
+    else if (isValidSession) {
+      console.log("✅ Existing valid session found, restoring edit mode...");
       setIsLoggedIn(true);
       unlockEditing();
+      setSessionChecked(true);
     } 
     // No valid session
     else {
-      console.log("❌ No valid session found");
+      console.log("❌ No valid session found, locking editing...");
       if (existingSession) {
-        console.log("❌ Session expired or invalid");
+        console.log("❌ Session expired or invalid, clearing...");
         clearSession();
       }
       setIsLoggedIn(false);
       lockEditing();
+      setSessionChecked(true);
     }
     
-    setSessionChecked(true);
-    
-    // Clear location state to prevent auto-login on refresh
+    // Clear location state to prevent showing token in URL after refresh
     if (window.history.replaceState) {
-      window.history.replaceState(null, '', window.location.pathname);
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
     }
   }, [token, memberId]);
 
@@ -215,16 +218,22 @@ const Draft = () => {
       const isValid = session && isSessionValid();
       
       if (isValid) {
-        console.log("✅ Session is valid - Editing enabled");
-        setIsLoggedIn(true);
-        unlockEditing();
-      } else {
-        console.log("❌ Session is invalid or expired - Locking editing");
-        if (session) {
-          clearSession();
+        // Only update state if it's different to prevent unnecessary re-renders
+        if (!isLoggedIn) {
+          console.log("✅ Session is valid - Enabling edit mode...");
+          setIsLoggedIn(true);
+          unlockEditing();
         }
-        setIsLoggedIn(false);
-        lockEditing();
+      } else {
+        // Only update state if it's different to prevent unnecessary re-renders
+        if (isLoggedIn || session) {
+          console.log("❌ Session is invalid or expired - Locking editing...");
+          if (session) {
+            clearSession();
+          }
+          setIsLoggedIn(false);
+          lockEditing();
+        }
       }
     };
     
