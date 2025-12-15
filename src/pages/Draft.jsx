@@ -22,7 +22,7 @@ const LOGIN_URL = "https://eepc-exporter-home-page-v2-whhx.vercel.app/auth/login
 const SESSION_KEY = 'draft_editor_session';
 const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 
-/* 🔒 LOCK EDITING FUNCTION */
+/* 🔒 LOCK EDITING FUNCTION - SIMPLIFIED */
 const lockEditing = () => {
   console.log("🔒 Locking editing - View Only Mode");
   
@@ -30,63 +30,44 @@ const lockEditing = () => {
   document.querySelectorAll("input, textarea, select").forEach((el) => {
     el.disabled = true;
     el.readOnly = true;
-    el.style.cursor = "not-allowed";
-    el.style.backgroundColor = "#f5f5f5";
   });
 
   // Disable all contenteditable elements
   document.querySelectorAll('[contenteditable="true"]').forEach((el) => {
     el.setAttribute("contenteditable", "false");
-    el.style.cursor = "not-allowed";
   });
 
-  // Disable all buttons except logout/exit
+  // Disable all buttons (except navigation)
   document.querySelectorAll("button").forEach((el) => {
-    if (!el.id?.includes("logout") && !el.id?.includes("login")) {
+    if (!el.hasAttribute("data-allow-on-lock")) {
       el.disabled = true;
-      el.style.cursor = "not-allowed";
-      el.style.opacity = "0.6";
     }
   });
 
-  // Visual indicators
+  // Remove pointer events and selection
   document.body.style.pointerEvents = "none";
   document.body.style.userSelect = "none";
-  document.body.style.opacity = "0.9";
-  document.body.style.cursor = "not-allowed";
-
-  // REMOVED: The session expired banner from lockEditing function
 };
 
-/* 🔓 UNLOCK EDITING FUNCTION */
+/* 🔓 UNLOCK EDITING FUNCTION - SIMPLIFIED */
 const unlockEditing = () => {
   console.log("🔓 Unlocking editing - Edit Mode Enabled");
   
   document.querySelectorAll("input, textarea, select").forEach((el) => {
     el.disabled = false;
     el.readOnly = false;
-    el.style.cursor = "";
-    el.style.backgroundColor = "";
   });
 
   document.querySelectorAll('[contenteditable="false"]').forEach((el) => {
     el.setAttribute("contenteditable", "true");
-    el.style.cursor = "";
   });
 
   document.querySelectorAll("button").forEach((el) => {
     el.disabled = false;
-    el.style.cursor = "";
-    el.style.opacity = "";
   });
 
   document.body.style.pointerEvents = "";
   document.body.style.userSelect = "";
-  document.body.style.opacity = "";
-  document.body.style.cursor = "";
-  document.body.style.marginTop = "";
-
-  // REMOVED: Banner removal since we're not adding it anymore
 };
 
 // Session Management Functions
@@ -95,12 +76,11 @@ const createSession = (token, memberId) => {
     token: token,
     memberId: memberId,
     createdAt: Date.now(),
-    lastActivity: Date.now(),
-    tabId: 'tab_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+    lastActivity: Date.now()
   };
   
   localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
-  console.log("✅ Session created:", sessionData);
+  console.log("✅ Session created");
   return sessionData;
 };
 
@@ -157,14 +137,12 @@ const Draft = () => {
     enabled: !!memberId,
   });
   
-  const [isEditingLocked, setIsEditingLocked] = useState(true);
   const [sessionChecked, setSessionChecked] = useState(false);
   const checkIntervalRef = useRef(null);
 
   // Initialize session on component mount
   useEffect(() => {
     console.log("=== Draft Component Mounted ===");
-    console.log("Location state:", location.state);
     
     // Check if we have token and memberId in location state
     if (token && memberId?.memberId) {
@@ -173,7 +151,6 @@ const Draft = () => {
       
       // Unlock editing immediately
       unlockEditing();
-      setIsEditingLocked(false);
       setSessionChecked(true);
     } else {
       // Check for existing session
@@ -181,11 +158,9 @@ const Draft = () => {
       if (existingSession) {
         console.log("✅ Existing session found");
         unlockEditing();
-        setIsEditingLocked(false);
       } else {
         console.log("❌ No session found");
         lockEditing();
-        setIsEditingLocked(true);
       }
       setSessionChecked(true);
     }
@@ -199,11 +174,9 @@ const Draft = () => {
       if (isValid) {
         console.log("✅ Session is valid - Editing enabled");
         unlockEditing();
-        setIsEditingLocked(false);
       } else {
         console.log("❌ Session is invalid - Locking editing");
         lockEditing();
-        setIsEditingLocked(true);
       }
     };
     
@@ -274,7 +247,6 @@ const Draft = () => {
     
     // Lock editing immediately
     lockEditing();
-    setIsEditingLocked(true);
     
     // Redirect to login after a short delay
     setTimeout(() => {
@@ -285,8 +257,7 @@ const Draft = () => {
   // Handle tab/window close
   useEffect(() => {
     const handleBeforeUnload = () => {
-      // We don't clear session on tab close anymore
-      // Session will expire naturally after timeout
+      // We don't clear session on tab close
       console.log("Tab closing, session will remain for other tabs");
     };
     
@@ -318,23 +289,6 @@ const Draft = () => {
         <div style={{ fontSize: "14px", color: "#777", textAlign: "center" }}>
           {token ? "Setting up your editing environment" : "Please wait..."}
         </div>
-        <button
-          onClick={() => window.location.href = LOGIN_URL}
-          style={{
-            padding: "10px 20px",
-            backgroundColor: "#2563eb",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
-            fontSize: "1rem",
-            transition: "background-color 0.2s ease",
-          }}
-          onMouseOver={(e) => (e.target.style.backgroundColor = "#1d4ed8")}
-          onMouseOut={(e) => (e.target.style.backgroundColor = "#2563eb")}
-        >
-          Go to Login
-        </button>
       </div>
     );
   }
@@ -342,81 +296,32 @@ const Draft = () => {
   return (
     <ChangeTrackerProvider>
       <div className="container">
-        {/* Simple Status Bar without Tab ID */}
-        <div style={{
-          position: "fixed",
-          top: "0",
-          left: "0",
-          right: "0",
-          zIndex: 10000,
-          padding: "10px 20px",
-          background: isEditingLocked ? "#ff4444" : "#4CAF50",
-          color: "white",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          boxShadow: "0 2px 10px rgba(0,0,0,0.2)"
-        }}>
-          <div style={{ fontWeight: "bold", fontSize: "16px" }}>
-            {isEditingLocked ? "🔒 View Only Mode" : "✏️ Edit Mode"}
-          </div>
-          
-          <div style={{ display: "flex", gap: "10px" }}>
-            {!isEditingLocked ? (
-              <>
-                <button
-                  onClick={handleLogout}
-                  style={{
-                    background: "white",
-                    color: "#ff4444",
-                    border: "none",
-                    padding: "8px 16px",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                    fontWeight: "bold"
-                  }}
-                >
-                  Logout
-                </button>
-                <button
-                  onClick={() => {
-                    // Open new tab with current URL
-                    window.open(window.location.href, '_blank');
-                  }}
-                  style={{
-                    background: "#2196F3",
-                    color: "white",
-                    border: "none",
-                    padding: "8px 16px",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                    fontWeight: "bold"
-                  }}
-                >
-                  Open New Tab
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={() => window.location.href = LOGIN_URL}
-                style={{
-                  background: "white",
-                  color: "#ff4444",
-                  border: "none",
-                  padding: "8px 16px",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                  fontWeight: "bold"
-                }}
-              >
-                Login to Edit
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Add margin for fixed header */}
-        <div style={{ marginTop: "60px" }}></div>
+        {/* NO VISIBLE STATUS BAR - Only hidden logout functionality */}
+        {/* You can add a hidden logout button somewhere if needed */}
+        <button
+          onClick={handleLogout}
+          style={{
+            position: "fixed",
+            top: "10px",
+            right: "10px",
+            zIndex: 10000,
+            padding: "8px 16px",
+            background: "transparent",
+            color: "transparent",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+            fontSize: "1px",
+            opacity: 0.01,
+            width: "1px",
+            height: "1px",
+            overflow: "hidden"
+          }}
+          aria-hidden="true"
+          tabIndex="-1"
+        >
+          Logout
+        </button>
 
         {rejectMsg.length > 0 && (
           <RejectSectionBanner
@@ -430,7 +335,6 @@ const Draft = () => {
           token={token}
           website_url={memberId?.website_url}
           rejectionNumbers={rejectSection}
-          isLocked={isEditingLocked}
         />
 
         {/* All draft components */}
