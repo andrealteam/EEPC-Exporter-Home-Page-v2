@@ -262,13 +262,33 @@ const HeaderDraft = ({ memberId }) => {
 
           <button
             className="update-btn"
-            style={{ background: "", zIndex: 9999, top: "-12px" }}
-            onClick={() => {
-              // console.log("clicked");
-              setOpenHeader(true);
+            style={{
+              position: 'fixed',
+              top: '15px',
+              right: '60px',
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              background: '#2563eb',
+              color: 'white',
+              border: '2px solid white',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              zIndex: 10000,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+              transition: 'all 0.2s ease',
+              '@media (min-width: 768px)': {
+                top: '20px',
+                right: '70px',
+                width: '40px',
+                height: '40px'
+              }
             }}
+            onClick={() => setOpenHeader(true)}
           >
-            <FontAwesomeIcon icon={faPen} />
+            <FontAwesomeIcon icon={faPen} style={{ fontSize: '16px' }} />
           </button>
 
           <nav className="navbar navbar-expand-lg">

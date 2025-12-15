@@ -372,15 +372,15 @@ const Draft = () => {
             onClick={handleLogout}
             style={{
               position: "fixed",
-              top: "20px",
-              right: "20px",
+              top: "60px",
+              right: "15px",
               zIndex: 10000,
-              width: "40px",
-              height: "40px",
-              padding: "8px",
+              width: "36px",
+              height: "36px",
+              padding: "6px",
               background: "#ff4444",
               color: "white",
-              border: "none",
+              border: "2px solid white",
               borderRadius: "50%",
               cursor: "pointer",
               display: "flex",
@@ -388,7 +388,14 @@ const Draft = () => {
               justifyContent: "center",
               boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
               transition: "all 0.2s ease",
-              fontFamily: "Arial, sans-serif"
+              fontFamily: "Arial, sans-serif",
+              '@media (min-width: 768px)': {
+                top: '20px',
+                right: '20px',
+                width: '40px',
+                height: '40px',
+                padding: '8px'
+              }
             }}
             onMouseOver={(e) => {
               e.target.style.background = "#ff3333";
