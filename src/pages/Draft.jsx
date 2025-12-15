@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { HeaderDraft } from "../components";
 import BannerDraft from "../components/draft/BannerDraft";
 import AboutDraft from "../components/draft/AboutDraft";
@@ -75,7 +75,7 @@ const lockEditing = () => {
         box-shadow: 0 2px 10px rgba(0,0,0,0.2);
       ">
         <div style="font-weight: bold;">🔒 View Only Mode - Login to Edit</div>
-        <button id="login-button" 
+        <button id="login-button-top" 
                 style="
                   background: white;
                   color: #ff4444;
@@ -95,7 +95,7 @@ const lockEditing = () => {
     document.body.style.marginTop = "50px";
     
     // Add click handler for login button
-    document.getElementById("login-button").onclick = () => {
+    document.getElementById("login-button-top").onclick = () => {
       window.location.href = "/login";
     };
   }
@@ -136,7 +136,6 @@ const unlockEditing = () => {
 
 const Draft = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const memberId = location.state?.exporterData;
   const token = location.state?.token;
 
@@ -150,118 +149,116 @@ const Draft = () => {
     enabled: !!memberId,
   });
   
-  const [customer, setCustomer] = useState(() => {
-    const stored = localStorage.getItem("sessionData");
-    return stored ? JSON.parse(stored) : null;
-  });
-  const [isEditingLocked, setIsEditingLocked] = useState(true); // Start as locked by default
+  const [isEditingLocked, setIsEditingLocked] = useState(true);
+  const [sessionChecked, setSessionChecked] = useState(false);
 
-  // Check session and set editing state
-  useEffect(() => {
-    const checkSessionAndSetEditing = () => {
-      const stored = localStorage.getItem("sessionData");
-      const currentCustomer = stored ? JSON.parse(stored) : null;
-      
-      if (currentCustomer && rejectSectionData) {
-        // Check if logged in user matches this company
-        const hasPermission = currentCustomer.member_name === rejectSectionData.company_name;
+  // Main session check function
+  const checkSession = () => {
+    const sessionData = localStorage.getItem("sessionData");
+    console.log("Checking session:", sessionData ? "Session exists" : "No session");
+    
+    if (sessionData) {
+      try {
+        const parsedSession = JSON.parse(sessionData);
+        console.log("Session data:", parsedSession);
         
-        if (hasPermission) {
-          console.log("User has permission, unlocking editing");
-          unlockEditing();
-          setIsEditingLocked(false);
-        } else {
-          console.log("User doesn't have permission, locking editing");
-          lockEditing();
-          setIsEditingLocked(true);
-        }
-      } else {
-        // No session or no data yet
-        console.log("No session found, locking editing");
+        // Just check if session exists, don't check company name matching
+        unlockEditing();
+        setIsEditingLocked(false);
+      } catch (error) {
+        console.error("Error parsing session data:", error);
         lockEditing();
         setIsEditingLocked(true);
       }
-    };
-
-    // Check initially
-    checkSessionAndSetEditing();
+    } else {
+      lockEditing();
+      setIsEditingLocked(true);
+    }
     
-    // Set up interval to check every 2 seconds
-    const interval = setInterval(checkSessionAndSetEditing, 2000);
-    
-    return () => clearInterval(interval);
-  }, [rejectSectionData]);
+    setSessionChecked(true);
+  };
 
-  // Listen for storage changes (cross-tab logout)
+  // Initial check and setup
   useEffect(() => {
-    const handleStorageChange = (event) => {
-      if (event.key === "sessionData") {
-        const newData = event.newValue ? JSON.parse(event.newValue) : null;
-        setCustomer(newData);
-        
-        if (!newData) {
-          // Session was removed (logout)
-          console.log("Session removed via storage event, locking editing");
-          lockEditing();
-          setIsEditingLocked(true);
-        } else {
-          // Session was added or changed
-          console.log("Session changed via storage event, checking permissions");
-          // The interval will handle the permission check
-        }
+    // Initial check
+    checkSession();
+    
+    // Set up interval to check every 3 seconds
+    const intervalId = setInterval(checkSession, 3000);
+    
+    // Listen for storage changes (cross-tab logout)
+    const handleStorageChange = (e) => {
+      if (e.key === "sessionData") {
+        console.log("Storage changed for sessionData");
+        checkSession();
       }
     };
-
+    
     window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
-
-  // Check on page visibility change
-  useEffect(() => {
+    
+    // Check when page becomes visible
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        const stored = localStorage.getItem("sessionData");
-        if (!stored) {
-          console.log("No session on visibility change, locking editing");
-          lockEditing();
-          setIsEditingLocked(true);
-        }
+      if (document.visibilityState === "visible") {
+        checkSession();
       }
     };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    
+    // Check on window focus
+    const handleFocus = () => {
+      checkSession();
+    };
+    
+    window.addEventListener("focus", handleFocus);
+    
+    // Cleanup
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener("storage", handleStorageChange);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
+    };
   }, []);
 
-  // Simple check - if no sessionData in localStorage, lock editing
+  // Debug: Log current state
   useEffect(() => {
-    const handleNoSession = () => {
-      const stored = localStorage.getItem("sessionData");
-      if (!stored) {
-        lockEditing();
-        setIsEditingLocked(true);
-      }
-    };
-
-    // Check on focus
-    window.addEventListener('focus', handleNoSession);
-    return () => window.removeEventListener('focus', handleNoSession);
-  }, []);
+    console.log("Current editing state:", isEditingLocked ? "LOCKED" : "UNLOCKED");
+    console.log("Session checked:", sessionChecked);
+  }, [isEditingLocked, sessionChecked]);
 
   let rejectSection = rejectSectionData?.rejected_sections || [];
   let rejectMsg = rejectSectionData?.reject_message || "";
 
-  // Show loading while checking permissions
-  if (isLoading) {
+  // Show loading while checking session
+  if (isLoading || !sessionChecked) {
     return (
       <div style={{
         height: "100vh",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "#f8fafc"
+        backgroundColor: "#f8fafc",
+        flexDirection: "column",
+        gap: "20px"
       }}>
-        <div>Loading...</div>
+        <div style={{ fontSize: "18px", color: "#555" }}>Checking session...</div>
+        <div style={{ fontSize: "14px", color: "#777" }}>
+          If stuck here, check localStorage for "sessionData"
+        </div>
+        <button 
+          onClick={() => window.location.href = "/login"}
+          style={{
+            padding: "10px 20px",
+            background: "#4CAF50",
+            color: "white",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer"
+          }}
+        >
+          Go to Login
+        </button>
       </div>
     );
   }
@@ -269,21 +266,41 @@ const Draft = () => {
   return (
     <ChangeTrackerProvider>
       <div className="container">
-        {/* Show status indicator */}
+        {/* Manual Login Button - Always visible */}
+        <button
+          onClick={() => window.location.href = "/login"}
+          style={{
+            position: "fixed",
+            top: "10px",
+            right: "10px",
+            zIndex: 9999,
+            padding: "8px 16px",
+            background: isEditingLocked ? "#ff4444" : "#4CAF50",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+            fontWeight: "bold",
+            fontSize: "14px"
+          }}
+        >
+          {isEditingLocked ? "🔒 Login to Edit" : "✏️ Edit Mode"}
+        </button>
+
+        {/* Status Indicator */}
         <div style={{
           position: "fixed",
-          top: "10px",
+          top: "50px",
           right: "10px",
-          zIndex: 9999,
-          padding: "8px 16px",
+          zIndex: 9998,
+          padding: "6px 12px",
           borderRadius: "4px",
-          fontWeight: "bold",
-          background: isEditingLocked ? "#ff4444" : "#4CAF50",
-          color: "white",
-          fontSize: "14px",
-          boxShadow: "0 2px 5px rgba(0,0,0,0.2)"
+          background: "#f0f0f0",
+          color: "#333",
+          fontSize: "12px",
+          border: "1px solid #ddd"
         }}>
-          {isEditingLocked ? "🔒 View Only" : "✏️ Edit Mode"}
+          Session: {isEditingLocked ? "Not Active" : "Active"}
         </div>
 
         {rejectMsg.length > 0 && (
