@@ -18,6 +18,9 @@ import { useQuery } from "@tanstack/react-query";
 import { getRejectionSection } from "../services/draftApi";
 import { ChangeTrackerProvider } from "../contexts/ChangeTrackerContext";
 
+const SESSION_KEY = 'draft_editor_session';
+const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+
 /* 🔒 LOCK EDITING FUNCTION */
 const lockEditing = () => {
   console.log("🔒 Locking editing - View Only Mode");
@@ -74,7 +77,7 @@ const lockEditing = () => {
         padding-right: 20px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.2);
       ">
-        <div style="font-weight: bold;">🔒 View Only Mode - Login to Edit</div>
+        <div style="font-weight: bold;">🔒 Session Expired - Please Login Again</div>
         <button id="login-button-top" 
                 style="
                   background: white;
@@ -134,32 +137,57 @@ const unlockEditing = () => {
   if (banner) banner.remove();
 };
 
-// SIMPLE SESSION CHECK - NO COMPLEX TAB MANAGEMENT
-const checkIfUserIsLoggedIn = () => {
-  console.log("=== SIMPLE SESSION CHECK ===");
+// Session Management Functions
+const createSession = (token, memberId) => {
+  const sessionData = {
+    token: token,
+    memberId: memberId,
+    createdAt: Date.now(),
+    lastActivity: Date.now(),
+    tabId: 'tab_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+  };
   
-  // Check all possible session keys
-  const possibleKeys = [
-    'sessionData',
-    'userData', 
-    'authData',
-    'token',
-    'user',
-    'userSession',
-    'authToken',
-    'loginData'
-  ];
-  
-  for (const key of possibleKeys) {
-    const data = localStorage.getItem(key);
-    if (data) {
-      console.log(`✅ Found session with key: ${key}`);
-      return true;
+  localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
+  console.log("✅ Session created:", sessionData);
+  return sessionData;
+};
+
+const getSession = () => {
+  try {
+    const sessionStr = localStorage.getItem(SESSION_KEY);
+    if (!sessionStr) {
+      return null;
     }
+    
+    const sessionData = JSON.parse(sessionStr);
+    
+    // Check if session is expired
+    const now = Date.now();
+    if (now - sessionData.createdAt > SESSION_TIMEOUT) {
+      console.log("❌ Session expired (timeout)");
+      clearSession();
+      return null;
+    }
+    
+    // Update last activity
+    sessionData.lastActivity = now;
+    localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
+    
+    return sessionData;
+  } catch (error) {
+    console.error("Error parsing session:", error);
+    return null;
   }
-  
-  console.log("❌ No session found");
-  return false;
+};
+
+const clearSession = () => {
+  localStorage.removeItem(SESSION_KEY);
+  console.log("✅ Session cleared");
+};
+
+const isSessionValid = () => {
+  const session = getSession();
+  return session !== null;
 };
 
 const Draft = () => {
@@ -179,53 +207,69 @@ const Draft = () => {
   
   const [isEditingLocked, setIsEditingLocked] = useState(true);
   const [sessionChecked, setSessionChecked] = useState(false);
+  const [currentTabId, setCurrentTabId] = useState('');
   const checkIntervalRef = useRef(null);
 
-  // SIMPLE SESSION CHECK - When user is logged in, unlock editing
-  const checkSession = () => {
-    const isLoggedIn = checkIfUserIsLoggedIn();
-    
-    if (isLoggedIn) {
-      console.log("✅ User is logged in - Unlocking editing");
-      unlockEditing();
-      setIsEditingLocked(false);
-    } else {
-      console.log("❌ User is not logged in - Locking editing");
-      lockEditing();
-      setIsEditingLocked(true);
-    }
-    
-    setSessionChecked(true);
-  };
-
-  // Initial check on component mount
+  // Initialize session on component mount
   useEffect(() => {
-    console.log("=== Component Mounted ===");
+    console.log("=== Draft Component Mounted ===");
     console.log("Location state:", location.state);
     
-    // If token is passed in location state, store it
-    if (token) {
-      console.log("✅ Token received in location state, storing...");
-      // Store the token in localStorage for session persistence
-      localStorage.setItem('draftAuthToken', token);
+    // Check if we have token and memberId in location state
+    if (token && memberId?.memberId) {
+      console.log("✅ Token and memberId received, creating session...");
+      const session = createSession(token, memberId.memberId);
+      setCurrentTabId(session.tabId);
+      
+      // Unlock editing immediately
+      unlockEditing();
+      setIsEditingLocked(false);
+      setSessionChecked(true);
+    } else {
+      // Check for existing session
+      const existingSession = getSession();
+      if (existingSession) {
+        console.log("✅ Existing session found");
+        setCurrentTabId(existingSession.tabId);
+        unlockEditing();
+        setIsEditingLocked(false);
+      } else {
+        console.log("❌ No session found");
+        lockEditing();
+        setIsEditingLocked(true);
+      }
+      setSessionChecked(true);
     }
-    
-    // Check memberId for token
-    if (memberId?.token) {
-      console.log("✅ Token found in memberId, storing...");
-      localStorage.setItem('draftAuthToken', memberId.token);
-    }
+  }, []);
+
+  // Set up session checking
+  useEffect(() => {
+    const checkSession = () => {
+      const isValid = isSessionValid();
+      
+      if (isValid) {
+        console.log("✅ Session is valid - Editing enabled");
+        unlockEditing();
+        setIsEditingLocked(false);
+      } else {
+        console.log("❌ Session is invalid - Locking editing");
+        lockEditing();
+        setIsEditingLocked(true);
+      }
+    };
     
     // Initial check
     checkSession();
     
-    // Set up periodic check every 2 seconds
-    checkIntervalRef.current = setInterval(checkSession, 2000);
+    // Set up interval to check every 3 seconds
+    checkIntervalRef.current = setInterval(checkSession, 3000);
     
     // Listen for storage changes (cross-tab logout)
     const handleStorageChange = (e) => {
-      console.log("Storage event detected:", e.key);
-      checkSession();
+      if (e.key === SESSION_KEY) {
+        console.log("Session storage changed, checking...");
+        checkSession();
+      }
     };
     
     window.addEventListener('storage', handleStorageChange);
@@ -240,14 +284,6 @@ const Draft = () => {
     
     document.addEventListener('visibilitychange', handleVisibilityChange);
     
-    // Check on window focus
-    const handleFocus = () => {
-      console.log("Window focused, checking session...");
-      checkSession();
-    };
-    
-    window.addEventListener('focus', handleFocus);
-    
     // Cleanup
     return () => {
       if (checkIntervalRef.current) {
@@ -255,32 +291,37 @@ const Draft = () => {
       }
       window.removeEventListener('storage', handleStorageChange);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
     };
   }, []);
 
-  // Manual logout function
-  const handleLogout = () => {
-    console.log("=== Manual Logout ===");
+  // Handle user activity to keep session alive
+  useEffect(() => {
+    const updateActivity = () => {
+      const session = getSession();
+      if (session) {
+        // Session is automatically updated in getSession()
+      }
+    };
     
-    // Clear all possible session keys
-    const keysToClear = [
-      'sessionData',
-      'userData', 
-      'authData',
-      'token',
-      'user',
-      'userSession',
-      'authToken',
-      'loginData',
-      'draftAuthToken'
-    ];
-    
-    keysToClear.forEach(key => {
-      localStorage.removeItem(key);
+    // Update on user interactions
+    const events = ['click', 'keydown', 'mousemove', 'scroll'];
+    events.forEach(event => {
+      document.addEventListener(event, updateActivity);
     });
     
-    console.log("All session data cleared from localStorage");
+    return () => {
+      events.forEach(event => {
+        document.removeEventListener(event, updateActivity);
+      });
+    };
+  }, []);
+
+  // Handle logout
+  const handleLogout = () => {
+    console.log("=== Logout initiated ===");
+    
+    // Clear session
+    clearSession();
     
     // Lock editing immediately
     lockEditing();
@@ -289,30 +330,29 @@ const Draft = () => {
     // Redirect to login after a short delay
     setTimeout(() => {
       window.location.href = "/login";
-    }, 500);
+    }, 1000);
   };
 
-  // Quick debug function
-  const debugSession = () => {
-    console.log("=== DEBUG SESSION INFO ===");
-    console.log("isEditingLocked:", isEditingLocked);
-    console.log("sessionChecked:", sessionChecked);
+  // Handle tab/window close
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // We don't clear session on tab close anymore
+      // Session will expire naturally after timeout
+      console.log("Tab closing, session will remain for other tabs");
+    };
     
-    // List all localStorage items
-    console.log("All localStorage items:");
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      console.log(`  ${key}:`, localStorage.getItem(key));
-    }
+    window.addEventListener('beforeunload', handleBeforeUnload);
     
-    checkSession();
-  };
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
 
   let rejectSection = rejectSectionData?.rejected_sections || [];
   let rejectMsg = rejectSectionData?.reject_message || "";
 
   // Show loading while checking session
-  if (isLoading) {
+  if (isLoading || !sessionChecked) {
     return (
       <div style={{
         height: "100vh",
@@ -324,7 +364,10 @@ const Draft = () => {
         gap: "20px"
       }}>
         <div style={{ fontSize: "18px", color: "#555" }}>
-          Loading draft data...
+          {token ? "Creating session..." : "Checking session..."}
+        </div>
+        <div style={{ fontSize: "14px", color: "#777", textAlign: "center" }}>
+          {token ? "Setting up your editing environment" : "Please wait..."}
         </div>
       </div>
     );
@@ -333,46 +376,13 @@ const Draft = () => {
   return (
     <ChangeTrackerProvider>
       <div className="container">
-        {/* Debug Panel (only in development) */}
-        {process.env.NODE_ENV === 'development' && (
-          <div style={{
-            position: "fixed",
-            top: "10px",
-            left: "10px",
-            zIndex: 10000,
-            background: "rgba(0,0,0,0.8)",
-            color: "white",
-            padding: "10px",
-            borderRadius: "5px",
-            fontSize: "12px",
-            maxWidth: "300px"
-          }}>
-            <div><strong>Debug Info:</strong></div>
-            <div>Status: {isEditingLocked ? "🔒 LOCKED" : "✅ UNLOCKED"}</div>
-            <button 
-              onClick={debugSession}
-              style={{
-                marginTop: "5px",
-                padding: "5px 10px",
-                background: "#4CAF50",
-                color: "white",
-                border: "none",
-                borderRadius: "3px",
-                cursor: "pointer"
-              }}
-            >
-              Debug Session
-            </button>
-          </div>
-        )}
-
-        {/* Session Control Bar */}
+        {/* Session Status Bar */}
         <div style={{
           position: "fixed",
           top: "0",
           left: "0",
           right: "0",
-          zIndex: 9999,
+          zIndex: 10000,
           padding: "10px 20px",
           background: isEditingLocked ? "#ff4444" : "#4CAF50",
           color: "white",
@@ -383,6 +393,11 @@ const Draft = () => {
         }}>
           <div style={{ fontWeight: "bold", fontSize: "16px" }}>
             {isEditingLocked ? "🔒 View Only Mode" : "✏️ Edit Mode"}
+            {!isEditingLocked && (
+              <span style={{ fontSize: "12px", marginLeft: "10px", opacity: 0.8 }}>
+                Tab ID: {currentTabId.substring(0, 8)}...
+              </span>
+            )}
           </div>
           
           <div style={{ display: "flex", gap: "10px" }}>
@@ -403,7 +418,10 @@ const Draft = () => {
                   Logout
                 </button>
                 <button
-                  onClick={() => window.open(window.location.href, '_blank')}
+                  onClick={() => {
+                    // Open new tab with current URL
+                    window.open(window.location.href, '_blank');
+                  }}
                   style={{
                     background: "#2196F3",
                     color: "white",
@@ -447,23 +465,23 @@ const Draft = () => {
         )}
 
         <PreviewPublish
-          memberId={memberId.memberId}
+          memberId={memberId?.memberId}
           token={token}
-          website_url={memberId.website_url}
+          website_url={memberId?.website_url}
           rejectionNumbers={rejectSection}
           isLocked={isEditingLocked}
         />
 
         {/* All draft components */}
-        <HeaderDraft memberId={memberId.memberId} />
-        <ParticipationDraft memberId={memberId.memberId} />
-        <BannerDraft memberId={memberId.memberId} />
-        <AboutDraft memberId={memberId.memberId} />
-        <ProductsDraft memberId={memberId.memberId} />
-        <Testimonials memberId={memberId.memberId} />
-        <MapReview memberId={memberId.memberId} />
+        <HeaderDraft memberId={memberId?.memberId} />
+        <ParticipationDraft memberId={memberId?.memberId} />
+        <BannerDraft memberId={memberId?.memberId} />
+        <AboutDraft memberId={memberId?.memberId} />
+        <ProductsDraft memberId={memberId?.memberId} />
+        <Testimonials memberId={memberId?.memberId} />
+        <MapReview memberId={memberId?.memberId} />
       </div>
-      <FooterDraft memberId={memberId.memberId} />
+      <FooterDraft memberId={memberId?.memberId} />
     </ChangeTrackerProvider>
   );
 };
