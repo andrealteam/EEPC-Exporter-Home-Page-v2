@@ -525,9 +525,11 @@ div.update-btn {
 /* Mobile responsive styles for update buttons */
 @media (max-width: 991px) {
   .header .d-flex {
+    display: flex;
     flex-wrap: wrap;
-    gap: 10px;
-    justify-content: center;
+    gap: 20px;
+    align-items: center;
+    justify-content: flex-end;
   }
   
   .contact-box {
@@ -2190,22 +2192,44 @@ button:hover .button-text {
   }
 }
 
-@media (max-width: 600px) {
-  .call-text {
-    display: block;
-    margin-left: 0;
-    margin-top: 5px;
+@media (max-width: 991px) {
+  .header .d-flex {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+    width: 100%;
+    padding: 15px 0;
   }
   
   .contact-box {
-    flex-direction: column;
-    align-items: flex-start;
-    margin-left: 0;
-    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    margin: 5px 0;
+    width: 100%;
   }
   
   .contact-box svg {
-    margin-bottom: 5px;
+    flex-shrink: 0;
+    margin-right: 10px;
+  }
+  
+  .call-text {
+    display: block !important;
+    font-size: 14px;
+  }
+  
+  .call-text a {
+    font-size: 14px;
+    word-break: break-all;
+  }
+  
+  .header .d-flex .contact-box:not(:last-child) {
+    margin-right: 0;
+  }
+  
+  .navbar-brand {
+    margin-right: 0;
+    margin-bottom: 15px;
   }
   .testimonial-container .slick-next {
     right: 0;
