@@ -22,92 +22,8 @@ const LOGIN_URL = "https://eepc-exporter-home-page-v2.vercel.app/auth/login";
 
 const Draft = () => {
   const location = useLocation();
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
-  
-  // Get memberId and token from location state
   const memberId = location.state?.exporterData;
   const token = location.state?.token;
-
-  // Check authentication on component mount and when memberId changes
-  useEffect(() => {
-    const checkAuth = () => {
-      const storedData = localStorage.getItem('sessionData');
-      if (!storedData || !memberId) {
-        setIsAuthenticated(false);
-        return false;
-      }
-      
-      try {
-        const sessionData = JSON.parse(storedData);
-        if (!sessionData?.member_id || sessionData.member_id !== memberId.memberId) {
-          setIsAuthenticated(false);
-          return false;
-        }
-        return true;
-      } catch (e) {
-        setIsAuthenticated(false);
-        return false;
-      }
-    };
-
-    // Initial check
-    checkAuth();
-
-    // Listen for storage events (for cross-tab logout)
-    const handleStorageChange = (e) => {
-      if (e.key === 'sessionData' || e.key === null) {
-        if (!checkAuth()) {
-          // Small delay to allow state updates to propagate
-          setTimeout(() => {
-            window.location.href = `${LOGIN_URL}?sessionExpired=true`;
-          }, 100);
-        }
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, [memberId]);
-
-  // Redirect if not authenticated
-  if (!isAuthenticated) {
-    return (
-      <div
-        style={{
-          height: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          backgroundColor: '#f8fafc',
-          color: '#1e293b',
-          fontFamily: 'Inter, sans-serif',
-        }}
-      >
-        <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Session Expired</h2>
-        <p style={{ fontSize: '1rem', color: '#64748b', marginBottom: '1.5rem' }}>
-          Your session has expired or you are not authorized to access this page.
-        </p>
-        <button
-          onClick={() => (window.location.href = LOGIN_URL)}
-          style={{
-            padding: '10px 20px',
-            backgroundColor: '#2563eb',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontSize: '1rem',
-            transition: 'background-color 0.2s ease',
-          }}
-          onMouseOver={(e) => (e.target.style.backgroundColor = '#1d4ed8')}
-          onMouseOut={(e) => (e.target.style.backgroundColor = '#2563eb')}
-        >
-          Go to Login
-        </button>
-      </div>
-    );
-  }
 
   const {
     data: rejectSectionData,
@@ -122,44 +38,30 @@ const Draft = () => {
 
   const [customer, setCustomer] = useState(() => {
     const stored = localStorage.getItem("sessionData");
-    if (!stored) {
-      window.location.href = `${LOGIN_URL}?sessionExpired=true`;
-      return null;
-    }
-    return JSON.parse(stored);
+    return stored ? JSON.parse(stored) : null;
   });
 
-  // Session validation effect
   useEffect(() => {
-    const validateSession = () => {
-      const storedData = localStorage.getItem('sessionData');
-      if (!storedData || !memberId) {
-        setIsAuthenticated(false);
-        return false;
-      }
-      
-      try {
-        const sessionData = JSON.parse(storedData);
-        if (!sessionData?.member_id || sessionData.member_id !== memberId.memberId) {
-          setIsAuthenticated(false);
-          return false;
+    const handleStorageChange = (event) => {
+      if (event.key === "sessionData") {
+        const newData = event.newValue ? JSON.parse(event.newValue) : null;
+        setCustomer(newData);
+        if (!newData) {
+          window.close();
+          setTimeout(() => {
+            window.location.replace(LOGIN_URL);
+          }, 150);
         }
-        return true;
-      } catch (e) {
-        setIsAuthenticated(false);
-        return false;
       }
     };
 
-    // Initial validation
-    validateSession();
+    // Listen for localStorage changes
+    window.addEventListener("storage", handleStorageChange);
 
-    // Set up interval to check session periodically
-    const interval = setInterval(validateSession, 30000); // Check every 30 seconds
-
-    // Cleanup interval on component unmount
-    return () => clearInterval(interval);
-  }, [memberId]);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
 
   let rejectSection = rejectSectionData?.rejected_sections || [];
   let rejectMsg = rejectSectionData?.reject_message || "";

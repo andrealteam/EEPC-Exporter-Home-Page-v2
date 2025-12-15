@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { SignJWT } from "jose";
 import { useNavigate } from "react-router-dom";
 import { postEditExporterHomePage, postLiveWebsite } from "../../services/liveApi";
@@ -10,48 +10,8 @@ import { useChangeTracker } from "../../contexts/ChangeTrackerContext";
 const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [jwtToken, setJwtToken] = useState('');
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
   const navigate = useNavigate();
   const { hasChanges, resetAfterPreviewOrPublish, markAsChanged } = useChangeTracker();
-
-  // Check authentication status
-  const checkAuth = useCallback(() => {
-    const storedData = localStorage.getItem('sessionData');
-    if (!storedData || !memberId) {
-      setIsAuthenticated(false);
-      return false;
-    }
-    
-    try {
-      const sessionData = JSON.parse(storedData);
-      if (!sessionData?.member_id || sessionData.member_id !== memberId.memberId) {
-        setIsAuthenticated(false);
-        return false;
-      }
-      setIsAuthenticated(true);
-      return true;
-    } catch (e) {
-      setIsAuthenticated(false);
-      return false;
-    }
-  }, [memberId]);
-
-  // Set up auth check on mount and when memberId changes
-  useEffect(() => {
-    checkAuth();
-    
-    // Listen for storage changes (for cross-tab logout)
-    const handleStorageChange = (e) => {
-      if (e.key === 'sessionData' || e.key === null) {
-        if (!checkAuth()) {
-          window.location.href = 'https://eepc-exporter-home-page-v2.vercel.app/auth/login?sessionExpired=true';
-        }
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, [checkAuth]);
 
   // Fetch products data
   const { data: productsData, isLoading: isProductsLoading } = useQuery({
@@ -69,10 +29,10 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
 
   // Generate JWT token for preview
   const generateToken = async () => {
-    if (!memberId || !checkAuth()) {
-      // If no memberId or not authenticated, clear any existing token and redirect
+    if (!memberId) {
+      // If no memberId, clear any existing token and redirect
       localStorage.removeItem('isValidToken');
-      window.location.href = 'https://eepc-exporter-home-page-v2.vercel.app/auth/login?sessionExpired=true';
+      window.location.href = '/404';
       return null;
     }
 
@@ -119,11 +79,6 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
 
   // Handle preview button click
   const handlePreview = async () => {
-    if (!checkAuth()) {
-      window.location.href = 'https://eepc-exporter-home-page-v2.vercel.app/auth/login?sessionExpired=true';
-      return;
-    }
-    
     try {
       setIsSubmitted(true);
       const token = await generateToken();
@@ -162,10 +117,6 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
 
   // Handle publish button click
   const handlePublish = () => {
-    if (!checkAuth()) {
-      window.location.href = 'https://eepc-exporter-home-page-v2.vercel.app/auth/login?sessionExpired=true';
-      return;
-    }
     const hasProducts = Array.isArray(productsData)
       ? productsData.length > 0
       : Array.isArray(productsData?.data)
@@ -217,8 +168,8 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
 
   const isLoading = isProductsLoading || isAboutLoading;
   // Enable buttons when there are changes, regardless of previous preview/publish
-  const isPreviewDisabled = isLoading || !hasChanges || !isAuthenticated;
-  const isPublishDisabled = isLoading || !hasChanges || !isAuthenticated;
+  const isPreviewDisabled = isLoading || !hasChanges;
+  const isPublishDisabled = isLoading || !hasChanges;
 
   if (isLoading) {
     return (
