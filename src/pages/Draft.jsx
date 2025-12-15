@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { HeaderDraft } from "../components";
 import BannerDraft from "../components/draft/BannerDraft";
@@ -7,7 +7,6 @@ import ProductsDraft from "../components/draft/productsDraft";
 import FooterDraft from "../components/draft/FooterDraft";
 import PreviewPublish from "../components/draft/PreviewPublish";
 import Testimonials from "../components/draft/Testimonials";
-import GalleryDraft from "../components/draft/GalleryDraft";
 import ParticipationDraft from "../components/draft/ParticipationDraft";
 import MapReview from "../components/draft/MapReview";
 import RejectSectionBanner from "../components/draft/RejectSectionBanner";
@@ -18,24 +17,22 @@ import { ChangeTrackerProvider } from "../contexts/ChangeTrackerContext";
 const LOGIN_URL =
   "https://eepc-exporter-home-page-v2.vercel.app/auth/login";
 
-/* 🔒 HARD LOCK FUNCTION — disables ALL editing */
+/* 🔒 HARD LOCK — disables ALL editing */
 const lockEditing = () => {
-  // Disable form inputs
+  // Disable inputs
   document.querySelectorAll("input, textarea, select").forEach((el) => {
     el.disabled = true;
     el.readOnly = true;
   });
 
-  // Disable contentEditable elements
+  // Disable contenteditable
   document.querySelectorAll('[contenteditable="true"]').forEach((el) => {
     el.setAttribute("contenteditable", "false");
   });
 
-  // Block all mouse & keyboard interactions
+  // Block interactions
   document.body.style.pointerEvents = "none";
   document.body.style.userSelect = "none";
-
-  // Visual indication
   document.body.style.opacity = "0.6";
 };
 
@@ -44,11 +41,6 @@ const Draft = () => {
   const memberId = location.state?.exporterData;
   const token = location.state?.token;
 
-  const [customer, setCustomer] = useState(() => {
-    const stored = localStorage.getItem("sessionData");
-    return stored ? JSON.parse(stored) : null;
-  });
-
   /* 🔐 API DATA */
   const { data: rejectSectionData } = useQuery({
     queryKey: ["get-reject-section", memberId],
@@ -56,22 +48,16 @@ const Draft = () => {
     enabled: !!memberId,
   });
 
-  /* 🚨 Detect logout instantly (cross-tab + same tab) */
+  /* 🚨 LOGOUT DETECTION (ONLY ON LOGOUT) */
   useEffect(() => {
     const handleStorageChange = (event) => {
-      if (event.key === "sessionData") {
-        const newData = event.newValue
-          ? JSON.parse(event.newValue)
-          : null;
+      if (event.key === "sessionData" && !event.newValue) {
+        // 🔥 logout detected
+        lockEditing();
 
-        setCustomer(newData);
-
-        if (!newData) {
-          lockEditing();
-          setTimeout(() => {
-            window.location.replace(LOGIN_URL);
-          }, 300);
-        }
+        setTimeout(() => {
+          window.location.replace(LOGIN_URL);
+        }, 300);
       }
     };
 
@@ -81,16 +67,6 @@ const Draft = () => {
       window.removeEventListener("storage", handleStorageChange);
     };
   }, []);
-
-  /* 🔁 Refresh protection */
-  useEffect(() => {
-    if (!customer) {
-      lockEditing();
-      setTimeout(() => {
-        window.location.replace(LOGIN_URL);
-      }, 300);
-    }
-  }, [customer]);
 
   const rejectSection =
     rejectSectionData?.rejected_sections || [];
@@ -113,25 +89,12 @@ const Draft = () => {
           rejectionNumbers={rejectSection}
         />
 
-        {/* HEADER */}
         <HeaderDraft memberId={memberId?.memberId} />
-
-        {/* PARTICIPATION */}
         <ParticipationDraft memberId={memberId?.memberId} />
-
-        {/* BANNER */}
         <BannerDraft memberId={memberId?.memberId} />
-
-        {/* ABOUT */}
         <AboutDraft memberId={memberId?.memberId} />
-
-        {/* PRODUCTS */}
         <ProductsDraft memberId={memberId?.memberId} />
-
-        {/* TESTIMONIALS */}
         <Testimonials memberId={memberId?.memberId} />
-
-        {/* MAP */}
         <MapReview memberId={memberId?.memberId} />
       </div>
 
