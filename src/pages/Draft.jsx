@@ -26,17 +26,6 @@ const Draft = () => {
   const token = location.state?.token;
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [showError, setShowError] = useState(false);
-  
-  useEffect(() => {
-    if (!isAuthorized) {
-      const timer = setTimeout(() => {
-        setShowError(true);
-      }, 300);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [isAuthorized]);
 
   const {
     data: rejectSectionData,
@@ -50,42 +39,35 @@ const Draft = () => {
 
   // Check authentication status on component mount and when memberId/token changes
   useEffect(() => {
-    const checkAuth = async () => {
+    const checkAuth = () => {
       try {
-        // If we have token in URL, use it to set/update session
-        if (token && memberId) {
-          const sessionData = {
-            token: token,
-            member_id: memberId.memberId,
-            member_name: memberId.memberName || '',
-            exp: memberId.exp || (Date.now() / 1000) + (60 * 60 * 24) // Default 24h expiration
-          };
-          localStorage.setItem("sessionData", JSON.stringify(sessionData));
-          setIsAuthorized(true);
-          return true;
-        }
-
-        // Check existing session data
-        const storedSession = localStorage.getItem("sessionData");
-        if (!storedSession) {
-          console.log("No session data found");
-          setIsAuthorized(false);
-          return false;
-        }
-
-        const sessionData = JSON.parse(storedSession);
+        const sessionData = JSON.parse(localStorage.getItem("sessionData") || "null");
         
-        // Check if token is expired
-        const currentTime = Date.now() / 1000;
-        if (sessionData.exp && sessionData.exp < currentTime) {
-          console.log("Token expired");
-          localStorage.removeItem("sessionData");
+        // If no session data, not authorized
+        if (!sessionData) {
           setIsAuthorized(false);
           return false;
         }
 
-        // If we got here, all checks passed
-        console.log("Authentication successful");
+        // If we have memberId in URL, verify it matches the session
+        if (memberId?.memberId && sessionData.member_id !== memberId.memberId) {
+          setIsAuthorized(false);
+          return false;
+        }
+
+        // If we have token in URL, verify it matches the session
+        if (token && sessionData.token !== token) {
+          setIsAuthorized(false);
+          return false;
+        }
+
+        // If we have company name in rejectSectionData, verify it matches
+        if (rejectSectionData?.company_name && 
+            sessionData.member_name !== rejectSectionData.company_name) {
+          setIsAuthorized(false);
+          return false;
+        }
+
         setIsAuthorized(true);
         return true;
       } catch (error) {
@@ -97,15 +79,8 @@ const Draft = () => {
       }
     };
 
-    // Check auth if we have the necessary data
-    if (memberId || token) {
-      checkAuth().catch(error => {
-        console.error("Auth check failed:", error);
-        setIsAuthorized(false);
-      });
-    } else {
-      setIsLoading(false);
-    }
+    // Initial check
+    const isValid = checkAuth();
 
     // Set up storage event listener for cross-tab logout
     const handleStorageChange = (event) => {
@@ -129,7 +104,7 @@ const Draft = () => {
       window.removeEventListener("storage", handleStorageChange);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [memberId, token]);
+  }, [memberId, token, rejectSectionData]);
 
   // Show loading state while checking auth
   if (isLoading || isSectionLoading) {
@@ -148,51 +123,49 @@ const Draft = () => {
 
   // Show unauthorized/expired session message
   if (!isAuthorized) {
-    if (!showError) {
-      return (
-        <div style={{
+    return (
+      <div
+        style={{
           height: "100vh",
           display: "flex",
+          flexDirection: "column",
           justifyContent: "center",
           alignItems: "center",
-          backgroundColor: "#f8fafc"
-        }}>
-          <p>Checking authentication status...</p>
-        </div>
-      );
-    }
-    
-    return (
-      <div style={{
-        height: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#f8fafc",
-        color: "#1e293b",
-        fontFamily: "Inter, sans-serif",
-        padding: "20px",
-        textAlign: "center"
-      }}>
-        <h2 style={{ marginBottom: "20px" }}>Session Expired</h2>
-        <p style={{ marginBottom: "20px" }}>Your session has expired or you don't have permission to access this page.</p>
-        <a 
-          href={LOGIN_URL}
+          backgroundColor: "#f8fafc",
+          color: "#1e293b",
+          fontFamily: "Inter, sans-serif",
+        }}
+      >
+        <h2 style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>
+          Session Expired
+        </h2>
+        <p
+          style={{ fontSize: "1rem", color: "#64748b", marginBottom: "1.5rem" }}
+        >
+          Your session has expired or you are not authorized to access this page.
+        </p>
+        <button
+          onClick={() => {
+            // Clear any existing session data
+            localStorage.removeItem("sessionData");
+            // Redirect to login
+            window.location.href = LOGIN_URL;
+          }}
           style={{
-            display: "inline-block",
             padding: "10px 20px",
             backgroundColor: "#2563eb",
             color: "white",
-            textDecoration: "none",
+            border: "none",
             borderRadius: "8px",
+            cursor: "pointer",
+            fontSize: "1rem",
             transition: "background-color 0.2s ease",
           }}
           onMouseOver={(e) => (e.target.style.backgroundColor = "#1d4ed8")}
           onMouseOut={(e) => (e.target.style.backgroundColor = "#2563eb")}
         >
           Go to Login
-        </a>
+        </button>
       </div>
     );
   }
