@@ -34,8 +34,8 @@ const Draft = () => {
       if (window.authCheckInterval) {
         clearInterval(window.authCheckInterval);
       }
-      // Redirect to login
-      window.location.replace(LOGIN_URL);
+      // Redirect to 404 page
+      window.location.href = '/404';
       return false;
     }
     return true;
@@ -55,7 +55,7 @@ const Draft = () => {
   const [customer, setCustomer] = useState(() => {
     const stored = localStorage.getItem("sessionData");
     if (!stored) {
-      window.location.replace(LOGIN_URL);
+      window.location.href = '/404';
       return null;
     }
     return JSON.parse(stored);
@@ -101,49 +101,8 @@ const Draft = () => {
   let rejectMsg = rejectSectionData?.reject_message || "";
 
   if (!customer || customer?.member_name === undefined || customer?.member_name !== rejectSectionData?.company_name) {
-    return (
-      <div
-        style={{
-          height: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: "#f8fafc",
-          color: "#1e293b",
-          fontFamily: "Inter, sans-serif",
-        }}
-      >
-        <h2 style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>
-          Session Expired
-        </h2>
-        <p
-          style={{ fontSize: "1rem", color: "#64748b", marginBottom: "1.5rem" }}
-        >
-          Your session has expired or you are not authorized to access this page.
-          Redirecting to login...
-        </p>
-        <button
-          onClick={() => {
-            window.location.href = LOGIN_URL;
-          }}
-          style={{
-            padding: "10px 20px",
-            backgroundColor: "#2563eb",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
-            fontSize: "1rem",
-            transition: "background-color 0.2s ease",
-          }}
-          onMouseOver={(e) => (e.target.style.backgroundColor = "#1d4ed8")}
-          onMouseOut={(e) => (e.target.style.backgroundColor = "#2563eb")}
-        >
-          Go to Login
-        </button>
-      </div>
-    );
+    window.location.href = '/404';
+    return null;
   }
 
   return (
