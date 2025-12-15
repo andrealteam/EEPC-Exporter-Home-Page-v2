@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { HeaderDraft } from "../components";
 import BannerDraft from "../components/draft/BannerDraft";
@@ -17,20 +17,17 @@ import { ChangeTrackerProvider } from "../contexts/ChangeTrackerContext";
 const LOGIN_URL =
   "https://eepc-exporter-home-page-v2.vercel.app/auth/login";
 
-/* 🔒 HARD LOCK — disables ALL editing */
+/* 🔒 HARD LOCK */
 const lockEditing = () => {
-  // Disable inputs
   document.querySelectorAll("input, textarea, select").forEach((el) => {
     el.disabled = true;
     el.readOnly = true;
   });
 
-  // Disable contenteditable
   document.querySelectorAll('[contenteditable="true"]').forEach((el) => {
     el.setAttribute("contenteditable", "false");
   });
 
-  // Block interactions
   document.body.style.pointerEvents = "none";
   document.body.style.userSelect = "none";
   document.body.style.opacity = "0.6";
@@ -41,6 +38,8 @@ const Draft = () => {
   const memberId = location.state?.exporterData;
   const token = location.state?.token;
 
+  const isLockedRef = useRef(false);
+
   /* 🔐 API DATA */
   const { data: rejectSectionData } = useQuery({
     queryKey: ["get-reject-section", memberId],
@@ -48,24 +47,51 @@ const Draft = () => {
     enabled: !!memberId,
   });
 
-  /* 🚨 LOGOUT DETECTION (ONLY ON LOGOUT) */
-  useEffect(() => {
-    const handleStorageChange = (event) => {
-      if (event.key === "sessionData" && !event.newValue) {
-        // 🔥 logout detected
-        lockEditing();
+  /* 🔍 SESSION CHECK FUNCTION */
+  const checkSession = () => {
+    const session = localStorage.getItem("sessionData");
+    if (!session && !isLockedRef.current) {
+      isLockedRef.current = true;
+      lockEditing();
+      setTimeout(() => {
+        window.location.replace(LOGIN_URL);
+      }, 300);
+    }
+  };
 
-        setTimeout(() => {
-          window.location.replace(LOGIN_URL);
-        }, 300);
+  /* ✅ CROSS-TAB LOGOUT */
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key === "sessionData" && !e.newValue) {
+        checkSession();
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  /* ✅ SAME-TAB LOGOUT + TAB SWITCH */
+  useEffect(() => {
+    const onFocus = () => checkSession();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        checkSession();
       }
     };
 
-    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
-      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
+  }, []);
+
+  /* ✅ HEARTBEAT (FINAL GUARANTEE) */
+  useEffect(() => {
+    const interval = setInterval(checkSession, 1500);
+    return () => clearInterval(interval);
   }, []);
 
   const rejectSection =
