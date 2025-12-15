@@ -437,7 +437,7 @@ const Draft = () => {
               </>
             ) : (
               <button
-                onClick={() => window.location.href = "/login"}
+                onClick={() => window.location.href = "https://eepc-exporter-home-page-v2-whhx.vercel.app/auth/login"}
                 style={{
                   background: "white",
                   color: "#ff4444",
