@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { HeaderDraft } from "../components";
 import BannerDraft from "../components/draft/BannerDraft";
@@ -20,7 +20,7 @@ import { ChangeTrackerProvider } from "../contexts/ChangeTrackerContext";
 
 /* 🔒 LOCK EDITING FUNCTION */
 const lockEditing = () => {
-  console.log("Locking editing - View Only Mode");
+  console.log("🔒 Locking editing - View Only Mode");
   
   // Disable all form inputs
   document.querySelectorAll("input, textarea, select").forEach((el) => {
@@ -74,7 +74,7 @@ const lockEditing = () => {
         padding-right: 20px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.2);
       ">
-        <div style="font-weight: bold;">🔒 Tab Session Expired - Return to Original Tab or Login Again</div>
+        <div style="font-weight: bold;">🔒 Session Expired - Please Login Again</div>
         <button id="login-button-top" 
                 style="
                   background: white;
@@ -85,7 +85,7 @@ const lockEditing = () => {
                   cursor: pointer;
                   font-weight: bold;
                 ">
-          Login Again
+          Login
         </button>
       </div>
     `;
@@ -103,7 +103,7 @@ const lockEditing = () => {
 
 /* 🔓 UNLOCK EDITING FUNCTION */
 const unlockEditing = () => {
-  console.log("Unlocking editing - Edit Mode Enabled");
+  console.log("🔓 Unlocking editing - Edit Mode Enabled");
   
   document.querySelectorAll("input, textarea, select").forEach((el) => {
     el.disabled = false;
@@ -134,33 +134,214 @@ const unlockEditing = () => {
   if (banner) banner.remove();
 };
 
-// Generate a unique tab ID
-const generateTabId = () => {
-  return 'tab_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-};
-
-// Check if this tab is the original session tab
-const isOriginalTab = () => {
-  const tabId = localStorage.getItem('currentTabId');
-  const originalTabId = sessionStorage.getItem('originalTabId');
-  
-  console.log("Tab check - Current tab:", tabId, "Original tab:", originalTabId);
-  
-  // If no original tab is set yet, this is the first/original tab
-  if (!originalTabId) {
-    console.log("This is the original tab (no originalTabId set yet)");
-    return true;
+// Session management system
+class SessionManager {
+  constructor() {
+    this.tabId = 'tab_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    this.sessionKey = 'active_sessions';
+    this.heartbeatInterval = null;
+    
+    // Initialize tab session
+    this.initializeTab();
   }
   
-  // If current tab matches original tab ID
-  if (tabId === originalTabId) {
-    console.log("This is the original tab (IDs match)");
-    return true;
+  // Initialize tab session
+  initializeTab() {
+    console.log("Initializing tab:", this.tabId);
+    
+    // Register this tab as active
+    this.registerTab();
+    
+    // Start heartbeat to keep session alive
+    this.startHeartbeat();
+    
+    // Set up cleanup on tab close
+    window.addEventListener('beforeunload', () => {
+      this.unregisterTab();
+    });
   }
   
-  console.log("This is a duplicate tab");
-  return false;
-};
+  // Register this tab in active sessions
+  registerTab() {
+    const activeSessions = this.getActiveSessions();
+    
+    // Add this tab to active sessions
+    activeSessions[this.tabId] = {
+      id: this.tabId,
+      lastActive: Date.now(),
+      status: 'active'
+    };
+    
+    localStorage.setItem(this.sessionKey, JSON.stringify(activeSessions));
+    
+    // Trigger storage event for other tabs
+    this.triggerStorageEvent();
+  }
+  
+  // Unregister tab (on close)
+  unregisterTab() {
+    const activeSessions = this.getActiveSessions();
+    delete activeSessions[this.tabId];
+    localStorage.setItem(this.sessionKey, JSON.stringify(activeSessions));
+    this.triggerStorageEvent();
+  }
+  
+  // Update heartbeat
+  updateHeartbeat() {
+    const activeSessions = this.getActiveSessions();
+    if (activeSessions[this.tabId]) {
+      activeSessions[this.tabId].lastActive = Date.now();
+      localStorage.setItem(this.sessionKey, JSON.stringify(activeSessions));
+    }
+  }
+  
+  // Start heartbeat (update every 2 seconds)
+  startHeartbeat() {
+    this.heartbeatInterval = setInterval(() => {
+      this.updateHeartbeat();
+    }, 2000);
+  }
+  
+  // Stop heartbeat
+  stopHeartbeat() {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+    }
+  }
+  
+  // Get all active sessions
+  getActiveSessions() {
+    try {
+      const sessions = localStorage.getItem(this.sessionKey);
+      return sessions ? JSON.parse(sessions) : {};
+    } catch (e) {
+      return {};
+    }
+  }
+  
+  // Clean up old sessions (older than 10 seconds)
+  cleanupOldSessions() {
+    const activeSessions = this.getActiveSessions();
+    const now = Date.now();
+    let changed = false;
+    
+    for (const tabId in activeSessions) {
+      if (now - activeSessions[tabId].lastActive > 10000) { // 10 seconds
+        delete activeSessions[tabId];
+        changed = true;
+      }
+    }
+    
+    if (changed) {
+      localStorage.setItem(this.sessionKey, JSON.stringify(activeSessions));
+      this.triggerStorageEvent();
+    }
+  }
+  
+  // Check if this tab is the primary session holder
+  isPrimarySession() {
+    const activeSessions = this.getActiveSessions();
+    const sessionKeys = Object.keys(activeSessions);
+    
+    if (sessionKeys.length === 0) return false;
+    
+    // Sort by registration time (oldest first)
+    const sortedTabs = sessionKeys.sort((a, b) => {
+      return activeSessions[a].lastActive - activeSessions[b].lastActive;
+    });
+    
+    // The oldest active tab is the primary
+    return sortedTabs[0] === this.tabId;
+  }
+  
+  // Trigger storage event to notify other tabs
+  triggerStorageEvent() {
+    const event = new StorageEvent('storage', {
+      key: this.sessionKey,
+      newValue: localStorage.getItem(this.sessionKey),
+      oldValue: localStorage.getItem(this.sessionKey),
+      url: window.location.href
+    });
+    window.dispatchEvent(event);
+  }
+  
+  // Check session validity
+  checkSessionValidity() {
+    // Check if user has valid session data
+    const sessionData = this.getSessionData();
+    const hasValidSession = !!sessionData;
+    
+    // Check if this tab is the primary session
+    const isPrimary = this.isPrimarySession();
+    
+    console.log("Session check:", {
+      tabId: this.tabId,
+      hasValidSession,
+      isPrimary,
+      sessionData: sessionData ? 'exists' : 'none'
+    });
+    
+    return {
+      isValid: hasValidSession && isPrimary,
+      isPrimary,
+      hasSession: hasValidSession
+    };
+  }
+  
+  // Get session data from localStorage
+  getSessionData() {
+    const possibleKeys = [
+      'sessionData',
+      'userData', 
+      'authData',
+      'token',
+      'user',
+      'userSession',
+      'authToken',
+      'loginData'
+    ];
+    
+    for (const key of possibleKeys) {
+      const data = localStorage.getItem(key);
+      if (data) {
+        try {
+          return JSON.parse(data);
+        } catch (e) {
+          return data; // Return as string if not JSON
+        }
+      }
+    }
+    
+    return null;
+  }
+  
+  // Force logout (clear all sessions)
+  forceLogout() {
+    // Clear session data
+    const possibleKeys = [
+      'sessionData',
+      'userData', 
+      'authData',
+      'token',
+      'user',
+      'userSession',
+      'authToken',
+      'loginData'
+    ];
+    
+    possibleKeys.forEach(key => {
+      localStorage.removeItem(key);
+    });
+    
+    // Clear active sessions
+    localStorage.removeItem(this.sessionKey);
+    
+    // Trigger storage event
+    this.triggerStorageEvent();
+    
+    console.log("Force logout executed");
+  }
+}
 
 const Draft = () => {
   const location = useLocation();
@@ -179,101 +360,43 @@ const Draft = () => {
   
   const [isEditingLocked, setIsEditingLocked] = useState(true);
   const [sessionChecked, setSessionChecked] = useState(false);
-  const [isDuplicateTab, setIsDuplicateTab] = useState(false);
-  const [tabId, setTabId] = useState('');
+  const [sessionStatus, setSessionStatus] = useState('');
+  const sessionManagerRef = useRef(null);
 
-  // Initialize tab ID and session
+  // Initialize session manager
   useEffect(() => {
-    console.log("=== Initializing Tab Session ===");
+    sessionManagerRef.current = new SessionManager();
     
-    // Generate or get current tab ID
-    let currentTabId = localStorage.getItem('currentTabId');
-    if (!currentTabId) {
-      currentTabId = generateTabId();
-      localStorage.setItem('currentTabId', currentTabId);
-      console.log("Generated new tab ID:", currentTabId);
-    }
-    setTabId(currentTabId);
-    
-    // Get original tab ID from sessionStorage
-    const originalTabId = sessionStorage.getItem('originalTabId');
-    
-    // If this is the first time loading (no originalTabId in sessionStorage)
-    if (!originalTabId) {
-      console.log("Setting this as original tab");
-      sessionStorage.setItem('originalTabId', currentTabId);
-      sessionStorage.setItem('tabInitialized', 'true');
-      setIsDuplicateTab(false);
-    } else {
-      // Check if this tab is the original tab
-      const isOriginal = originalTabId === currentTabId;
-      setIsDuplicateTab(!isOriginal);
-      console.log("Duplicate tab detected:", !isOriginal);
-    }
-    
-    // Set up beforeunload to clean up if this is the original tab
-    const handleBeforeUnload = () => {
-      const currentTab = localStorage.getItem('currentTabId');
-      const originalTab = sessionStorage.getItem('originalTabId');
-      
-      if (currentTab === originalTab) {
-        console.log("Original tab closing - clearing sessionStorage");
-        sessionStorage.removeItem('originalTabId');
-        sessionStorage.removeItem('tabInitialized');
-      }
-    };
-    
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    
+    // Clean up on unmount
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      if (sessionManagerRef.current) {
+        sessionManagerRef.current.stopHeartbeat();
+        sessionManagerRef.current.unregisterTab();
+      }
     };
   }, []);
 
-  // Main session check function - TAB SPECIFIC
+  // Main session check function
   const checkSession = () => {
-    console.log("=== Tab-Specific Session Check ===");
-    console.log("Tab ID:", tabId);
-    console.log("Is duplicate tab:", isDuplicateTab);
+    if (!sessionManagerRef.current) return;
     
-    // First, check if this is a duplicate tab
-    if (isDuplicateTab) {
-      console.log("❌ DUPLICATE TAB DETECTED - Locking editing");
-      lockEditing();
-      setIsEditingLocked(true);
-      setSessionChecked(true);
-      return;
-    }
+    const sessionCheck = sessionManagerRef.current.checkSessionValidity();
     
-    // For original tab, check session data
-    const possibleSessionKeys = [
-      'sessionData',
-      'userData', 
-      'authData',
-      'token',
-      'user',
-      'userSession',
-      'authToken',
-      'loginData'
-    ];
+    console.log("Session check result:", sessionCheck);
     
-    let foundSession = null;
-    
-    for (const key of possibleSessionKeys) {
-      const data = localStorage.getItem(key);
-      if (data) {
-        console.log(`✅ Session found with key: ${key}`);
-        foundSession = data;
-        break;
-      }
-    }
-    
-    if (foundSession) {
-      console.log("✅ Valid session in original tab - Unlocking editing");
+    if (sessionCheck.isValid) {
+      // Valid session and primary tab
+      setSessionStatus('Primary tab with valid session');
       unlockEditing();
       setIsEditingLocked(false);
+    } else if (sessionCheck.hasSession && !sessionCheck.isPrimary) {
+      // Has session but not primary tab (duplicate tab)
+      setSessionStatus('Duplicate tab - View only');
+      lockEditing();
+      setIsEditingLocked(true);
     } else {
-      console.log("❌ No session found in original tab");
+      // No valid session
+      setSessionStatus('No valid session');
       lockEditing();
       setIsEditingLocked(true);
     }
@@ -281,45 +404,64 @@ const Draft = () => {
     setSessionChecked(true);
   };
 
-  // Check session periodically
+  // Set up session checking
   useEffect(() => {
-    if (!tabId) return;
+    if (!sessionManagerRef.current) return;
     
     // Initial check after 1 second
-    const initialCheck = setTimeout(() => {
+    const initialTimer = setTimeout(() => {
       checkSession();
     }, 1000);
     
-    // Set up interval to check every 3 seconds
-    const intervalId = setInterval(checkSession, 3000);
+    // Check every 3 seconds
+    const checkInterval = setInterval(() => {
+      sessionManagerRef.current.cleanupOldSessions();
+      checkSession();
+    }, 3000);
     
-    // Listen for storage changes
+    // Listen for storage events (cross-tab logout)
     const handleStorageChange = (e) => {
-      if (e.key === 'currentTabId' || e.key?.includes('session') || e.key?.includes('auth')) {
-        console.log("Session-related storage change:", e.key);
+      if (e.key === 'active_sessions' || 
+          e.key?.includes('session') || 
+          e.key?.includes('auth') ||
+          e.key?.includes('token') ||
+          e.key?.includes('user')) {
+        console.log("Storage change detected:", e.key);
         checkSession();
       }
     };
     
-    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener('storage', handleStorageChange);
     
-    // Check when page becomes visible
+    // Check on visibility change
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
+      if (document.visibilityState === 'visible') {
         checkSession();
       }
     };
     
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     
     // Cleanup
     return () => {
-      clearTimeout(initialCheck);
-      clearInterval(intervalId);
-      window.removeEventListener("storage", handleStorageChange);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      clearTimeout(initialTimer);
+      clearInterval(checkInterval);
+      window.removeEventListener('storage', handleStorageChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [tabId, isDuplicateTab]);
+  }, []);
+
+  // Handle manual logout
+  const handleLogout = () => {
+    if (sessionManagerRef.current) {
+      sessionManagerRef.current.forceLogout();
+    }
+    
+    // Redirect to login
+    setTimeout(() => {
+      window.location.href = "/login";
+    }, 1000);
+  };
 
   let rejectSection = rejectSectionData?.rejected_sections || [];
   let rejectMsg = rejectSectionData?.reject_message || "";
@@ -337,28 +479,11 @@ const Draft = () => {
         gap: "20px"
       }}>
         <div style={{ fontSize: "18px", color: "#555" }}>
-          {isDuplicateTab ? "Checking tab session..." : "Checking authentication..."}
+          Initializing session...
         </div>
         <div style={{ fontSize: "14px", color: "#777", textAlign: "center" }}>
-          {isDuplicateTab 
-            ? "Duplicate tab detected. Only the original tab can edit." 
-            : "Please wait while we verify your session..."}
+          Please wait while we set up your editing session
         </div>
-        {isDuplicateTab && (
-          <button 
-            onClick={() => window.location.href = "/login"}
-            style={{
-              padding: "10px 20px",
-              background: "#2196F3",
-              color: "white",
-              border: "none",
-              borderRadius: "5px",
-              cursor: "pointer"
-            }}
-          >
-            Login in New Tab
-          </button>
-        )}
       </div>
     );
   }
@@ -366,77 +491,67 @@ const Draft = () => {
   return (
     <ChangeTrackerProvider>
       <div className="container">
-        {/* Tab Status Indicator */}
+        {/* Session Status Bar */}
         <div style={{
           position: "fixed",
-          top: "10px",
-          right: "10px",
+          top: "0",
+          left: "0",
+          right: "0",
           zIndex: 10000,
           padding: "8px 16px",
-          borderRadius: "4px",
-          background: isDuplicateTab ? "#ff4444" : (isEditingLocked ? "#ff9800" : "#4CAF50"),
+          background: isEditingLocked ? "#ff4444" : "#4CAF50",
           color: "white",
-          border: "none",
-          cursor: "pointer",
-          fontWeight: "bold",
-          fontSize: "14px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
           boxShadow: "0 2px 5px rgba(0,0,0,0.2)"
-        }}
-        onClick={() => {
-          if (isDuplicateTab) {
-            window.location.href = "/login";
-          }
-        }}
-        title={isDuplicateTab ? "Click to login in this tab" : "Session status"}>
-          {isDuplicateTab ? "🚫 Duplicate Tab" : (isEditingLocked ? "🔒 View Only" : "✏️ Edit Mode")}
+        }}>
+          <div style={{ fontWeight: "bold", fontSize: "14px" }}>
+            {isEditingLocked ? "🔒 View Only Mode" : "✏️ Edit Mode"}
+            <span style={{ fontSize: "12px", marginLeft: "10px", opacity: 0.8 }}>
+              {sessionStatus}
+            </span>
+          </div>
+          
+          <div style={{ display: "flex", gap: "10px" }}>
+            {!isEditingLocked && (
+              <button
+                onClick={handleLogout}
+                style={{
+                  background: "white",
+                  color: "#ff4444",
+                  border: "none",
+                  padding: "6px 12px",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                  fontSize: "12px"
+                }}
+              >
+                Logout
+              </button>
+            )}
+            
+            <button
+              onClick={() => window.location.href = "/login"}
+              style={{
+                background: "white",
+                color: "#4CAF50",
+                border: "none",
+                padding: "6px 12px",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontWeight: "bold",
+                fontSize: "12px"
+              }}
+            >
+              {isEditingLocked ? "Login" : "Switch Account"}
+            </button>
+          </div>
         </div>
 
-        {/* Debug info (optional - can remove in production) */}
-        {process.env.NODE_ENV === 'development' && (
-          <div style={{
-            position: "fixed",
-            top: "50px",
-            right: "10px",
-            zIndex: 9999,
-            background: "rgba(0,0,0,0.7)",
-            color: "white",
-            padding: "5px 10px",
-            borderRadius: "3px",
-            fontSize: "10px",
-            maxWidth: "200px"
-          }}>
-            Tab: {tabId.substring(0, 10)}...
-            <br />
-            Status: {isDuplicateTab ? "Duplicate" : "Original"}
-          </div>
-        )}
-
-        {/* Manual override button for testing (optional) */}
-        {isDuplicateTab && (
-          <button
-            onClick={() => {
-              // Force this tab to become the original tab
-              sessionStorage.setItem('originalTabId', tabId);
-              setIsDuplicateTab(false);
-              checkSession();
-            }}
-            style={{
-              position: "fixed",
-              top: "80px",
-              right: "10px",
-              zIndex: 9998,
-              padding: "5px 10px",
-              background: "#9C27B0",
-              color: "white",
-              border: "none",
-              borderRadius: "3px",
-              cursor: "pointer",
-              fontSize: "10px"
-            }}
-          >
-            Make This Original Tab
-          </button>
-        )}
+        {/* Add margin for fixed header */}
+        <div style={{ marginTop: "50px" }}></div>
 
         {rejectMsg.length > 0 && (
           <RejectSectionBanner
@@ -450,7 +565,7 @@ const Draft = () => {
           token={token}
           website_url={memberId.website_url}
           rejectionNumbers={rejectSection}
-          isLocked={isEditingLocked || isDuplicateTab}
+          isLocked={isEditingLocked}
         />
 
         {/* All draft components */}
