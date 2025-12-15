@@ -572,7 +572,6 @@ div.update-btn {
   .header .d-flex {
     justify-content: flex-end;
     padding-right: 40px; /* Space for edit button */
-    padding-top: 20px; /* Add some top padding to prevent content from being hidden */
   }
   
   .contact-box i {
@@ -582,14 +581,9 @@ div.update-btn {
   /* Edit button positioning */
   .header .update-btn {
     position: absolute;
-    top: 60px; /* Increased from 10px to 60px to move it lower */
+    top: 10px;
     right: 10px;
     margin: 0;
-    z-index: 1000; /* Ensure it stays above other elements */
-    background: rgba(255, 255, 255, 0.9); /* Add background for better visibility */
-    padding: 8px;
-    border-radius: 4px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   }
   
   .update-btn {
