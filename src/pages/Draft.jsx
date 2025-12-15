@@ -130,8 +130,24 @@ const clearSession = () => {
 };
 
 const isSessionValid = () => {
-  const session = getSession();
-  return session !== null;
+  try {
+    const session = getSession();
+    if (!session) return false;
+    
+    // Check if session has expired
+    const now = Date.now();
+    if (now - session.lastActivity > SESSION_TIMEOUT) {
+      console.log("❌ Session expired (timeout)");
+      clearSession();
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Error validating session:", error);
+    clearSession();
+    return false;
+  }
 };
 
 const Draft = () => {
@@ -171,8 +187,16 @@ const Draft = () => {
       const existingSession = getSession();
       if (existingSession) {
         console.log("✅ Existing session found");
-        setIsLoggedIn(true);
-        unlockEditing();
+        // Verify session is still valid
+        if (isSessionValid()) {
+          setIsLoggedIn(true);
+          unlockEditing();
+        } else {
+          console.log("❌ Session expired");
+          setIsLoggedIn(false);
+          lockEditing();
+          clearSession();
+        }
       } else {
         console.log("❌ No session found");
         setIsLoggedIn(false);
@@ -180,7 +204,7 @@ const Draft = () => {
       }
       setSessionChecked(true);
     }
-  }, []);
+  }, [token, memberId]);
 
   // Set up session checking
   useEffect(() => {
@@ -267,10 +291,11 @@ const Draft = () => {
     lockEditing();
     setIsLoggedIn(false);
     
-    // Redirect to login after a short delay
-    setTimeout(() => {
-      window.location.href = LOGIN_URL;
-    }, 1000);
+    // Clear any location state to prevent auto-login on refresh
+    window.history.replaceState({}, document.title);
+    
+    // Redirect to login immediately
+    window.location.href = LOGIN_URL;
   };
 
   // Handle login button click
