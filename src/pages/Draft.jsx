@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { HeaderDraft } from "../components";
 import BannerDraft from "../components/draft/BannerDraft";
 import AboutDraft from "../components/draft/AboutDraft";
@@ -18,11 +18,9 @@ import { useQuery } from "@tanstack/react-query";
 import { getRejectionSection } from "../services/draftApi";
 import { ChangeTrackerProvider } from "../contexts/ChangeTrackerContext";
 
-const LOGIN_URL = "https://eepc-exporter-home-page-v2.vercel.app/auth/login";
-
 /* 🔒 LOCK EDITING FUNCTION */
 const lockEditing = () => {
-  console.log("Locking editing...");
+  console.log("Locking editing - View Only Mode");
   
   // Disable all form inputs
   document.querySelectorAll("input, textarea, select").forEach((el) => {
@@ -40,7 +38,7 @@ const lockEditing = () => {
 
   // Disable all buttons except logout/exit
   document.querySelectorAll("button").forEach((el) => {
-    if (!el.id?.includes("logout") && !el.id?.includes("exit")) {
+    if (!el.id?.includes("logout") && !el.id?.includes("login")) {
       el.disabled = true;
       el.style.cursor = "not-allowed";
       el.style.opacity = "0.6";
@@ -76,8 +74,8 @@ const lockEditing = () => {
         padding-right: 20px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.2);
       ">
-        <div style="font-weight: bold;">Session Expired - View Only Mode</div>
-        <button onclick="window.location.href='${LOGIN_URL}'" 
+        <div style="font-weight: bold;">🔒 View Only Mode - Login to Edit</div>
+        <button id="login-button" 
                 style="
                   background: white;
                   color: #ff4444;
@@ -87,7 +85,7 @@ const lockEditing = () => {
                   cursor: pointer;
                   font-weight: bold;
                 ">
-          Login Again
+          Login
         </button>
       </div>
     `;
@@ -95,12 +93,17 @@ const lockEditing = () => {
     
     // Add margin to body to account for banner
     document.body.style.marginTop = "50px";
+    
+    // Add click handler for login button
+    document.getElementById("login-button").onclick = () => {
+      window.location.href = "/login";
+    };
   }
 };
 
 /* 🔓 UNLOCK EDITING FUNCTION */
 const unlockEditing = () => {
-  console.log("Unlocking editing...");
+  console.log("Unlocking editing - Edit Mode Enabled");
   
   document.querySelectorAll("input, textarea, select").forEach((el) => {
     el.disabled = false;
@@ -133,6 +136,7 @@ const unlockEditing = () => {
 
 const Draft = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const memberId = location.state?.exporterData;
   const token = location.state?.token;
 
@@ -150,29 +154,45 @@ const Draft = () => {
     const stored = localStorage.getItem("sessionData");
     return stored ? JSON.parse(stored) : null;
   });
-  const [isEditingLocked, setIsEditingLocked] = useState(false);
+  const [isEditingLocked, setIsEditingLocked] = useState(true); // Start as locked by default
 
+  // Check session and set editing state
   useEffect(() => {
-    // Check initial state
-    const checkAndSetEditing = () => {
-      const hasValidSession = customer?.member_name && 
-                            customer?.member_name === rejectSectionData?.company_name;
+    const checkSessionAndSetEditing = () => {
+      const stored = localStorage.getItem("sessionData");
+      const currentCustomer = stored ? JSON.parse(stored) : null;
       
-      if (hasValidSession) {
-        unlockEditing();
-        setIsEditingLocked(false);
+      if (currentCustomer && rejectSectionData) {
+        // Check if logged in user matches this company
+        const hasPermission = currentCustomer.member_name === rejectSectionData.company_name;
+        
+        if (hasPermission) {
+          console.log("User has permission, unlocking editing");
+          unlockEditing();
+          setIsEditingLocked(false);
+        } else {
+          console.log("User doesn't have permission, locking editing");
+          lockEditing();
+          setIsEditingLocked(true);
+        }
       } else {
+        // No session or no data yet
+        console.log("No session found, locking editing");
         lockEditing();
         setIsEditingLocked(true);
       }
     };
-    
-    // Initial check
-    if (rejectSectionData) {
-      checkAndSetEditing();
-    }
-  }, [customer, rejectSectionData]);
 
+    // Check initially
+    checkSessionAndSetEditing();
+    
+    // Set up interval to check every 2 seconds
+    const interval = setInterval(checkSessionAndSetEditing, 2000);
+    
+    return () => clearInterval(interval);
+  }, [rejectSectionData]);
+
+  // Listen for storage changes (cross-tab logout)
   useEffect(() => {
     const handleStorageChange = (event) => {
       if (event.key === "sessionData") {
@@ -180,89 +200,91 @@ const Draft = () => {
         setCustomer(newData);
         
         if (!newData) {
-          // Session removed - lock editing but don't redirect immediately
+          // Session was removed (logout)
+          console.log("Session removed via storage event, locking editing");
           lockEditing();
           setIsEditingLocked(true);
-          
-          // Optional: Auto-redirect after delay
-          setTimeout(() => {
-            window.location.replace(LOGIN_URL);
-          }, 5000);
         } else {
-          // New session added - check if it's valid for this draft
-          const isValid = newData.member_name === rejectSectionData?.company_name;
-          if (isValid) {
-            unlockEditing();
-            setIsEditingLocked(false);
-          } else {
-            lockEditing();
-            setIsEditingLocked(true);
-          }
+          // Session was added or changed
+          console.log("Session changed via storage event, checking permissions");
+          // The interval will handle the permission check
         }
       }
     };
 
-    // Listen for localStorage changes
     window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
 
-    // Also check periodically
-    const interval = setInterval(() => {
-      const stored = localStorage.getItem("sessionData");
-      const currentCustomer = stored ? JSON.parse(stored) : null;
-      
-      if (!currentCustomer && !isEditingLocked) {
-        lockEditing();
-        setIsEditingLocked(true);
-      }
-    }, 2000);
-
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      clearInterval(interval);
-    };
-  }, [rejectSectionData, isEditingLocked]);
-
-  // Check permission when component renders
+  // Check on page visibility change
   useEffect(() => {
-    if (customer && rejectSectionData) {
-      const hasPermission = customer.member_name === rejectSectionData.company_name;
-      
-      if (!hasPermission) {
-        // User doesn't have permission - lock editing
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const stored = localStorage.getItem("sessionData");
+        if (!stored) {
+          console.log("No session on visibility change, locking editing");
+          lockEditing();
+          setIsEditingLocked(true);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  // Simple check - if no sessionData in localStorage, lock editing
+  useEffect(() => {
+    const handleNoSession = () => {
+      const stored = localStorage.getItem("sessionData");
+      if (!stored) {
         lockEditing();
         setIsEditingLocked(true);
-      } else {
-        // User has permission - unlock editing
-        unlockEditing();
-        setIsEditingLocked(false);
       }
-    }
-  }, [customer, rejectSectionData]);
+    };
+
+    // Check on focus
+    window.addEventListener('focus', handleNoSession);
+    return () => window.removeEventListener('focus', handleNoSession);
+  }, []);
 
   let rejectSection = rejectSectionData?.rejected_sections || [];
   let rejectMsg = rejectSectionData?.reject_message || "";
 
+  // Show loading while checking permissions
+  if (isLoading) {
+    return (
+      <div style={{
+        height: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#f8fafc"
+      }}>
+        <div>Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <ChangeTrackerProvider>
       <div className="container">
-        {/* Show a message if in view-only mode */}
-        {isEditingLocked && (
-          <div style={{
-            position: "fixed",
-            top: "60px",
-            right: "20px",
-            background: "#ff4444",
-            color: "white",
-            padding: "8px 16px",
-            borderRadius: "4px",
-            zIndex: 9999,
-            fontSize: "14px",
-            fontWeight: "bold",
-            boxShadow: "0 2px 10px rgba(0,0,0,0.2)"
-          }}>
-            View Only Mode
-          </div>
-        )}
+        {/* Show status indicator */}
+        <div style={{
+          position: "fixed",
+          top: "10px",
+          right: "10px",
+          zIndex: 9999,
+          padding: "8px 16px",
+          borderRadius: "4px",
+          fontWeight: "bold",
+          background: isEditingLocked ? "#ff4444" : "#4CAF50",
+          color: "white",
+          fontSize: "14px",
+          boxShadow: "0 2px 5px rgba(0,0,0,0.2)"
+        }}>
+          {isEditingLocked ? "🔒 View Only" : "✏️ Edit Mode"}
+        </div>
 
         {rejectMsg.length > 0 && (
           <RejectSectionBanner
@@ -276,31 +298,15 @@ const Draft = () => {
           token={token}
           website_url={memberId.website_url}
           rejectionNumbers={rejectSection}
-          isLocked={isEditingLocked} // Pass lock status to PreviewPublish
         />
 
-        {/* 1 */}
+        {/* All draft components */}
         <HeaderDraft memberId={memberId.memberId} />
-
         <ParticipationDraft memberId={memberId.memberId} />
-
-        {/* 2 */}
         <BannerDraft memberId={memberId.memberId} />
-
-        {/* <CertificateDraft memberId={memberId.memberId} /> */}
-        {/* <AwardsDraft memberId={memberId.memberId} /> */}
-        {/* <Testimonials memberId={memberId.memberId} /> */}
-        {/* <GalleryDraft memberId={memberId.memberId} /> */}
-
-        {/* 4 */}
         <AboutDraft memberId={memberId.memberId} />
-        {/* <WhoWeAreDraft memberId={memberId.memberId} /> */}
-
-        {/* 5 */}
         <ProductsDraft memberId={memberId.memberId} />
-
         <Testimonials memberId={memberId.memberId} />
-
         <MapReview memberId={memberId.memberId} />
       </div>
       <FooterDraft memberId={memberId.memberId} />
