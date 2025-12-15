@@ -26,6 +26,17 @@ const Draft = () => {
   const token = location.state?.token;
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showError, setShowError] = useState(false);
+  
+  useEffect(() => {
+    if (!isAuthorized) {
+      const timer = setTimeout(() => {
+        setShowError(true);
+      }, 300);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthorized]);
 
   const {
     data: rejectSectionData,
@@ -139,16 +150,6 @@ const Draft = () => {
 
   // Show unauthorized/expired session message
   if (!isAuthorized) {
-    const [showError, setShowError] = useState(false);
-    
-    useEffect(() => {
-      const timer = setTimeout(() => {
-        setShowError(true);
-      }, 300);
-      
-      return () => clearTimeout(timer);
-    }, []);
-    
     if (!showError) {
       return (
         <div style={{
