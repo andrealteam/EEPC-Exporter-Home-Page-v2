@@ -18,7 +18,7 @@ import WhatsAppPopUp from "../components/live/WhatsAppPopUp";
 import MapReviewLive from "../components/live/MapReviewLive";
 import CryptoJS from "crypto-js";
 
-const secretKey = "my-secret-key";
+const secretKey = "fgghw53ujf8836d";
 const LOGIN_URL = "https://eepc-exporter-home-page-v2.vercel.app/auth/login";
 
 const Live = () => {
