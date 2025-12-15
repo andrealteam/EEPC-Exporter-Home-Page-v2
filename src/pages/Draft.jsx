@@ -18,12 +18,11 @@ import { useQuery } from "@tanstack/react-query";
 import { getRejectionSection } from "../services/draftApi";
 import { ChangeTrackerProvider } from "../contexts/ChangeTrackerContext";
 
-// ✅ CORRECT LOGIN URL IS ALREADY HERE
 const LOGIN_URL = "https://eepc-exporter-home-page-v2-whhx.vercel.app/auth/login";
 const SESSION_KEY = 'draft_editor_session';
 const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 
-/* 🔒 LOCK EDITING FUNCTION - SIMPLIFIED */
+/* 🔒 LOCK EDITING FUNCTION - FIXED */
 const lockEditing = () => {
   console.log("🔒 Locking editing - View Only Mode");
   
@@ -38,19 +37,30 @@ const lockEditing = () => {
     el.setAttribute("contenteditable", "false");
   });
 
-  // Disable all buttons (except navigation)
+  // Disable all buttons EXCEPT buttons with id containing "login" or "logout"
   document.querySelectorAll("button").forEach((el) => {
-    if (!el.hasAttribute("data-allow-on-lock")) {
+    const id = el.id || '';
+    const text = el.textContent || '';
+    if (!id.includes('login') && !id.includes('logout') && 
+        !text.includes('Login') && !text.includes('Logout')) {
       el.disabled = true;
     }
   });
 
-  // Remove pointer events and selection
+  // Remove pointer events and selection from body, but allow clicking on login button
   document.body.style.pointerEvents = "none";
   document.body.style.userSelect = "none";
+  
+  // Ensure login/logout buttons remain clickable
+  const loginButtons = document.querySelectorAll('button[id*="login"], button[id*="logout"]');
+  loginButtons.forEach(button => {
+    button.style.pointerEvents = "auto";
+    button.style.position = "relative";
+    button.style.zIndex = "10001";
+  });
 };
 
-/* 🔓 UNLOCK EDITING FUNCTION - SIMPLIFIED */
+/* 🔓 UNLOCK EDITING FUNCTION - FIXED */
 const unlockEditing = () => {
   console.log("🔓 Unlocking editing - Edit Mode Enabled");
   
@@ -63,6 +73,7 @@ const unlockEditing = () => {
     el.setAttribute("contenteditable", "true");
   });
 
+  // Enable all buttons
   document.querySelectorAll("button").forEach((el) => {
     el.disabled = false;
   });
@@ -256,10 +267,16 @@ const Draft = () => {
     lockEditing();
     setIsLoggedIn(false);
     
-    // ✅ Redirects to correct login URL
+    // Redirect to login after a short delay
     setTimeout(() => {
       window.location.href = LOGIN_URL;
     }, 1000);
+  };
+
+  // Handle login button click
+  const handleLoginClick = () => {
+    console.log("Login button clicked, redirecting to:", LOGIN_URL);
+    window.location.href = LOGIN_URL;
   };
 
   // Handle tab/window close
@@ -297,8 +314,9 @@ const Draft = () => {
         <div style={{ fontSize: "14px", color: "#777", textAlign: "center" }}>
           {token ? "Setting up your editing environment" : "Please wait..."}
         </div>
-        {/* ✅ Login button in loading state also uses correct URL */}
+        {/* Login button in loading state */}
         <button
+          id="loading-login-button"
           onClick={() => window.location.href = LOGIN_URL}
           style={{
             padding: "10px 20px",
@@ -322,9 +340,10 @@ const Draft = () => {
   return (
     <ChangeTrackerProvider>
       <div className="container">
-        {/* ✅ Only Logout Button (Visible when logged in) */}
+        {/* Only Logout Button (Visible when logged in) */}
         {isLoggedIn && (
           <button
+            id="logout-button-main"
             onClick={handleLogout}
             style={{
               position: "fixed",
@@ -366,10 +385,11 @@ const Draft = () => {
           </button>
         )}
 
-        {/* ✅ Login button when not logged in - USES CORRECT URL */}
+        {/* Login button when not logged in */}
         {!isLoggedIn && (
           <button
-            onClick={() => window.location.href = LOGIN_URL}
+            id="login-button-main"
+            onClick={handleLoginClick}
             style={{
               position: "fixed",
               top: "20px",
