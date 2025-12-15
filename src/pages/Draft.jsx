@@ -74,7 +74,7 @@ const lockEditing = () => {
         padding-right: 20px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.2);
       ">
-        <div style="font-weight: bold;">🔒 View Only Mode - Login to Edit</div>
+        <div style="font-weight: bold;">🔒 Tab Session Expired - Return to Original Tab or Login Again</div>
         <button id="login-button-top" 
                 style="
                   background: white;
@@ -85,7 +85,7 @@ const lockEditing = () => {
                   cursor: pointer;
                   font-weight: bold;
                 ">
-          Login
+          Login Again
         </button>
       </div>
     `;
@@ -134,6 +134,34 @@ const unlockEditing = () => {
   if (banner) banner.remove();
 };
 
+// Generate a unique tab ID
+const generateTabId = () => {
+  return 'tab_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+};
+
+// Check if this tab is the original session tab
+const isOriginalTab = () => {
+  const tabId = localStorage.getItem('currentTabId');
+  const originalTabId = sessionStorage.getItem('originalTabId');
+  
+  console.log("Tab check - Current tab:", tabId, "Original tab:", originalTabId);
+  
+  // If no original tab is set yet, this is the first/original tab
+  if (!originalTabId) {
+    console.log("This is the original tab (no originalTabId set yet)");
+    return true;
+  }
+  
+  // If current tab matches original tab ID
+  if (tabId === originalTabId) {
+    console.log("This is the original tab (IDs match)");
+    return true;
+  }
+  
+  console.log("This is a duplicate tab");
+  return false;
+};
+
 const Draft = () => {
   const location = useLocation();
   const memberId = location.state?.exporterData;
@@ -151,24 +179,76 @@ const Draft = () => {
   
   const [isEditingLocked, setIsEditingLocked] = useState(true);
   const [sessionChecked, setSessionChecked] = useState(false);
-  const [debugInfo, setDebugInfo] = useState("");
+  const [isDuplicateTab, setIsDuplicateTab] = useState(false);
+  const [tabId, setTabId] = useState('');
 
-  // Main session check function - FIXED VERSION
-  const checkSession = () => {
-    // Check ALL localStorage keys to see what's available
-    const allKeys = {};
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      allKeys[key] = localStorage.getItem(key);
+  // Initialize tab ID and session
+  useEffect(() => {
+    console.log("=== Initializing Tab Session ===");
+    
+    // Generate or get current tab ID
+    let currentTabId = localStorage.getItem('currentTabId');
+    if (!currentTabId) {
+      currentTabId = generateTabId();
+      localStorage.setItem('currentTabId', currentTabId);
+      console.log("Generated new tab ID:", currentTabId);
+    }
+    setTabId(currentTabId);
+    
+    // Get original tab ID from sessionStorage
+    const originalTabId = sessionStorage.getItem('originalTabId');
+    
+    // If this is the first time loading (no originalTabId in sessionStorage)
+    if (!originalTabId) {
+      console.log("Setting this as original tab");
+      sessionStorage.setItem('originalTabId', currentTabId);
+      sessionStorage.setItem('tabInitialized', 'true');
+      setIsDuplicateTab(false);
+    } else {
+      // Check if this tab is the original tab
+      const isOriginal = originalTabId === currentTabId;
+      setIsDuplicateTab(!isOriginal);
+      console.log("Duplicate tab detected:", !isOriginal);
     }
     
-    console.log("=== DEBUG: All localStorage keys ===", allKeys);
-    console.log("=== DEBUG: Checking for session keys ===");
+    // Set up beforeunload to clean up if this is the original tab
+    const handleBeforeUnload = () => {
+      const currentTab = localStorage.getItem('currentTabId');
+      const originalTab = sessionStorage.getItem('originalTabId');
+      
+      if (currentTab === originalTab) {
+        console.log("Original tab closing - clearing sessionStorage");
+        sessionStorage.removeItem('originalTabId');
+        sessionStorage.removeItem('tabInitialized');
+      }
+    };
     
-    // Try to find session data with different possible key names
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
+
+  // Main session check function - TAB SPECIFIC
+  const checkSession = () => {
+    console.log("=== Tab-Specific Session Check ===");
+    console.log("Tab ID:", tabId);
+    console.log("Is duplicate tab:", isDuplicateTab);
+    
+    // First, check if this is a duplicate tab
+    if (isDuplicateTab) {
+      console.log("❌ DUPLICATE TAB DETECTED - Locking editing");
+      lockEditing();
+      setIsEditingLocked(true);
+      setSessionChecked(true);
+      return;
+    }
+    
+    // For original tab, check session data
     const possibleSessionKeys = [
       'sessionData',
-      'userData',
+      'userData', 
       'authData',
       'token',
       'user',
@@ -178,38 +258,22 @@ const Draft = () => {
     ];
     
     let foundSession = null;
-    let foundKey = null;
     
     for (const key of possibleSessionKeys) {
       const data = localStorage.getItem(key);
       if (data) {
-        console.log(`Found potential session key: ${key}`, data);
+        console.log(`✅ Session found with key: ${key}`);
         foundSession = data;
-        foundKey = key;
         break;
       }
     }
     
-    setDebugInfo(`Keys in localStorage: ${Object.keys(allKeys).join(', ')}`);
-    
     if (foundSession) {
-      console.log(`✅ Session found with key: ${foundKey}`);
-      try {
-        const parsedSession = JSON.parse(foundSession);
-        console.log("✅ Parsed session data:", parsedSession);
-        
-        unlockEditing();
-        setIsEditingLocked(false);
-      } catch (error) {
-        console.error("❌ Error parsing session data:", error);
-        // Even if it's not JSON, if there's a token string, consider it valid
-        console.log("✅ Non-JSON session data found, still considering valid");
-        unlockEditing();
-        setIsEditingLocked(false);
-      }
+      console.log("✅ Valid session in original tab - Unlocking editing");
+      unlockEditing();
+      setIsEditingLocked(false);
     } else {
-      console.log("❌ No session found in localStorage");
-      console.log("Available keys:", Object.keys(allKeys));
+      console.log("❌ No session found in original tab");
       lockEditing();
       setIsEditingLocked(true);
     }
@@ -217,34 +281,24 @@ const Draft = () => {
     setSessionChecked(true);
   };
 
-  // Initial check and setup
+  // Check session periodically
   useEffect(() => {
-    console.log("=== Draft Component Mounted ===");
-    console.log("Location state:", location.state);
+    if (!tabId) return;
     
-    // Check if token is passed in location state
-    if (token) {
-      console.log("✅ Token found in location state, storing in localStorage");
-      // Store token in localStorage for session management
-      localStorage.setItem('authToken', token);
-    }
-    
-    // Check if memberId has token
-    if (memberId?.token) {
-      console.log("✅ Token found in memberId, storing in localStorage");
-      localStorage.setItem('authToken', memberId.token);
-    }
-    
-    // Initial check
-    checkSession();
+    // Initial check after 1 second
+    const initialCheck = setTimeout(() => {
+      checkSession();
+    }, 1000);
     
     // Set up interval to check every 3 seconds
     const intervalId = setInterval(checkSession, 3000);
     
-    // Listen for storage changes (cross-tab logout)
+    // Listen for storage changes
     const handleStorageChange = (e) => {
-      console.log("Storage event:", e.key, e.newValue);
-      checkSession();
+      if (e.key === 'currentTabId' || e.key?.includes('session') || e.key?.includes('auth')) {
+        console.log("Session-related storage change:", e.key);
+        checkSession();
+      }
     };
     
     window.addEventListener("storage", handleStorageChange);
@@ -258,36 +312,17 @@ const Draft = () => {
     
     document.addEventListener("visibilitychange", handleVisibilityChange);
     
-    // Check on window focus
-    const handleFocus = () => {
-      checkSession();
-    };
-    
-    window.addEventListener("focus", handleFocus);
-    
     // Cleanup
     return () => {
+      clearTimeout(initialCheck);
       clearInterval(intervalId);
       window.removeEventListener("storage", handleStorageChange);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("focus", handleFocus);
     };
-  }, []);
-
-  // Debug: Log current state
-  useEffect(() => {
-    console.log("Current editing state:", isEditingLocked ? "LOCKED" : "UNLOCKED");
-    console.log("Session checked:", sessionChecked);
-  }, [isEditingLocked, sessionChecked]);
+  }, [tabId, isDuplicateTab]);
 
   let rejectSection = rejectSectionData?.rejected_sections || [];
   let rejectMsg = rejectSectionData?.reject_message || "";
-
-  // Add a button to manually check session
-  const handleManualCheck = () => {
-    console.log("=== MANUAL SESSION CHECK ===");
-    checkSession();
-  };
 
   // Show loading while checking session
   if (isLoading || !sessionChecked) {
@@ -301,36 +336,29 @@ const Draft = () => {
         flexDirection: "column",
         gap: "20px"
       }}>
-        <div style={{ fontSize: "18px", color: "#555" }}>Checking session...</div>
-        <div style={{ fontSize: "14px", color: "#777" }}>
-          Debug Info: {debugInfo}
+        <div style={{ fontSize: "18px", color: "#555" }}>
+          {isDuplicateTab ? "Checking tab session..." : "Checking authentication..."}
         </div>
-        <button 
-          onClick={handleManualCheck}
-          style={{
-            padding: "10px 20px",
-            background: "#4CAF50",
-            color: "white",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer"
-          }}
-        >
-          Check Session Manually
-        </button>
-        <button 
-          onClick={() => window.location.href = "/login"}
-          style={{
-            padding: "10px 20px",
-            background: "#2196F3",
-            color: "white",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer"
-          }}
-        >
-          Go to Login
-        </button>
+        <div style={{ fontSize: "14px", color: "#777", textAlign: "center" }}>
+          {isDuplicateTab 
+            ? "Duplicate tab detected. Only the original tab can edit." 
+            : "Please wait while we verify your session..."}
+        </div>
+        {isDuplicateTab && (
+          <button 
+            onClick={() => window.location.href = "/login"}
+            style={{
+              padding: "10px 20px",
+              background: "#2196F3",
+              color: "white",
+              border: "none",
+              borderRadius: "5px",
+              cursor: "pointer"
+            }}
+          >
+            Login in New Tab
+          </button>
+        )}
       </div>
     );
   }
@@ -338,30 +366,67 @@ const Draft = () => {
   return (
     <ChangeTrackerProvider>
       <div className="container">
-        {/* Debug Panel */}
+        {/* Tab Status Indicator */}
         <div style={{
           position: "fixed",
           top: "10px",
-          left: "10px",
+          right: "10px",
           zIndex: 10000,
-          background: "rgba(0,0,0,0.8)",
+          padding: "8px 16px",
+          borderRadius: "4px",
+          background: isDuplicateTab ? "#ff4444" : (isEditingLocked ? "#ff9800" : "#4CAF50"),
           color: "white",
-          padding: "10px",
-          borderRadius: "5px",
-          fontSize: "12px",
-          maxWidth: "300px",
-          maxHeight: "200px",
-          overflow: "auto"
-        }}>
-          <div><strong>Debug Info:</strong></div>
-          <div>Status: {isEditingLocked ? "🔒 LOCKED" : "✅ UNLOCKED"}</div>
-          <div>Session Checked: {sessionChecked ? "Yes" : "No"}</div>
-          <button 
-            onClick={handleManualCheck}
+          border: "none",
+          cursor: "pointer",
+          fontWeight: "bold",
+          fontSize: "14px",
+          boxShadow: "0 2px 5px rgba(0,0,0,0.2)"
+        }}
+        onClick={() => {
+          if (isDuplicateTab) {
+            window.location.href = "/login";
+          }
+        }}
+        title={isDuplicateTab ? "Click to login in this tab" : "Session status"}>
+          {isDuplicateTab ? "🚫 Duplicate Tab" : (isEditingLocked ? "🔒 View Only" : "✏️ Edit Mode")}
+        </div>
+
+        {/* Debug info (optional - can remove in production) */}
+        {process.env.NODE_ENV === 'development' && (
+          <div style={{
+            position: "fixed",
+            top: "50px",
+            right: "10px",
+            zIndex: 9999,
+            background: "rgba(0,0,0,0.7)",
+            color: "white",
+            padding: "5px 10px",
+            borderRadius: "3px",
+            fontSize: "10px",
+            maxWidth: "200px"
+          }}>
+            Tab: {tabId.substring(0, 10)}...
+            <br />
+            Status: {isDuplicateTab ? "Duplicate" : "Original"}
+          </div>
+        )}
+
+        {/* Manual override button for testing (optional) */}
+        {isDuplicateTab && (
+          <button
+            onClick={() => {
+              // Force this tab to become the original tab
+              sessionStorage.setItem('originalTabId', tabId);
+              setIsDuplicateTab(false);
+              checkSession();
+            }}
             style={{
-              marginTop: "5px",
+              position: "fixed",
+              top: "80px",
+              right: "10px",
+              zIndex: 9998,
               padding: "5px 10px",
-              background: "#4CAF50",
+              background: "#9C27B0",
               color: "white",
               border: "none",
               borderRadius: "3px",
@@ -369,47 +434,9 @@ const Draft = () => {
               fontSize: "10px"
             }}
           >
-            Check Session
+            Make This Original Tab
           </button>
-        </div>
-
-        {/* Manual Login Button - Always visible */}
-        <button
-          onClick={() => window.location.href = "/login"}
-          style={{
-            position: "fixed",
-            top: "10px",
-            right: "10px",
-            zIndex: 9999,
-            padding: "8px 16px",
-            background: isEditingLocked ? "#ff4444" : "#4CAF50",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-            fontWeight: "bold",
-            fontSize: "14px"
-          }}
-        >
-          {isEditingLocked ? "🔒 Login to Edit" : "✏️ Edit Mode"}
-        </button>
-
-        {/* Status Indicator */}
-        <div style={{
-          position: "fixed",
-          top: "50px",
-          right: "10px",
-          zIndex: 9998,
-          padding: "6px 12px",
-          borderRadius: "4px",
-          background: isEditingLocked ? "#ff4444" : "#4CAF50",
-          color: "white",
-          fontSize: "12px",
-          border: "1px solid #ddd",
-          fontWeight: "bold"
-        }}>
-          {isEditingLocked ? "VIEW ONLY" : "EDITING ENABLED"}
-        </div>
+        )}
 
         {rejectMsg.length > 0 && (
           <RejectSectionBanner
@@ -423,6 +450,7 @@ const Draft = () => {
           token={token}
           website_url={memberId.website_url}
           rejectionNumbers={rejectSection}
+          isLocked={isEditingLocked || isDuplicateTab}
         />
 
         {/* All draft components */}
