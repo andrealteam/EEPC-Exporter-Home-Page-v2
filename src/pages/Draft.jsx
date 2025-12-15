@@ -55,54 +55,7 @@ const lockEditing = () => {
   document.body.style.opacity = "0.9";
   document.body.style.cursor = "not-allowed";
 
-  // Add a notification banner at top
-  const bannerId = "session-expired-banner";
-  if (!document.getElementById(bannerId)) {
-    const banner = document.createElement("div");
-    banner.id = bannerId;
-    banner.innerHTML = `
-      <div style="
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        background: #ff4444;
-        color: white;
-        padding: 12px;
-        text-align: center;
-        z-index: 10000;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding-left: 20px;
-        padding-right: 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-      ">
-        <div style="font-weight: bold;">🔒 Session Expired - Please Login Again</div>
-        <button id="login-button-top" 
-                style="
-                  background: white;
-                  color: #ff4444;
-                  border: none;
-                  padding: 6px 16px;
-                  border-radius: 4px;
-                  cursor: pointer;
-                  font-weight: bold;
-                ">
-          Login
-        </button>
-      </div>
-    `;
-    document.body.prepend(banner);
-    
-    // Add margin to body to account for banner
-    document.body.style.marginTop = "50px";
-    
-    // Add click handler for login button
-    document.getElementById("login-button-top").onclick = () => {
-      window.location.href = LOGIN_URL;
-    };
-  }
+  // REMOVED: The session expired banner from lockEditing function
 };
 
 /* 🔓 UNLOCK EDITING FUNCTION */
@@ -133,9 +86,7 @@ const unlockEditing = () => {
   document.body.style.cursor = "";
   document.body.style.marginTop = "";
 
-  // Remove banner
-  const banner = document.getElementById("session-expired-banner");
-  if (banner) banner.remove();
+  // REMOVED: Banner removal since we're not adding it anymore
 };
 
 // Session Management Functions
@@ -208,7 +159,6 @@ const Draft = () => {
   
   const [isEditingLocked, setIsEditingLocked] = useState(true);
   const [sessionChecked, setSessionChecked] = useState(false);
-  const [currentTabId, setCurrentTabId] = useState('');
   const checkIntervalRef = useRef(null);
 
   // Initialize session on component mount
@@ -219,8 +169,7 @@ const Draft = () => {
     // Check if we have token and memberId in location state
     if (token && memberId?.memberId) {
       console.log("✅ Token and memberId received, creating session...");
-      const session = createSession(token, memberId.memberId);
-      setCurrentTabId(session.tabId);
+      createSession(token, memberId.memberId);
       
       // Unlock editing immediately
       unlockEditing();
@@ -231,7 +180,6 @@ const Draft = () => {
       const existingSession = getSession();
       if (existingSession) {
         console.log("✅ Existing session found");
-        setCurrentTabId(existingSession.tabId);
         unlockEditing();
         setIsEditingLocked(false);
       } else {
@@ -394,7 +342,7 @@ const Draft = () => {
   return (
     <ChangeTrackerProvider>
       <div className="container">
-        {/* Session Status Bar */}
+        {/* Simple Status Bar without Tab ID */}
         <div style={{
           position: "fixed",
           top: "0",
@@ -411,11 +359,6 @@ const Draft = () => {
         }}>
           <div style={{ fontWeight: "bold", fontSize: "16px" }}>
             {isEditingLocked ? "🔒 View Only Mode" : "✏️ Edit Mode"}
-            {!isEditingLocked && (
-              <span style={{ fontSize: "12px", marginLeft: "10px", opacity: 0.8 }}>
-                Tab ID: {currentTabId.substring(0, 8)}...
-              </span>
-            )}
           </div>
           
           <div style={{ display: "flex", gap: "10px" }}>
