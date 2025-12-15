@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { HeaderDraft } from "../components";
 import BannerDraft from "../components/draft/BannerDraft";
@@ -38,12 +38,6 @@ const lockEditing = () => {
       el.disabled = true;
       el.style.cursor = "not-allowed";
       el.style.opacity = "0.6";
-    }
-  });
-
-  // Disable all links except logout/exit
-  document.querySelectorAll("a").forEach((el) => {
-    if (!el.href?.includes("logout") && !el.href?.includes(LOGIN_URL)) {
     }
   });
 
@@ -90,7 +84,7 @@ const lockEditing = () => {
         pointer-events: auto;
       ">
         <h3 style="color: #ff4444; margin-bottom: 10px;">Session Expired</h3>
-        <p style="margin-bottom: 15px;">Your session has expired. Redirecting to login...</p>
+        <p style="margin-bottom: 15px;">Your session has expired. You cannot edit anything.</p>
         <button onclick="window.location.href='${LOGIN_URL}'" 
                 style="
                   background: #ff4444;
@@ -108,7 +102,7 @@ const lockEditing = () => {
   }
 };
 
-/* 🔓 UNLOCK EDITING - Add this function too */
+/* 🔓 UNLOCK EDITING */
 const unlockEditing = () => {
   document.querySelectorAll("input, textarea, select").forEach((el) => {
     el.disabled = false;
@@ -148,6 +142,7 @@ const Draft = () => {
 
   const hadSessionRef = useRef(false);
   const isLockedRef = useRef(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   /* 🔐 API DATA */
   const { data: rejectSectionData } = useQuery({
@@ -156,45 +151,54 @@ const Draft = () => {
     enabled: !!memberId,
   });
 
-  /* 🔍 CHECK SESSION ON MOUNT */
+  /* 🔍 INITIAL SESSION CHECK - ONLY SET FLAGS, DON'T LOCK IMMEDIATELY */
   useEffect(() => {
     const session = localStorage.getItem("sessionData");
     
-    if (!session) {
-      // No session on initial load - lock immediately
-      isLockedRef.current = true;
-      lockEditing();
-      
-      // Redirect to login after showing message
-      setTimeout(() => {
-        window.location.replace(LOGIN_URL);
-      }, 3000);
-    } else {
+    if (session) {
       hadSessionRef.current = true;
-      // Ensure editing is unlocked when session exists
+      // User has session, ensure editing is unlocked
       unlockEditing();
+    } else {
+      // No session initially, but don't lock yet
+      hadSessionRef.current = false;
     }
+    
+    setHasInitialized(true);
   }, []);
 
-  /* 🚨 LOGOUT HANDLER */
+  /* 🚨 LOGOUT HANDLER - ONLY LOCK WHEN USER ACTUALLY LOGS OUT */
   const handleLogout = () => {
     if (isLockedRef.current) return;
     
+    console.log("Logging out and locking editing...");
     isLockedRef.current = true;
+    
+    // Clear session data
     localStorage.removeItem("sessionData");
+    
+    // Lock editing
     lockEditing();
-
-    // Redirect after a delay to show the message
+    
+    // Optional: Redirect to login after delay
     setTimeout(() => {
       window.location.replace(LOGIN_URL);
-    }, 3000);
+    }, 5000); // 5 seconds to see the message
   };
 
   /* ✅ CROSS-TAB LOGOUT DETECTION */
   useEffect(() => {
     const onStorage = (e) => {
-      if (e.key === "sessionData" && !e.newValue) {
-        handleLogout();
+      if (e.key === "sessionData") {
+        if (!e.newValue && hadSessionRef.current) {
+          // Session was cleared in another tab
+          handleLogout();
+        } else if (e.newValue) {
+          // Session was added in another tab
+          hadSessionRef.current = true;
+          isLockedRef.current = false;
+          unlockEditing();
+        }
       }
     };
 
@@ -206,8 +210,18 @@ const Draft = () => {
   useEffect(() => {
     const checkSession = () => {
       const session = localStorage.getItem("sessionData");
+      
+      // Only check if we had a session before
       if (!session && hadSessionRef.current) {
+        console.log("Session lost - locking editing");
         handleLogout();
+      }
+      // If session exists now, make sure editing is unlocked
+      else if (session && isLockedRef.current) {
+        console.log("Session restored - unlocking editing");
+        hadSessionRef.current = true;
+        isLockedRef.current = false;
+        unlockEditing();
       }
     };
 
@@ -221,14 +235,35 @@ const Draft = () => {
       }
     });
 
-    // Periodic check (every 2 seconds)
-    const interval = setInterval(checkSession, 2000);
+    // Periodic check (every 2 seconds) - only if we have initialized
+    let interval;
+    if (hasInitialized) {
+      interval = setInterval(checkSession, 2000);
+    }
 
     return () => {
       window.removeEventListener("focus", checkSession);
-      clearInterval(interval);
+      if (interval) clearInterval(interval);
     };
-  }, []);
+  }, [hasInitialized]);
+
+  /* 🔄 Also check session when component mounts/updates */
+  useEffect(() => {
+    if (hasInitialized) {
+      const session = localStorage.getItem("sessionData");
+      
+      if (session && isLockedRef.current) {
+        // Session exists but editing is locked - unlock it
+        console.log("Unlocking editing - session exists");
+        isLockedRef.current = false;
+        unlockEditing();
+      } else if (!session && hadSessionRef.current) {
+        // Had session before but now it's gone - lock it
+        console.log("Locking editing - session lost");
+        handleLogout();
+      }
+    }
+  }, [hasInitialized]);
 
   const rejectSection = rejectSectionData?.rejected_sections || [];
   const rejectMsg = rejectSectionData?.reject_message || "";
