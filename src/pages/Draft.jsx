@@ -50,17 +50,31 @@ const Draft = () => {
 
   // Check authentication status on component mount and when memberId/token changes
   useEffect(() => {
-    const checkAuth = () => {
+    const checkAuth = async () => {
       try {
-        const sessionData = JSON.parse(localStorage.getItem("sessionData") || "null");
-        
-        // If no session data, not authorized
-        if (!sessionData) {
+        // If we have token in URL, use it to set/update session
+        if (token && memberId) {
+          const sessionData = {
+            token: token,
+            member_id: memberId.memberId,
+            member_name: memberId.memberName || '',
+            exp: memberId.exp || (Date.now() / 1000) + (60 * 60 * 24) // Default 24h expiration
+          };
+          localStorage.setItem("sessionData", JSON.stringify(sessionData));
+          setIsAuthorized(true);
+          return true;
+        }
+
+        // Check existing session data
+        const storedSession = localStorage.getItem("sessionData");
+        if (!storedSession) {
           console.log("No session data found");
           setIsAuthorized(false);
           return false;
         }
 
+        const sessionData = JSON.parse(storedSession);
+        
         // Check if token is expired
         const currentTime = Date.now() / 1000;
         if (sessionData.exp && sessionData.exp < currentTime) {
@@ -68,29 +82,6 @@ const Draft = () => {
           localStorage.removeItem("sessionData");
           setIsAuthorized(false);
           return false;
-        }
-
-        // If we have memberId in URL, verify it matches the session
-        if (memberId?.memberId && sessionData.member_id !== memberId.memberId) {
-          console.log("Member ID mismatch");
-          setIsAuthorized(false);
-          return false;
-        }
-
-        // If we have token in URL, verify it matches the session
-        if (token && sessionData.token !== token) {
-          console.log("Token mismatch");
-          setIsAuthorized(false);
-          return false;
-        }
-
-        // Only check company name if rejectSectionData is loaded
-        if (rejectSectionData?.company_name) {
-          if (sessionData.member_name !== rejectSectionData.company_name) {
-            console.log("Company name mismatch");
-            setIsAuthorized(false);
-            return false;
-          }
         }
 
         // If we got here, all checks passed
@@ -106,8 +97,15 @@ const Draft = () => {
       }
     };
 
-    // Initial check
-    const isValid = checkAuth();
+    // Check auth if we have the necessary data
+    if (memberId || token) {
+      checkAuth().catch(error => {
+        console.error("Auth check failed:", error);
+        setIsAuthorized(false);
+      });
+    } else {
+      setIsLoading(false);
+    }
 
     // Set up storage event listener for cross-tab logout
     const handleStorageChange = (event) => {
@@ -131,7 +129,7 @@ const Draft = () => {
       window.removeEventListener("storage", handleStorageChange);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [memberId, token, rejectSectionData]);
+  }, [memberId, token]);
 
   // Show loading state while checking auth
   if (isLoading || isSectionLoading) {
