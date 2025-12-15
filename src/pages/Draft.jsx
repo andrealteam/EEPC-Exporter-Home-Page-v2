@@ -138,6 +138,7 @@ const Draft = () => {
   });
   
   const [sessionChecked, setSessionChecked] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const checkIntervalRef = useRef(null);
 
   // Initialize session on component mount
@@ -148,6 +149,7 @@ const Draft = () => {
     if (token && memberId?.memberId) {
       console.log("✅ Token and memberId received, creating session...");
       createSession(token, memberId.memberId);
+      setIsLoggedIn(true);
       
       // Unlock editing immediately
       unlockEditing();
@@ -157,9 +159,11 @@ const Draft = () => {
       const existingSession = getSession();
       if (existingSession) {
         console.log("✅ Existing session found");
+        setIsLoggedIn(true);
         unlockEditing();
       } else {
         console.log("❌ No session found");
+        setIsLoggedIn(false);
         lockEditing();
       }
       setSessionChecked(true);
@@ -173,9 +177,11 @@ const Draft = () => {
       
       if (isValid) {
         console.log("✅ Session is valid - Editing enabled");
+        setIsLoggedIn(true);
         unlockEditing();
       } else {
         console.log("❌ Session is invalid - Locking editing");
+        setIsLoggedIn(false);
         lockEditing();
       }
     };
@@ -247,6 +253,7 @@ const Draft = () => {
     
     // Lock editing immediately
     lockEditing();
+    setIsLoggedIn(false);
     
     // Redirect to login after a short delay
     setTimeout(() => {
@@ -296,32 +303,93 @@ const Draft = () => {
   return (
     <ChangeTrackerProvider>
       <div className="container">
-        {/* NO VISIBLE STATUS BAR - Only hidden logout functionality */}
-        {/* You can add a hidden logout button somewhere if needed */}
-        <button
-          onClick={handleLogout}
-          style={{
-            position: "fixed",
-            top: "10px",
-            right: "10px",
-            zIndex: 10000,
-            padding: "8px 16px",
-            background: "transparent",
-            color: "transparent",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-            fontSize: "1px",
-            opacity: 0.01,
-            width: "1px",
-            height: "1px",
-            overflow: "hidden"
-          }}
-          aria-hidden="true"
-          tabIndex="-1"
-        >
-          Logout
-        </button>
+        {/* Only Logout Button (Visible when logged in) */}
+        {isLoggedIn && (
+          <button
+            onClick={handleLogout}
+            style={{
+              position: "fixed",
+              top: "20px",
+              right: "20px",
+              zIndex: 10000,
+              padding: "10px 20px",
+              background: "#ff4444",
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontWeight: "bold",
+              fontSize: "14px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+              transition: "all 0.2s ease",
+              fontFamily: "Arial, sans-serif"
+            }}
+            onMouseOver={(e) => {
+              e.target.style.background = "#ff3333";
+              e.target.style.transform = "translateY(-1px)";
+              e.target.style.boxShadow = "0 4px 12px rgba(0,0,0,0.3)";
+            }}
+            onMouseOut={(e) => {
+              e.target.style.background = "#ff4444";
+              e.target.style.transform = "translateY(0)";
+              e.target.style.boxShadow = "0 2px 8px rgba(0,0,0,0.2)";
+            }}
+            onMouseDown={(e) => {
+              e.target.style.background = "#ff2222";
+              e.target.style.transform = "translateY(1px)";
+            }}
+            onMouseUp={(e) => {
+              e.target.style.background = "#ff3333";
+              e.target.style.transform = "translateY(-1px)";
+            }}
+          >
+            🔓 Logout
+          </button>
+        )}
+
+        {/* Show Login button when not logged in */}
+        {!isLoggedIn && (
+          <button
+            onClick={() => window.location.href = LOGIN_URL}
+            style={{
+              position: "fixed",
+              top: "20px",
+              right: "20px",
+              zIndex: 10000,
+              padding: "10px 20px",
+              background: "#4CAF50",
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontWeight: "bold",
+              fontSize: "14px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+              transition: "all 0.2s ease",
+              fontFamily: "Arial, sans-serif"
+            }}
+            onMouseOver={(e) => {
+              e.target.style.background = "#45a049";
+              e.target.style.transform = "translateY(-1px)";
+              e.target.style.boxShadow = "0 4px 12px rgba(0,0,0,0.3)";
+            }}
+            onMouseOut={(e) => {
+              e.target.style.background = "#4CAF50";
+              e.target.style.transform = "translateY(0)";
+              e.target.style.boxShadow = "0 2px 8px rgba(0,0,0,0.2)";
+            }}
+            onMouseDown={(e) => {
+              e.target.style.background = "#3d8b40";
+              e.target.style.transform = "translateY(1px)";
+            }}
+            onMouseUp={(e) => {
+              e.target.style.background = "#45a049";
+              e.target.style.transform = "translateY(-1px)";
+            }}
+          >
+            🔑 Login to Edit
+          </button>
+        )}
 
         {rejectMsg.length > 0 && (
           <RejectSectionBanner
