@@ -134,7 +134,7 @@ const Draft = () => {
         />
 
         {/* 1 */}
-        {/* <HeaderDraft memberId={memberId.memberId} /> */}
+        <HeaderDraft memberId={memberId.memberId} />
 
         <ParticipationDraft memberId={memberId.memberId} />
 
