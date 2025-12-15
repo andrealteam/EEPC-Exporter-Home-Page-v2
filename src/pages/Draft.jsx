@@ -18,6 +18,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getRejectionSection } from "../services/draftApi";
 import { ChangeTrackerProvider } from "../contexts/ChangeTrackerContext";
 
+// ✅ CORRECT LOGIN URL IS ALREADY HERE
 const LOGIN_URL = "https://eepc-exporter-home-page-v2-whhx.vercel.app/auth/login";
 const SESSION_KEY = 'draft_editor_session';
 const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
@@ -255,7 +256,7 @@ const Draft = () => {
     lockEditing();
     setIsLoggedIn(false);
     
-    // Redirect to login after a short delay
+    // ✅ Redirects to correct login URL
     setTimeout(() => {
       window.location.href = LOGIN_URL;
     }, 1000);
@@ -296,6 +297,24 @@ const Draft = () => {
         <div style={{ fontSize: "14px", color: "#777", textAlign: "center" }}>
           {token ? "Setting up your editing environment" : "Please wait..."}
         </div>
+        {/* ✅ Login button in loading state also uses correct URL */}
+        <button
+          onClick={() => window.location.href = LOGIN_URL}
+          style={{
+            padding: "10px 20px",
+            backgroundColor: "#2563eb",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer",
+            fontSize: "1rem",
+            transition: "background-color 0.2s ease",
+          }}
+          onMouseOver={(e) => (e.target.style.backgroundColor = "#1d4ed8")}
+          onMouseOut={(e) => (e.target.style.backgroundColor = "#2563eb")}
+        >
+          Go to Login
+        </button>
       </div>
     );
   }
@@ -303,7 +322,7 @@ const Draft = () => {
   return (
     <ChangeTrackerProvider>
       <div className="container">
-        {/* Only Logout Button (Visible when logged in) */}
+        {/* ✅ Only Logout Button (Visible when logged in) */}
         {isLoggedIn && (
           <button
             onClick={handleLogout}
@@ -347,7 +366,7 @@ const Draft = () => {
           </button>
         )}
 
-        {/* Show Login button when not logged in */}
+        {/* ✅ Login button when not logged in - USES CORRECT URL */}
         {!isLoggedIn && (
           <button
             onClick={() => window.location.href = LOGIN_URL}
