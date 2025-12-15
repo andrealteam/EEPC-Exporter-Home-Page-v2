@@ -388,7 +388,14 @@ const Draft = () => {
               justifyContent: "center",
               boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
               transition: "all 0.2s ease",
-              fontFamily: "Arial, sans-serif"
+              fontFamily: "Arial, sans-serif",
+              '@media (max-width: 768px)': {
+                top: '120px',
+                right: '15px',
+                width: '36px',
+                height: '36px',
+                padding: '6px'
+              }
             }}
             onMouseOver={(e) => {
               e.target.style.background = "#ff3333";
