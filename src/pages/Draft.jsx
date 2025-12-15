@@ -130,8 +130,24 @@ const clearSession = () => {
 };
 
 const isSessionValid = () => {
-  const session = getSession();
-  return session !== null;
+  try {
+    const session = getSession();
+    if (!session) return false;
+    
+    // Check if session has expired
+    const now = Date.now();
+    if (now - session.lastActivity > SESSION_TIMEOUT) {
+      console.log("❌ Session expired (timeout)");
+      clearSession();
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Error validating session:", error);
+    clearSession();
+    return false;
+  }
 };
 
 const Draft = () => {
@@ -157,42 +173,56 @@ const Draft = () => {
   useEffect(() => {
     console.log("=== Draft Component Mounted ===");
     
-    // Check if we have token and memberId in location state
+    // Clear any existing session first to prevent conflicts
+    const existingSession = getSession();
+    
+    // Check if we have token and memberId in location state (new login)
     if (token && memberId?.memberId) {
-      console.log("✅ Token and memberId received, creating session...");
+      console.log("✅ Token and memberId received, creating new session...");
       createSession(token, memberId.memberId);
       setIsLoggedIn(true);
-      
-      // Unlock editing immediately
       unlockEditing();
-      setSessionChecked(true);
-    } else {
-      // Check for existing session
-      const existingSession = getSession();
+    } 
+    // Check for existing valid session
+    else if (existingSession && isSessionValid()) {
+      console.log("✅ Existing valid session found");
+      setIsLoggedIn(true);
+      unlockEditing();
+    } 
+    // No valid session
+    else {
+      console.log("❌ No valid session found");
       if (existingSession) {
-        console.log("✅ Existing session found");
-        setIsLoggedIn(true);
-        unlockEditing();
-      } else {
-        console.log("❌ No session found");
-        setIsLoggedIn(false);
-        lockEditing();
+        console.log("❌ Session expired or invalid");
+        clearSession();
       }
-      setSessionChecked(true);
+      setIsLoggedIn(false);
+      lockEditing();
     }
-  }, []);
+    
+    setSessionChecked(true);
+    
+    // Clear location state to prevent auto-login on refresh
+    if (window.history.replaceState) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, [token, memberId]);
 
   // Set up session checking
   useEffect(() => {
     const checkSession = () => {
-      const isValid = isSessionValid();
+      const session = getSession();
+      const isValid = session && isSessionValid();
       
       if (isValid) {
         console.log("✅ Session is valid - Editing enabled");
         setIsLoggedIn(true);
         unlockEditing();
       } else {
-        console.log("❌ Session is invalid - Locking editing");
+        console.log("❌ Session is invalid or expired - Locking editing");
+        if (session) {
+          clearSession();
+        }
         setIsLoggedIn(false);
         lockEditing();
       }
@@ -260,17 +290,18 @@ const Draft = () => {
   const handleLogout = () => {
     console.log("=== Logout initiated ===");
     
-    // Clear session
+    // Clear session and update state
     clearSession();
-    
-    // Lock editing immediately
-    lockEditing();
     setIsLoggedIn(false);
+    lockEditing();
     
-    // Redirect to login after a short delay
-    setTimeout(() => {
-      window.location.href = LOGIN_URL;
-    }, 1000);
+    // Clear any location state and redirect to login
+    if (window.history.replaceState) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+    
+    // Force a full page reload to reset all component states
+    window.location.href = LOGIN_URL;
   };
 
   // Handle login button click
@@ -342,7 +373,7 @@ const Draft = () => {
           Your session has expired or you are not authorized to access this page.
         </p>
         <button
-          onClick={() => window.location.href = LOGIN_URL}
+          onClick={() => window.location.href = "https://eepc-exporter-home-page-v2-whhx.vercel.app/auth/login"}
           style={{
             padding: "10px 20px",
             backgroundColor: "#2563eb",
@@ -361,6 +392,7 @@ const Draft = () => {
       </div>
     );
   }
+
 
   return (
     <ChangeTrackerProvider>
