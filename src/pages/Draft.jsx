@@ -314,9 +314,34 @@ const Draft = () => {
         <div style={{ fontSize: "14px", color: "#777", textAlign: "center" }}>
           {token ? "Setting up your editing environment" : "Please wait..."}
         </div>
-        {/* Login button in loading state */}
+      </div>
+    );
+  }
+
+  // Show session expired/unauthorized access UI when not logged in
+  if (!isLoggedIn) {
+    return (
+      <div
+        style={{
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "#f8fafc",
+          color: "#1e293b",
+          fontFamily: "Inter, sans-serif",
+        }}
+      >
+        <h2 style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>
+          Session Expired
+        </h2>
+        <p
+          style={{ fontSize: "1rem", color: "#64748b", marginBottom: "1.5rem" }}
+        >
+          Your session has expired or you are not authorized to access this page.
+        </p>
         <button
-          id="loading-login-button"
           onClick={() => window.location.href = LOGIN_URL}
           style={{
             padding: "10px 20px",
