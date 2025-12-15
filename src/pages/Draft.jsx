@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { HeaderDraft } from "../components";
-import { checkAuth, clearAuth } from "../utils/auth";
+import { checkAuth, clearAuth, requireAuth } from "../utils/auth";
 import BannerDraft from "../components/draft/BannerDraft";
 import AboutDraft from "../components/draft/AboutDraft";
 import WhoWeAreDraft from "../components/draft/WhoWeAreDraft";
@@ -19,44 +19,59 @@ import { useQuery } from "@tanstack/react-query";
 import { getRejectionSection } from "../services/draftApi";
 import { ChangeTrackerProvider } from "../contexts/ChangeTrackerContext";
 
-const LOGIN_URL = "https://eepc-exporter-home-page-v2.vercel.app/auth/login";
+const LOGIN_URL = "/auth/login";
 
 const Draft = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(checkAuth());
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const memberId = location.state?.exporterData;
   const token = location.state?.token;
 
-  // Check authentication status on component mount and when location changes
-  useEffect(() => {
+  // Function to handle authentication check
+  const checkAuthentication = useCallback(() => {
     const authStatus = checkAuth();
     setIsAuthenticated(authStatus);
+    setIsCheckingAuth(false);
     
     if (!authStatus) {
       clearAuth();
-      // Redirect to login after a short delay to allow state to update
-      const timer = setTimeout(() => {
+      if (!window.location.pathname.includes('/auth/login')) {
         window.location.href = LOGIN_URL;
-      }, 100);
-      return () => clearTimeout(timer);
+      }
     }
-  }, [location]);
+    return authStatus;
+  }, []);
 
-  // If not authenticated, show loading or redirect message
-  if (!isAuthenticated) {
+  // Check authentication on mount and when location changes
+  useEffect(() => {
+    checkAuthentication();
+    
+    // Set up storage event listener for logout from other tabs/windows
+    const handleStorageChange = (event) => {
+      if (event.key === 'sessionData' || event.key === null) {
+        checkAuthentication();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [checkAuthentication]);
+
+  // Show loading while checking auth
+  if (isCheckingAuth) {
     return (
       <div style={{
         height: '100vh',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        flexDirection: 'column',
         backgroundColor: '#f8fafc',
         color: '#1e293b',
         fontFamily: 'Inter, sans-serif'
       }}>
-        <h2>Redirecting to login...</h2>
+        <div>Loading...</div>
       </div>
     );
   }
@@ -72,41 +87,17 @@ const Draft = () => {
   });
   const [userData, setUserData] = useState(null);
 
+  // Handle customer data separately from authentication
   const [customer, setCustomer] = useState(() => {
     const stored = localStorage.getItem("sessionData");
     return stored ? JSON.parse(stored) : null;
   });
 
+  // Update customer data when it changes
   useEffect(() => {
-    const handleStorageChange = (event) => {
-      if (event.key === "sessionData" || event.key === null) {
-        const newData = event.newValue ? JSON.parse(event.newValue) : null;
-        setCustomer(newData);
-        if (!newData) {
-          clearAuth();
-          window.close();
-          setTimeout(() => {
-            window.location.replace(LOGIN_URL);
-          }, 150);
-        }
-      }
-    };
-
-    // Listen for localStorage changes
-    window.addEventListener("storage", handleStorageChange);
-    // Also check auth status periodically
-    const authCheckInterval = setInterval(() => {
-      if (!checkAuth()) {
-        clearAuth();
-        window.location.href = LOGIN_URL;
-      }
-    }, 30000); // Check every 30 seconds
-
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      clearInterval(authCheckInterval);
-    };
-  }, []);
+    const stored = localStorage.getItem("sessionData");
+    setCustomer(stored ? JSON.parse(stored) : null);
+  }, [isAuthenticated]);
 
   let rejectSection = rejectSectionData?.rejected_sections || [];
   let rejectMsg = rejectSectionData?.reject_message || "";

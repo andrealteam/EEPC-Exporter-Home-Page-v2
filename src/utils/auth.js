@@ -5,7 +5,10 @@
 export const checkAuth = () => {
   try {
     const stored = localStorage.getItem("sessionData");
-    if (!stored) return false;
+    if (!stored) {
+      clearAuth();
+      return false;
+    }
     
     const customer = JSON.parse(stored);
     const currentTime = Date.now() / 1000;
@@ -36,7 +39,10 @@ export const requireAuth = (redirectUrl = '/auth/login') => {
   const isAuthenticated = checkAuth();
   if (!isAuthenticated) {
     clearAuth();
-    window.location.href = redirectUrl;
+    // Only redirect if we're not already on the login page
+    if (!window.location.pathname.includes('/auth/login')) {
+      window.location.href = redirectUrl;
+    }
     return false;
   }
   return true;

@@ -11,10 +11,22 @@ import { useChangeTracker } from "../../contexts/ChangeTrackerContext";
 const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [jwtToken, setJwtToken] = useState('');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { hasChanges, resetAfterPreviewOrPublish, markAsChanged } = useChangeTracker();
+  
+  // Check authentication status
+  const isAuthenticated = checkAuth();
+  
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      clearAuth();
+      if (!window.location.pathname.includes('/auth/login')) {
+        window.location.href = '/auth/login';
+      }
+    }
+  }, [isAuthenticated]);
 
   // Check authentication status on component mount and when location changes
   useEffect(() => {
@@ -31,29 +43,6 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
     }
   }, [location]);
 
-  // If not authenticated, show disabled state
-  if (!isAuthenticated) {
-    return (
-      <header className="header" style={{ position: "relative", paddingTop: "66px" }}>
-        <div className="update-btn" style={{ zIndex: 9999 }}>
-          <button
-            className="edit-btn-2 btn-primary opacity-50 cursor-not-allowed"
-            disabled={true}
-            title="Please log in to enable preview"
-          >
-            Preview
-          </button>
-          <button
-            className="edit-btn-1 btn-primary opacity-50 cursor-not-allowed"
-            disabled={true}
-            title="Please log in to enable publish"
-          >
-            Publish
-          </button>
-        </div>
-      </header>
-    );
-  }
 
   // Fetch products data
   const { data: productsData, isLoading: isProductsLoading } = useQuery({
@@ -122,7 +111,7 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
   // Handle preview button click
   const handlePreview = async () => {
     try {
-      if (!isAuthenticated) {
+      if (!checkAuth()) {
         clearAuth();
         window.location.href = '/auth/login';
         return;
@@ -165,7 +154,7 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
 
   // Handle publish button click
   const handlePublish = () => {
-    if (!isAuthenticated) {
+    if (!checkAuth()) {
       clearAuth();
       window.location.href = '/auth/login';
       return;
@@ -227,9 +216,9 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
   };
 
   const isLoading = isProductsLoading || isAboutLoading;
-  // Disable buttons when not authenticated, loading, or no changes
-  const isPreviewDisabled = !isAuthenticated || isLoading || !hasChanges;
-  const isPublishDisabled = !isAuthenticated || isLoading || !hasChanges;
+  // Disable buttons when loading or no changes
+  const isPreviewDisabled = isLoading || !hasChanges;
+  const isPublishDisabled = isLoading || !hasChanges;
 
   if (isLoading) {
     return (
