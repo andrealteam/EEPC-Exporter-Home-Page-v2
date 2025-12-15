@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { HeaderDraft } from "../components";
-import { checkAuth, clearAuth, requireAuth } from "../utils/auth";
+import { checkAuth, clearAuth, handleSuccessfulLogin } from "../utils/auth";
 import BannerDraft from "../components/draft/BannerDraft";
 import AboutDraft from "../components/draft/AboutDraft";
 import WhoWeAreDraft from "../components/draft/WhoWeAreDraft";
@@ -18,19 +18,60 @@ import RejectSectionBanner from "../components/draft/RejectSectionBanner";
 import { useQuery } from "@tanstack/react-query";
 import { getRejectionSection } from "../services/draftApi";
 import { ChangeTrackerProvider } from "../contexts/ChangeTrackerContext";
+import { jwtVerify } from "jose";
 
 const LOGIN_URL = "/auth/login";
 
 const Draft = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [isAuthenticated, setIsAuthenticated] = useState(checkAuth());
+  const [searchParams] = useSearchParams();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const memberId = location.state?.exporterData;
-  const token = location.state?.token;
+  const [authError, setAuthError] = useState(null);
+
+  // Get memberId and token from URL or location state
+  const memberId = useMemo(() => {
+    return location.state?.exporterData || searchParams.get('memberId');
+  }, [location.state, searchParams]);
+
+  // Function to verify and handle token
+  const verifyAndHandleToken = useCallback(async (token) => {
+    try {
+      const secret = new TextEncoder().encode("fgghw53ujf8836d");
+      const { payload } = await jwtVerify(token, secret);
+      
+      if (payload) {
+        handleSuccessfulLogin({
+          token,
+          ...payload,
+          exp: payload.exp || Math.floor(Date.now() / 1000) + 3600,
+        });
+        setIsAuthenticated(true);
+        setIsCheckingAuth(false);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Token verification failed:", error);
+      setAuthError("Invalid or expired token");
+      clearAuth();
+      setIsCheckingAuth(false);
+      return false;
+    }
+  }, []);
 
   // Function to handle authentication check
-  const checkAuthentication = useCallback(() => {
+  const checkAuthentication = useCallback(async () => {
+    // Check for token in URL first
+    const urlToken = searchParams.get('token');
+    
+    if (urlToken) {
+      const isValid = await verifyAndHandleToken(urlToken);
+      if (isValid) return true;
+    }
+    
+    // Check existing auth
     const authStatus = checkAuth();
     setIsAuthenticated(authStatus);
     setIsCheckingAuth(false);
@@ -38,13 +79,16 @@ const Draft = () => {
     if (!authStatus) {
       clearAuth();
       if (!window.location.pathname.includes('/auth/login')) {
+        // Store current URL for redirect after login
+        sessionStorage.setItem('redirectAfterLogin', window.location.pathname);
         window.location.href = LOGIN_URL;
       }
     }
+    
     return authStatus;
-  }, []);
+  }, [searchParams, verifyAndHandleToken]);
 
-  // Check authentication on mount and when location changes
+  // Check authentication on mount
   useEffect(() => {
     checkAuthentication();
     

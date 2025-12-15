@@ -1,5 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
-import { checkAuth, requireAuth } from "./auth";
+import { checkAuth } from "./auth";
 
 // Pages
 import Login from "../pages/Login";
@@ -28,7 +27,8 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-const routes = createBrowserRouter([
+// Define routes array
+export const routes = [
   // Public routes
   {
     path: "/auth/login",
@@ -98,6 +98,6 @@ const routes = createBrowserRouter([
     path: "*",
     element: <PageNotFound />,
   },
-]);
+];
 
 export default routes;
