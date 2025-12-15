@@ -257,8 +257,19 @@ const HeaderDraft = ({ memberId }) => {
           </header>
         </>
       ) : (
-        <header className="header" style={{ position: 'sticky', top: 0, zIndex: 1000, backgroundColor: 'white', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}>
+        <header className="header" style={{ position: "relative" }}>
           <Favicon iconUrl={headerData?.logo ? baseFileURL + headerData?.logo : demoLogo} />
+
+          <button
+            className="update-btn"
+            style={{ background: "", zIndex: 9999, top: "-12px" }}
+            onClick={() => {
+              // console.log("clicked");
+              setOpenHeader(true);
+            }}
+          >
+            <FontAwesomeIcon icon={faPen} />
+          </button>
 
           <nav className="navbar navbar-expand-lg">
             <div className="container-fluid">
@@ -303,45 +314,15 @@ const HeaderDraft = ({ memberId }) => {
                     <a href={`tel:${headerData?.phone}`}>{headerData?.phone}</a>
                   </div>
                 </div>
-                <div className="contact-box" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <FontAwesomeIcon icon={faEnvelopeOpen} />
-                    <div className="call-text" style={{ marginLeft: '8px' }}>
-                      <span>Mail Us:</span>
-                      <a href={`mailto:${headerData?.email}`}>
-                        {headerData?.email}
-                      </a>
-                    </div>
+                <div className="contact-box">
+                  <FontAwesomeIcon icon={faEnvelopeOpen} />
+
+                  <div className="call-text">
+                    <span>Mail Us:</span>
+                    <a href={`mailto:${headerData?.email}`}>
+                      {headerData?.email}
+                    </a>
                   </div>
-                  <button
-                    onClick={() => setOpenHeader(true)}
-                    style={{
-                      width: '30px',
-                      height: '30px',
-                      borderRadius: '50%',
-                      background: '#10b981',
-                      color: 'white',
-                      border: '2px solid white',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
-                      transition: 'all 0.2s ease',
-                      marginLeft: '10px',
-                      '&:hover': {
-                        background: '#059669',
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 4px 8px rgba(0,0,0,0.3)'
-                      },
-                      '&:active': {
-                        transform: 'translateY(0)'
-                      }
-                    }}
-                    title="Edit Header"
-                  >
-                    <FontAwesomeIcon icon={faPen} style={{ fontSize: '12px' }} />
-                  </button>
                 </div>
 
                 {/* <div class="container d-flex justify-content-between align-items-center">
