@@ -92,7 +92,7 @@ const createSession = (token, memberId) => {
   };
   
   localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
-  console.log("✅ Session created for member:", memberId);
+  console.log("✅ Session created");
   return sessionData;
 };
 
@@ -152,8 +152,8 @@ const isSessionValid = () => {
 
 const Draft = () => {
   const location = useLocation();
-  const [memberId, setMemberId] = useState(location.state?.exporterData);
-  const [token, setToken] = useState(location.state?.token);
+  const memberId = location.state?.exporterData;
+  const token = location.state?.token;
 
   const {
     data: rejectSectionData,
@@ -173,51 +173,38 @@ const Draft = () => {
   useEffect(() => {
     console.log("=== Draft Component Mounted ===");
     
-    // Check for existing valid session first
+    // Clear any existing session first to prevent conflicts
     const existingSession = getSession();
-    const isValidSession = existingSession && isSessionValid();
     
-    // If we have token and memberId in location state (new login)
+    // Check if we have token and memberId in location state (new login)
     if (token && memberId?.memberId) {
-      console.log("✅ Token and memberId received, creating/updating session...");
+      console.log("✅ Token and memberId received, creating new session...");
       createSession(token, memberId.memberId);
-      setMemberId({ memberId: memberId.memberId });
-      setToken(token);
       setIsLoggedIn(true);
       unlockEditing();
-      setSessionChecked(true);
     } 
-    // If we have a valid existing session
-    else if (isValidSession) {
-      console.log("✅ Existing valid session found, restoring edit mode...");
-      // Update state from session
-      setMemberId({ memberId: existingSession.memberId });
-      setToken(existingSession.token);
+    // Check for existing valid session
+    else if (existingSession && isSessionValid()) {
+      console.log("✅ Existing valid session found");
       setIsLoggedIn(true);
       unlockEditing();
-      setSessionChecked(true);
     } 
     // No valid session
     else {
-      console.log("❌ No valid session found, locking editing...");
+      console.log("❌ No valid session found");
       if (existingSession) {
-        console.log("❌ Session expired or invalid, clearing...");
+        console.log("❌ Session expired or invalid");
         clearSession();
       }
       setIsLoggedIn(false);
       lockEditing();
-      setSessionChecked(true);
-      
-      // Redirect to login if we're not already there
-      if (!window.location.pathname.includes('login')) {
-        window.location.href = LOGIN_URL;
-      }
     }
     
-    // Clear location state to prevent showing token in URL after refresh
+    setSessionChecked(true);
+    
+    // Clear location state to prevent auto-login on refresh
     if (window.history.replaceState) {
-      const cleanUrl = window.location.pathname;
-      window.history.replaceState({}, document.title, cleanUrl);
+      window.history.replaceState(null, '', window.location.pathname);
     }
   }, [token, memberId]);
 
@@ -228,22 +215,16 @@ const Draft = () => {
       const isValid = session && isSessionValid();
       
       if (isValid) {
-        // Only update state if it's different to prevent unnecessary re-renders
-        if (!isLoggedIn) {
-          console.log("✅ Session is valid - Enabling edit mode...");
-          setIsLoggedIn(true);
-          unlockEditing();
-        }
+        console.log("✅ Session is valid - Editing enabled");
+        setIsLoggedIn(true);
+        unlockEditing();
       } else {
-        // Only update state if it's different to prevent unnecessary re-renders
-        if (isLoggedIn || session) {
-          console.log("❌ Session is invalid or expired - Locking editing...");
-          if (session) {
-            clearSession();
-          }
-          setIsLoggedIn(false);
-          lockEditing();
+        console.log("❌ Session is invalid or expired - Locking editing");
+        if (session) {
+          clearSession();
         }
+        setIsLoggedIn(false);
+        lockEditing();
       }
     };
     
@@ -253,43 +234,15 @@ const Draft = () => {
     // Set up interval to check every 3 seconds
     checkIntervalRef.current = setInterval(checkSession, 3000);
     
-        // Enhanced storage event handler for cross-tab synchronization
+    // Listen for storage changes (cross-tab logout)
     const handleStorageChange = (e) => {
-      console.log("Storage event detected:", e);
-      
-      // If session was removed or changed
-      if (e.key === SESSION_KEY || e.key === null) {
-        console.log("Session storage changed, checking status...");
-        const session = getSession();
-        
-        // If session is cleared or invalid in another tab
-        if (!session || !isSessionValid()) {
-          console.log("Session invalidated in another tab, logging out...");
-          clearSession();
-          setIsLoggedIn(false);
-          lockEditing();
-          
-          // Only redirect if not already on login page
-          if (!window.location.pathname.includes('login')) {
-            window.location.href = LOGIN_URL;
-          }
-        } else {
-          // Session was updated in another tab, sync the state
-          console.log("Session updated in another tab, syncing...");
-          checkSession();
-        }
+      if (e.key === SESSION_KEY) {
+        console.log("Session storage changed, checking...");
+        checkSession();
       }
     };
     
-    // Add storage event listener
     window.addEventListener('storage', handleStorageChange);
-    
-    // Also listen for the 'beforeunload' event to clean up
-    const handleBeforeUnload = () => {
-      // Cleanup if needed
-    };
-    
-    window.addEventListener('beforeunload', handleBeforeUnload);
     
     // Check when page becomes visible
     const handleVisibilityChange = () => {
@@ -307,7 +260,6 @@ const Draft = () => {
         clearInterval(checkIntervalRef.current);
       }
       window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
@@ -338,29 +290,17 @@ const Draft = () => {
   const handleLogout = () => {
     console.log("=== Logout initiated ===");
     
-    // Clear session from all tabs by dispatching a storage event
-    const event = new StorageEvent('storage', {
-      key: SESSION_KEY,
-      oldValue: localStorage.getItem(SESSION_KEY),
-      newValue: null,
-      url: window.location.href,
-      storageArea: localStorage
-    });
-    
     // Clear session and update state
     clearSession();
     setIsLoggedIn(false);
     lockEditing();
     
-    // Dispatch the event to sync across tabs
-    window.dispatchEvent(event);
-    
-    // Clear any location state
+    // Clear any location state and redirect to login
     if (window.history.replaceState) {
       window.history.replaceState(null, '', window.location.pathname);
     }
     
-    // Redirect to login
+    // Force a full page reload to reset all component states
     window.location.href = LOGIN_URL;
   };
 
