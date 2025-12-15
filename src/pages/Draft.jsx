@@ -253,15 +253,43 @@ const Draft = () => {
     // Set up interval to check every 3 seconds
     checkIntervalRef.current = setInterval(checkSession, 3000);
     
-    // Listen for storage changes (cross-tab logout)
+        // Enhanced storage event handler for cross-tab synchronization
     const handleStorageChange = (e) => {
-      if (e.key === SESSION_KEY) {
-        console.log("Session storage changed, checking...");
-        checkSession();
+      console.log("Storage event detected:", e);
+      
+      // If session was removed or changed
+      if (e.key === SESSION_KEY || e.key === null) {
+        console.log("Session storage changed, checking status...");
+        const session = getSession();
+        
+        // If session is cleared or invalid in another tab
+        if (!session || !isSessionValid()) {
+          console.log("Session invalidated in another tab, logging out...");
+          clearSession();
+          setIsLoggedIn(false);
+          lockEditing();
+          
+          // Only redirect if not already on login page
+          if (!window.location.pathname.includes('login')) {
+            window.location.href = LOGIN_URL;
+          }
+        } else {
+          // Session was updated in another tab, sync the state
+          console.log("Session updated in another tab, syncing...");
+          checkSession();
+        }
       }
     };
     
+    // Add storage event listener
     window.addEventListener('storage', handleStorageChange);
+    
+    // Also listen for the 'beforeunload' event to clean up
+    const handleBeforeUnload = () => {
+      // Cleanup if needed
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
     
     // Check when page becomes visible
     const handleVisibilityChange = () => {
@@ -279,6 +307,7 @@ const Draft = () => {
         clearInterval(checkIntervalRef.current);
       }
       window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
@@ -309,17 +338,29 @@ const Draft = () => {
   const handleLogout = () => {
     console.log("=== Logout initiated ===");
     
+    // Clear session from all tabs by dispatching a storage event
+    const event = new StorageEvent('storage', {
+      key: SESSION_KEY,
+      oldValue: localStorage.getItem(SESSION_KEY),
+      newValue: null,
+      url: window.location.href,
+      storageArea: localStorage
+    });
+    
     // Clear session and update state
     clearSession();
     setIsLoggedIn(false);
     lockEditing();
     
-    // Clear any location state and redirect to login
+    // Dispatch the event to sync across tabs
+    window.dispatchEvent(event);
+    
+    // Clear any location state
     if (window.history.replaceState) {
       window.history.replaceState(null, '', window.location.pathname);
     }
     
-    // Force a full page reload to reset all component states
+    // Redirect to login
     window.location.href = LOGIN_URL;
   };
 
