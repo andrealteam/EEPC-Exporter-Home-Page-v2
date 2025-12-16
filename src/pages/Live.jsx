@@ -19,7 +19,7 @@ import MapReviewLive from "../components/live/MapReviewLive";
 import CryptoJS from "crypto-js";
 
 const secretKey = "fgghw53ujf8836d";
-const LOGIN_URL = "https://eepc-exporter-home-page-v2.vercel.app/auth/login";
+const LOGIN_URL = "https://eepc-exporter-home-page-v2-whhx.vercel.app/auth/login";
 
 const Live = () => {
   // Check for edit mode in URL
