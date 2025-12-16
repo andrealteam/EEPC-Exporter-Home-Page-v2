@@ -5,7 +5,6 @@ import "react-loading-skeleton/dist/skeleton.css";
 import { Toaster } from "react-hot-toast";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ChangeTrackerProvider } from "./contexts/ChangeTrackerContext";
 import routes from "./utils/routes.jsx";
 import "./index.css";
 import "slick-carousel/slick/slick.css";
@@ -31,9 +30,7 @@ const queryClient = new QueryClient();
 // Render the app
 createRoot(document.getElementById("root")).render(
   <QueryClientProvider client={queryClient}>
-    <ChangeTrackerProvider>
-      <RouterProvider router={router} />
-      <Toaster position="top-right" reverseOrder={false} duration="10000" />
-    </ChangeTrackerProvider>
+    <RouterProvider router={router} />
+    <Toaster position="top-right" reverseOrder={false} duration="10000" />
   </QueryClientProvider>
 );
