@@ -151,6 +151,46 @@ const HeaderDraft = ({ memberId }) => {
             .header .update-btn {
               top: 20px !important; /* Increased from 10px to 20px */
             }
+            
+            .file-upload {
+              display: inline-flex !important;
+              align-items: center;
+              justify-content: center;
+              gap: 8px;
+              background-color: #007bff;
+              color: #fff;
+              font-size: 14px;
+              font-weight: 500;
+              padding: 8px 14px;
+              border-radius: 6px;
+              cursor: pointer;
+              transition: background-color 0.2s ease, transform 0.2s ease;
+              position: absolute;
+              top: 100px;
+              right: 20px;
+              z-index: 10;
+              border: none;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            
+            .file-upload:hover {
+              background-color: #0069d9;
+              transform: translateY(-1px);
+            }
+            
+            .file-upload input[type="file"] {
+              position: absolute;
+              width: 100%;
+              height: 100%;
+              opacity: 0;
+              left: 0;
+              top: 0;
+              cursor: pointer;
+            }
+            
+            .file-upload span {
+              pointer-events: none;
+            }
           }
         `
       }</style>
