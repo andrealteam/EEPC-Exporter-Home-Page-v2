@@ -145,6 +145,15 @@ const HeaderDraft = ({ memberId }) => {
 
   return (
     <>
+      <style>{
+        `
+          @media (max-width: 767px) {
+            .header .update-btn {
+              top: 20px !important; /* Increased from 10px to 20px */
+            }
+          }
+        `
+      }</style>
       {loading && <Loader isLoading={loading} />}
       {openHeader ? (
         <>
