@@ -195,7 +195,19 @@ const HeaderDraft = ({ memberId }) => {
                         }
                       }}
                     />
-                    <span>📁 Choose Image</span>
+                    <span style={{
+                      '@media (max-width: 767px)': {
+                        position: 'absolute',
+                        top: '20px',
+                        right: '20px',
+                        zIndex: 10,
+                        backgroundColor: 'white',
+                        padding: '5px 10px',
+                        borderRadius: '4px',
+                        border: '1px solid #ddd',
+                        fontSize: '14px'
+                      }
+                    }}>📁 Choose Image</span>
                   </label>
 
                   <img
