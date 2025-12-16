@@ -196,6 +196,7 @@ const HeaderDraft = ({ memberId }) => {
                       marginBottom: '15px',
                       width: '100%',
                       display: 'flex',
+                      padding:'0px',
                       justifyContent: 'center'
                     }
                   }}>
