@@ -189,18 +189,32 @@ const HeaderDraft = ({ memberId }) => {
                     <span>📁 Choose Image</span>
                   </label>
 
-                  <img
-                    src={
-                      editedHeader.logo || 
-                      (headerData?.logo ? `${baseFileURL}${headerData.logo}` : demoLogo)
+                  <div style={{ 
+                    marginTop: '10px',
+                    '@media (max-width: 767px)': {
+                      marginTop: '20px',
+                      marginBottom: '15px',
+                      width: '100%',
+                      display: 'flex',
+                      justifyContent: 'center'
                     }
-                    alt="Logo"
-                    width="120"
-                    style={{ marginTop: "10px" }}
-                    onError={(e) => {
-                      e.target.src = demoLogo;
-                    }}
-                  />
+                  }}>
+                    <img
+                      src={
+                        editedHeader.logo || 
+                        (headerData?.logo ? `${baseFileURL}${headerData.logo}` : demoLogo)
+                      }
+                      alt="Logo"
+                      width="120"
+                      style={{ 
+                        maxWidth: '100%',
+                        height: 'auto' 
+                      }}
+                      onError={(e) => {
+                        e.target.src = demoLogo;
+                      }}
+                    />
+                  </div>
                 </div>
 
                 {/* Editable Contact Info */}
