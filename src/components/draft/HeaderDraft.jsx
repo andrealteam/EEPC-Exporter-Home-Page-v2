@@ -166,7 +166,7 @@ const HeaderDraft = ({ memberId }) => {
               cursor: pointer;
               transition: background-color 0.2s ease, transform 0.2s ease;
               position: absolute;
-              top: 100px;
+              top: 60px;
               right: 20px;
               z-index: 10;
               border: none;
