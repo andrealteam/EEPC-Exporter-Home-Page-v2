@@ -367,27 +367,21 @@ const AboutDraft = ({ memberId }) => {
                                     // Ensure exactly 4 digits
                                     const value = e.target.value;
                                     if (value.length !== 4 && value !== '') {
-                                      toast.error('Please enter a valid 4-digit year');
+                                      toast.error('Please enter a valid 4-digit year (YYYY)');
                                       e.target.focus();
+                                    } else if (value.length === 4) {
+                                      const currentYear = new Date().getFullYear();
+                                      const enteredYear = parseInt(value, 10);
+                                      if (enteredYear < 1800 || enteredYear > currentYear) {
+                                        toast.error(`Please enter a year between 1800 and ${currentYear}`);
+                                        e.target.focus();
+                                      }
                                     }
                                   }}
                                   className="form-control"
                                   placeholder="YYYY"
                                   maxLength="4"
-                                />
-                                <input
-                                  type="month"
-                                  className="form-control mt-2"
-                                  onChange={(e) => {
-                                    if (e.target.value) {
-                                      const year = e.target.value.split('-')[0];
-                                      setEditedBanner(prev => ({
-                                        ...prev,
-                                        year_of_est: year
-                                      }));
-                                    }
-                                  }}
-                                  value={editedBanner.year_of_est ? `${editedBanner.year_of_est}-01` : ''}
+                                  title="Enter a 4-digit year (e.g., 2023)"
                                 />
                               </td>
                             </tr>
