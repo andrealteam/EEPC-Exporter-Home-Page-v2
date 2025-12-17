@@ -10,58 +10,27 @@ export const useChangeTracker = () => {
   return context;
 };
 
-// Helper function to load sections from localStorage
-const loadSections = () => {
-  try {
-    const savedSections = localStorage.getItem('sectionCompletion');
-    return savedSections 
-      ? JSON.parse(savedSections) 
-      : {
-          banner: false,
-          about: false,
-          products: false
-        };
-  } catch (error) {
-    console.error('Failed to load sections from localStorage', error);
-    return {
-      banner: false,
-      about: false,
-      products: false
-    };
-  }
-};
-
 export const ChangeTrackerProvider = ({ children }) => {
   const [hasChanges, setHasChanges] = useState(false);
-  const [sections, setSections] = useState(loadSections());
-  const [initialLoad, setInitialLoad] = useState(true);
-  const [hasMadeChanges, setHasMadeChanges] = useState(false);
+  const [sections, setSections] = useState({
+    banner: false,
+    about: false,
+    products: false
+  });
 
   const markAsChanged = useCallback(() => {
-    if (initialLoad) {
-      setInitialLoad(false);
-    }
     setHasChanges(true);
-    setHasMadeChanges(true);
-  }, [initialLoad]);
+  }, []);
 
   const resetAfterPreviewOrPublish = useCallback(() => {
     setHasChanges(false);
-    setHasMadeChanges(false);
-    // Save the current sections state to preserve completion status
-    localStorage.setItem('sectionCompletion', JSON.stringify(sections));
-  }, [sections]);
+  }, []);
 
   const updateSectionStatus = useCallback((section, isComplete) => {
-    setSections(prev => {
-      const newSections = {
-        ...prev,
-        [section]: isComplete
-      };
-      // Save to localStorage whenever sections are updated
-      localStorage.setItem('sectionCompletion', JSON.stringify(newSections));
-      return newSections;
-    });    
+    setSections(prev => ({
+      ...prev,
+      [section]: isComplete
+    }));    
   }, []);
 
   // Re-enable Preview/Publish after any text edit anywhere in the draft UI.
@@ -94,10 +63,8 @@ export const ChangeTrackerProvider = ({ children }) => {
   return (
     <ChangeTrackerContext.Provider value={{
       hasChanges,
-      hasMadeChanges,
       markAsChanged,
       resetAfterPreviewOrPublish,
-      initialLoad,
       updateSectionStatus,
       areAllSectionsComplete,
       sections

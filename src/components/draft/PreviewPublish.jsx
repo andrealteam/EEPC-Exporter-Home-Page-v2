@@ -166,35 +166,14 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
     }
   };
 
-  const { 
-    areAllSectionsComplete, 
-    hasChanges: hasUnsavedChanges, 
-    hasMadeChanges,
-    initialLoad,
-    sections 
-  } = useChangeTracker();
-  
   const isLoading = isProductsLoading || isAboutLoading;
   
-  // Buttons should be enabled only when:
-  // 1. Not in loading state
-  // 2. All sections are complete
-  // 3. User has made changes (after initial load)
-  const areButtonsDisabled = 
-    isLoading || 
-    !areAllSectionsComplete() ||
-    (!hasMadeChanges && !initialLoad);
-
-  // Debug logging
-  console.log('PreviewPublish state:', {
-    isLoading,
-    hasUnsavedChanges,
-    hasMadeChanges,
-    initialLoad,
-    sections,
-    areAllSectionsComplete: areAllSectionsComplete(),
-    areButtonsDisabled
-  });
+  // Check if all required sections are completed
+  const areAllSectionsComplete = useChangeTracker().areAllSectionsComplete();
+  
+  // Enable buttons only when all sections are complete and there are changes
+  const isPreviewDisabled = isLoading || !hasChanges || !areAllSectionsComplete;
+  const isPublishDisabled = isLoading || !hasChanges || !areAllSectionsComplete;
 
   if (isLoading) {
     return (
@@ -210,16 +189,16 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
     <header className="header" style={{ position: "relative", paddingTop: "66px" }}>
       <div className="update-btn" style={{ zIndex: 9999 }}>
         <button
-          className={`edit-btn-2 btn-primary ${areButtonsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
-          disabled={areButtonsDisabled}
+          className={`edit-btn-2 btn-primary ${isPreviewDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+          disabled={isPreviewDisabled}
           onClick={handlePreview}
         >
           Preview
         </button>
 
         <button
-          className={`edit-btn-1 btn-primary ${areButtonsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
-          disabled={areButtonsDisabled}
+          className={`edit-btn-1 btn-primary ${isPublishDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+          disabled={isPublishDisabled}
           onClick={handlePublish}
         >
           Publish
