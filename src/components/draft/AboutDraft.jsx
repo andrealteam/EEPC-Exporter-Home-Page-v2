@@ -353,11 +353,41 @@ const AboutDraft = ({ memberId }) => {
                               </th>
                               <td>
                                 <input
-                                  type="number"
+                                  type="text"
                                   name="year_of_est"
                                   value={editedBanner.year_of_est}
-                                  onChange={handleInputChange}
+                                  onChange={(e) => {
+                                    // Only allow numbers and limit to 4 digits
+                                    const value = e.target.value;
+                                    if (value === '' || (value.length <= 4 && /^\d*$/.test(value))) {
+                                      handleInputChange(e);
+                                    }
+                                  }}
+                                  onBlur={(e) => {
+                                    // Ensure exactly 4 digits
+                                    const value = e.target.value;
+                                    if (value.length !== 4 && value !== '') {
+                                      toast.error('Please enter a valid 4-digit year');
+                                      e.target.focus();
+                                    }
+                                  }}
                                   className="form-control"
+                                  placeholder="YYYY"
+                                  maxLength="4"
+                                />
+                                <input
+                                  type="month"
+                                  className="form-control mt-2"
+                                  onChange={(e) => {
+                                    if (e.target.value) {
+                                      const year = e.target.value.split('-')[0];
+                                      setEditedBanner(prev => ({
+                                        ...prev,
+                                        year_of_est: year
+                                      }));
+                                    }
+                                  }}
+                                  value={editedBanner.year_of_est ? `${editedBanner.year_of_est}-01` : ''}
                                 />
                               </td>
                             </tr>
