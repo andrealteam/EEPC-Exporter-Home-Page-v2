@@ -12,6 +12,14 @@ export const useChangeTracker = () => {
 
 export const ChangeTrackerProvider = ({ children }) => {
   const [hasChanges, setHasChanges] = useState(false);
+  const [sections, setSections] = useState({
+    about: false,
+    products: false,
+    // Add more sections as needed
+  });
+
+  // Check if all required sections are complete
+  const allSectionsComplete = Object.values(sections).every(Boolean);
 
   const markAsChanged = useCallback(() => {
     setHasChanges(true);
@@ -21,9 +29,18 @@ export const ChangeTrackerProvider = ({ children }) => {
     setHasChanges(false);
   }, []);
 
-  // Re-enable Preview/Publish after any text edit anywhere in the draft UI.
+  const updateSectionStatus = useCallback((sectionName, isComplete) => {
+    setSections(prev => ({
+      ...prev,
+      [sectionName]: isComplete
+    }));  
+  }, []);
+
+  // Re-enable Preview/Publish after any text edit anywhere in the draft UI
   useEffect(() => {
-    const handleAnyEdit = () => setHasChanges(true);
+    const handleAnyEdit = () => {
+      setHasChanges(true);
+    };
 
     const events = ['input', 'change', 'keyup', 'paste'];
     events.forEach((evt) =>
@@ -40,8 +57,10 @@ export const ChangeTrackerProvider = ({ children }) => {
   return (
     <ChangeTrackerContext.Provider value={{
       hasChanges,
+      allSectionsComplete,
       markAsChanged,
       resetAfterPreviewOrPublish,
+      updateSectionStatus,
     }}>
       {children}
     </ChangeTrackerContext.Provider>

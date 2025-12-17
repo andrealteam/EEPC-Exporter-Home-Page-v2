@@ -87,22 +87,6 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
         return;
       }
 
-      // Check if productsData exists and has data
-      const hasProducts = productsData?.data?.length > 0 || 
-                         (Array.isArray(productsData) && productsData.length > 0) || 
-                         (productsData && Object.keys(productsData).length > 0);
-
-      const hasAbout = 
-        Array.isArray(aboutData) ? aboutData.length > 0 : 
-        (aboutData && Object.keys(aboutData).length > 0);
-
-      if (!hasProducts || !hasAbout) {
-        throw new Error(
-          !hasProducts ? "Please add at least 1 product before previewing." : 
-          "Please complete 'About Our Company' and 'Basic Information' sections first."
-        );
-      }
-
       const previewUrl = `${window.location.origin}/preview/${encodeURIComponent(token)}`;
       window.open(previewUrl, "_blank", 'noopener,noreferrer');
       markAsChanged();
@@ -117,22 +101,11 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
 
   // Handle publish button click
   const handlePublish = () => {
-    const hasProducts = Array.isArray(productsData)
-      ? productsData.length > 0
-      : Array.isArray(productsData?.data)
-      ? productsData.data.length > 0
-      : !!productsData && Object.keys(productsData).length > 0;
-
-    const hasAbout =
-      Array.isArray(aboutData) ? aboutData.length > 0 : !!aboutData && Object.keys(aboutData).length > 0;
-
-    if (rejectionNumbers.length > 0 || !hasProducts || !hasAbout) {
-      const message = !hasAbout ? 
-        "Please complete 'About Our Company' and 'Basic Information' sections first." :
-        rejectionNumbers.length > 0 ? 
-        "Please resolve all rejection issues before publishing." :
-        "Please add at least 1 product before publishing.";
-      toast.error(message, { position: "top-center", autoClose: 3000 });
+    if (rejectionNumbers.length > 0) {
+      toast.error("Please resolve all rejection issues before publishing.", { 
+        position: "top-center", 
+        autoClose: 3000 
+      });
       return;
     }
     setIsSubmitted(true);
@@ -167,9 +140,25 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
   };
 
   const isLoading = isProductsLoading || isAboutLoading;
-  // Enable buttons when there are changes, regardless of previous preview/publish
-  const isPreviewDisabled = isLoading || !hasChanges;
-  const isPublishDisabled = isLoading || !hasChanges;
+  
+  // Check if all required sections are complete
+  const hasRequiredSections = () => {
+    const hasProducts = productsData?.data?.length > 0 || 
+                       (Array.isArray(productsData) && productsData.length > 0) || 
+                       (productsData && Object.keys(productsData).length > 0);
+
+    const hasAbout = Array.isArray(aboutData) ? aboutData.length > 0 : 
+                    (aboutData && Object.keys(aboutData).length > 0);
+
+    return hasProducts && hasAbout;
+  };
+
+  // Disable buttons if:
+  // 1. Data is loading
+  // 2. There are no changes
+  // 3. Not all required sections are complete
+  const isPreviewDisabled = isLoading || !hasChanges || !hasRequiredSections();
+  const isPublishDisabled = isLoading || !hasChanges || !hasRequiredSections() || rejectionNumbers.length > 0;
 
   if (isLoading) {
     return (
@@ -188,6 +177,7 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
           className={`edit-btn-2 btn-primary ${isPreviewDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
           disabled={isPreviewDisabled}
           onClick={handlePreview}
+          title={isPreviewDisabled ? "Please complete all required sections and make changes to enable preview" : ""}
         >
           Preview
         </button>
@@ -196,6 +186,7 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
           className={`edit-btn-1 btn-primary ${isPublishDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
           disabled={isPublishDisabled}
           onClick={handlePublish}
+          title={isPublishDisabled ? "Please complete all required sections, resolve any rejections, and make changes to enable publishing" : ""}
         >
           Publish
         </button>

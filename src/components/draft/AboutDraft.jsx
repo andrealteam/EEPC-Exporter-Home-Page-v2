@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { demoLogo } from "../../utils/constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useChangeTracker } from "../../contexts/ChangeTrackerContext";
 import Skeleton from "react-loading-skeleton";
 import Select from "react-select";
 
@@ -55,7 +56,7 @@ let demoAboutContent = `<p>
 `;
 
 const AboutDraft = ({ memberId }) => {
-  const { markAsChanged } = useChangeTracker();
+  const { markAsChanged, updateSectionStatus } = useChangeTracker();
   const [openViewEdit, setOpenViewEdit] = useState(false);
   const [sectionItem, setSectionItem] = useState(false);
   const [deleteUndoMOdal, setDeleteUndoModal] = useState(false);
@@ -135,27 +136,45 @@ const AboutDraft = ({ memberId }) => {
     const cleanedValue = editedBanner.about_content
       .replace(/<(p|div)><br><\/\1>/gi, "")
       .trim();
-    let res = await postWhoWeAreSection(
-      memberId,
-      cleanedValue,
-      editedBanner.nature_of_business,
-      editedBanner.additional_business,
-      editedBanner.company_ceo,
-      editedBanner.registered_address,
-      editedBanner.total_employees,
-      editedBanner.year_of_est,
-      editedBanner.firm_status,
-      editedBanner.annual_turnover,
-      editedBanner.export_destination
-    );
-    if (res.status) {
+    
+    // Check if all required fields are filled
+    const isSectionComplete = 
+      cleanedValue && 
+      editedBanner.nature_of_business && 
+      editedBanner.company_ceo && 
+      editedBanner.registered_address && 
+      editedBanner.year_of_est?.length === 4;
+
+    try {
+      let res = await postWhoWeAreSection(
+        memberId,
+        cleanedValue,
+        editedBanner.nature_of_business,
+        editedBanner.additional_business,
+        editedBanner.company_ceo,
+        editedBanner.registered_address,
+        editedBanner.total_employees,
+        editedBanner.year_of_est,
+        editedBanner.firm_status,
+        editedBanner.annual_turnover,
+        editedBanner.export_destination
+      );
+      
+      if (res.status) {
+        setLoading(false);
+        toast.success(res?.message);
+        queryClient.invalidateQueries(["about-draft"]);
+        setOpenViewEdit(false);
+        
+        // Update section status after successful save
+        updateSectionStatus('about', isSectionComplete);
+      } else {
+        setLoading(false);
+        toast.error(res?.message);
+      }
+    } catch (error) {
       setLoading(false);
-      toast.success(res?.message);
-      queryClient.invalidateQueries(["about-draft"]);
-      setOpenViewEdit(false);
-    } else {
-      setLoading(false);
-      toast.error(res?.message);
+      toast.error("An error occurred while saving");
     }
   };
 
@@ -173,7 +192,20 @@ const AboutDraft = ({ memberId }) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setEditedBanner((prev) => ({ ...prev, [name]: value }));
+    setEditedBanner((prev) => {
+      const updated = { ...prev, [name]: value };
+      // Check if all required fields are filled
+      const isComplete = 
+        updated.about_content && 
+        updated.nature_of_business && 
+        updated.company_ceo && 
+        updated.registered_address && 
+        updated.year_of_est?.length === 4;
+      
+      // Update section status
+      updateSectionStatus('about', isComplete);
+      return updated;
+    });
     markAsChanged();
   };
 
