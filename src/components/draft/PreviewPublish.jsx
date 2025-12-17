@@ -167,9 +167,13 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
   };
 
   const isLoading = isProductsLoading || isAboutLoading;
-  // Enable buttons when there are changes, regardless of previous preview/publish
-  const isPreviewDisabled = isLoading || !hasChanges;
-  const isPublishDisabled = isLoading || !hasChanges;
+  
+  // Check if all required sections are completed
+  const areAllSectionsComplete = useChangeTracker().areAllSectionsComplete();
+  
+  // Enable buttons only when all sections are complete and there are changes
+  const isPreviewDisabled = isLoading || !hasChanges || !areAllSectionsComplete;
+  const isPublishDisabled = isLoading || !hasChanges || !areAllSectionsComplete;
 
   if (isLoading) {
     return (

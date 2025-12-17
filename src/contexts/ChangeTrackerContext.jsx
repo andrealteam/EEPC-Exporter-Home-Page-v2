@@ -12,6 +12,12 @@ export const useChangeTracker = () => {
 
 export const ChangeTrackerProvider = ({ children }) => {
   const [hasChanges, setHasChanges] = useState(false);
+  const [sections, setSections] = useState({
+    banner: false,
+    about: false,
+    whoWeAre: false,
+    products: false
+  });
 
   const markAsChanged = useCallback(() => {
     setHasChanges(true);
@@ -19,6 +25,13 @@ export const ChangeTrackerProvider = ({ children }) => {
 
   const resetAfterPreviewOrPublish = useCallback(() => {
     setHasChanges(false);
+  }, []);
+
+  const updateSectionStatus = useCallback((section, isComplete) => {
+    setSections(prev => ({
+      ...prev,
+      [section]: isComplete
+    }));    
   }, []);
 
   // Re-enable Preview/Publish after any text edit anywhere in the draft UI.
@@ -37,11 +50,19 @@ export const ChangeTrackerProvider = ({ children }) => {
     };
   }, []);
 
+  // Check if all required sections are completed
+  const areAllSectionsComplete = useCallback(() => {
+    return Object.values(sections).every(Boolean);
+  }, [sections]);
+
   return (
     <ChangeTrackerContext.Provider value={{
       hasChanges,
       markAsChanged,
       resetAfterPreviewOrPublish,
+      updateSectionStatus,
+      areAllSectionsComplete,
+      sections
     }}>
       {children}
     </ChangeTrackerContext.Provider>

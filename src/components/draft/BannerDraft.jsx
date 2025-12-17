@@ -70,7 +70,7 @@ const colorMap = {
 };
 
 const BannerDraft = ({ memberId }) => {
-  const { markAsChanged } = useChangeTracker();
+  const { markAsChanged, updateSectionStatus } = useChangeTracker();
   const [openViewEdit, setOpenViewEdit] = useState(false);
   const [playVideo, setPlayVideo] = useState(false);
   const [sectionItem, setSectionItem] = useState(false);
@@ -208,7 +208,11 @@ const BannerDraft = ({ memberId }) => {
         bannerData.since_text ||
         "Since 1974 - Exporter & Manufacturer of Industrial Valves and Hydraulic Solutions.",
     }));
-  }, [bannerData, openViewEdit]);
+    
+    // Update section completion status
+    const isBannerComplete = Boolean(bannerData.banner);
+    updateSectionStatus('banner', isBannerComplete);
+  }, [bannerData, openViewEdit, updateSectionStatus]);
 
   // 🔹 Convert API data -> local links state
   useEffect(() => {

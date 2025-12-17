@@ -101,7 +101,7 @@ const staticProducts = {
 };
 
 const ProductsDraft = ({ memberId }) => {
-  const { markAsChanged } = useChangeTracker();
+  const { markAsChanged, updateSectionStatus } = useChangeTracker();
   const fileInputRef = useRef(null);
   const [viewModal, setViewModal] = useState(null);
   const [viewEditModal, setViewEditModal] = useState(null);
@@ -162,6 +162,18 @@ const ProductsDraft = ({ memberId }) => {
     queryFn: () => getProducts(memberId),
   });
   const displayProducts = productsData || {};
+
+  // Update section completion status when products data changes
+  useEffect(() => {
+    if (productsData) {
+      const hasProducts = Object.values(productsData).some(
+        category => Array.isArray(category) && category.length > 0
+      );
+      updateSectionStatus('products', hasProducts);
+    } else {
+      updateSectionStatus('products', false);
+    }
+  }, [productsData, updateSectionStatus]);
 
   // : staticProducts;
 

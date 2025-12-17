@@ -55,7 +55,7 @@ let demoAboutContent = `<p>
 `;
 
 const AboutDraft = ({ memberId }) => {
-  const { markAsChanged } = useChangeTracker();
+  const { markAsChanged, updateSectionStatus } = useChangeTracker();
   const [openViewEdit, setOpenViewEdit] = useState(false);
   const [sectionItem, setSectionItem] = useState(false);
   const [deleteUndoMOdal, setDeleteUndoModal] = useState(false);
@@ -88,6 +88,14 @@ const AboutDraft = ({ memberId }) => {
       setSectionItem(false);
     }
   }, [sectionData]);
+
+  // Update section completion status when about data changes
+  useEffect(() => {
+    if (aboutData) {
+      const isAboutComplete = Boolean(aboutData.about_content && aboutData.about_content.trim() !== '');
+      updateSectionStatus('about', isAboutComplete);
+    }
+  }, [aboutData, updateSectionStatus]);
 
   const countryOptions = countryData?.map((item) => ({
     value: item.country,
