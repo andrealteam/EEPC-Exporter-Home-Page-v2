@@ -166,14 +166,25 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
     }
   };
 
+  const { areAllSectionsComplete, hasChanges: hasUnsavedChanges, sections } = useChangeTracker();
   const isLoading = isProductsLoading || isAboutLoading;
   
-  // Check if all required sections are completed
-  const areAllSectionsComplete = useChangeTracker().areAllSectionsComplete();
-  
-  // Enable buttons only when all sections are complete and there are changes
-  const isPreviewDisabled = isLoading || !hasChanges || !areAllSectionsComplete;
-  const isPublishDisabled = isLoading || !hasChanges || !areAllSectionsComplete;
+  // Enable buttons when either:
+  // 1. There are unsaved changes AND all sections are complete, OR
+  // 2. All sections were already complete before the page reload
+  const areButtonsDisabled = 
+    isLoading || 
+    (!hasUnsavedChanges && !areAllSectionsComplete()) ||
+    !areAllSectionsComplete();
+
+  // Debug logging
+  console.log('PreviewPublish state:', {
+    isLoading,
+    hasUnsavedChanges,
+    sections,
+    areAllSectionsComplete: areAllSectionsComplete(),
+    areButtonsDisabled
+  });
 
   if (isLoading) {
     return (
@@ -189,16 +200,16 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
     <header className="header" style={{ position: "relative", paddingTop: "66px" }}>
       <div className="update-btn" style={{ zIndex: 9999 }}>
         <button
-          className={`edit-btn-2 btn-primary ${isPreviewDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
-          disabled={isPreviewDisabled}
+          className={`edit-btn-2 btn-primary ${areButtonsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+          disabled={areButtonsDisabled}
           onClick={handlePreview}
         >
           Preview
         </button>
 
         <button
-          className={`edit-btn-1 btn-primary ${isPublishDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
-          disabled={isPublishDisabled}
+          className={`edit-btn-1 btn-primary ${areButtonsDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+          disabled={areButtonsDisabled}
           onClick={handlePublish}
         >
           Publish

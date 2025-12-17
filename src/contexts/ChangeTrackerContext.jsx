@@ -10,13 +10,30 @@ export const useChangeTracker = () => {
   return context;
 };
 
+// Helper function to load sections from localStorage
+const loadSections = () => {
+  try {
+    const savedSections = localStorage.getItem('sectionCompletion');
+    return savedSections 
+      ? JSON.parse(savedSections) 
+      : {
+          banner: false,
+          about: false,
+          products: false
+        };
+  } catch (error) {
+    console.error('Failed to load sections from localStorage', error);
+    return {
+      banner: false,
+      about: false,
+      products: false
+    };
+  }
+};
+
 export const ChangeTrackerProvider = ({ children }) => {
   const [hasChanges, setHasChanges] = useState(false);
-  const [sections, setSections] = useState({
-    banner: false,
-    about: false,
-    products: false
-  });
+  const [sections, setSections] = useState(loadSections());
 
   const markAsChanged = useCallback(() => {
     setHasChanges(true);
@@ -24,13 +41,20 @@ export const ChangeTrackerProvider = ({ children }) => {
 
   const resetAfterPreviewOrPublish = useCallback(() => {
     setHasChanges(false);
-  }, []);
+    // Save the current sections state to preserve completion status
+    localStorage.setItem('sectionCompletion', JSON.stringify(sections));
+  }, [sections]);
 
   const updateSectionStatus = useCallback((section, isComplete) => {
-    setSections(prev => ({
-      ...prev,
-      [section]: isComplete
-    }));    
+    setSections(prev => {
+      const newSections = {
+        ...prev,
+        [section]: isComplete
+      };
+      // Save to localStorage whenever sections are updated
+      localStorage.setItem('sectionCompletion', JSON.stringify(newSections));
+      return newSections;
+    });    
   }, []);
 
   // Re-enable Preview/Publish after any text edit anywhere in the draft UI.
