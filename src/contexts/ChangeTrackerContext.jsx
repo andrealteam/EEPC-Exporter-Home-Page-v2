@@ -2,6 +2,9 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 
 const ChangeTrackerContext = createContext();
 
+// Key for localStorage
+const STORAGE_KEY = 'eepc_has_changes';
+
 export const useChangeTracker = () => {
   const context = useContext(ChangeTrackerContext);
   if (!context) {
@@ -11,12 +14,22 @@ export const useChangeTracker = () => {
 };
 
 export const ChangeTrackerProvider = ({ children }) => {
-  const [hasChanges, setHasChanges] = useState(false);
+  // Load initial state from localStorage if available
+  const [hasChanges, setHasChanges] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved === 'true';
+  });
+  
   const [sections, setSections] = useState({
     banner: false,
     about: false,
     products: false
   });
+
+  // Save to localStorage whenever hasChanges changes
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, hasChanges.toString());
+  }, [hasChanges]);
 
   const markAsChanged = useCallback(() => {
     setHasChanges(true);
