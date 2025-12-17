@@ -34,13 +34,20 @@ const loadSections = () => {
 export const ChangeTrackerProvider = ({ children }) => {
   const [hasChanges, setHasChanges] = useState(false);
   const [sections, setSections] = useState(loadSections());
+  const [initialLoad, setInitialLoad] = useState(true);
+  const [hasMadeChanges, setHasMadeChanges] = useState(false);
 
   const markAsChanged = useCallback(() => {
+    if (initialLoad) {
+      setInitialLoad(false);
+    }
     setHasChanges(true);
-  }, []);
+    setHasMadeChanges(true);
+  }, [initialLoad]);
 
   const resetAfterPreviewOrPublish = useCallback(() => {
     setHasChanges(false);
+    setHasMadeChanges(false);
     // Save the current sections state to preserve completion status
     localStorage.setItem('sectionCompletion', JSON.stringify(sections));
   }, [sections]);
@@ -87,8 +94,10 @@ export const ChangeTrackerProvider = ({ children }) => {
   return (
     <ChangeTrackerContext.Provider value={{
       hasChanges,
+      hasMadeChanges,
       markAsChanged,
       resetAfterPreviewOrPublish,
+      initialLoad,
       updateSectionStatus,
       areAllSectionsComplete,
       sections

@@ -166,21 +166,31 @@ const PreviewPublish = ({ memberId, website_url, rejectionNumbers }) => {
     }
   };
 
-  const { areAllSectionsComplete, hasChanges: hasUnsavedChanges, sections } = useChangeTracker();
+  const { 
+    areAllSectionsComplete, 
+    hasChanges: hasUnsavedChanges, 
+    hasMadeChanges,
+    initialLoad,
+    sections 
+  } = useChangeTracker();
+  
   const isLoading = isProductsLoading || isAboutLoading;
   
-  // Enable buttons when either:
-  // 1. There are unsaved changes AND all sections are complete, OR
-  // 2. All sections were already complete before the page reload
+  // Buttons should be enabled only when:
+  // 1. Not in loading state
+  // 2. All sections are complete
+  // 3. User has made changes (after initial load)
   const areButtonsDisabled = 
     isLoading || 
-    (!hasUnsavedChanges && !areAllSectionsComplete()) ||
-    !areAllSectionsComplete();
+    !areAllSectionsComplete() ||
+    (!hasMadeChanges && !initialLoad);
 
   // Debug logging
   console.log('PreviewPublish state:', {
     isLoading,
     hasUnsavedChanges,
+    hasMadeChanges,
+    initialLoad,
     sections,
     areAllSectionsComplete: areAllSectionsComplete(),
     areButtonsDisabled
