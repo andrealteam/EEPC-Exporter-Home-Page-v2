@@ -15,7 +15,6 @@ export const ChangeTrackerProvider = ({ children }) => {
   const [sections, setSections] = useState({
     banner: false,
     about: false,
-    whoWeAre: false,
     products: false
   });
 
@@ -52,7 +51,13 @@ export const ChangeTrackerProvider = ({ children }) => {
 
   // Check if all required sections are completed
   const areAllSectionsComplete = useCallback(() => {
-    return Object.values(sections).every(Boolean);
+    // Only check banner, about, and products sections
+    const requiredSections = {
+      banner: sections.banner,
+      about: sections.about,
+      products: sections.products
+    };
+    return Object.values(requiredSections).every(Boolean);
   }, [sections]);
 
   return (
