@@ -27,15 +27,11 @@ const WhoWeArePreview = ({ memberId }) => {
   const thumbnailURL = `https://img.youtube.com/vi/${videoID}/hqdefault.jpg`;
   const videoURL = `https://www.youtube.com/watch?v=${videoID}`;
 
-  // Determine the column classes based on whether there's a video
-  const leftColumnClass = videoID ? "col-lg-6" : "col-12";
-  const rightColumnClass = videoID ? "col-lg-6" : "d-none";
-
   return (
     <section class="pb-10" style={{ position: "relative", paddingBottom: "12px", marginBottom: "0" }}>
       <div class="container">
         <div class="row">
-          <div class={leftColumnClass}>
+          <div class="col-lg-6">
             <div class="table-card">
               <div class="main-title">
                 <div>
@@ -104,38 +100,38 @@ const WhoWeArePreview = ({ memberId }) => {
               </div>
             </div>
           </div>
-          {videoID && (
-            <div class={rightColumnClass}>
-              <div class="video-wrapper">
-                <div class="corporate-video-wrapper position-relative">
-                  <div class="corporate-video position-relative">
-                    <div>
-                      <a
-                        href={videoURL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <img src={thumbnailURL} alt="YouTube Video Thumbnail" className="img-fluid" />
-                        <FontAwesomeIcon
-                          icon={faPlay}
-                          style={{
-                            position: "absolute",
-                            top: "50%",
-                            left: "50%",
-                            transform: "translate(-50%, -50%)",
-                            fontSize: "48px",
-                            color: "white",
-                            borderRadius: "50%",
-                            padding: "10px",
-                          }}
-                        />
-                      </a>
-                    </div>
+          <div class="col-lg-6">
+            <div class="video-wrapper">
+              <div class="corporate-video-wrapper position-relative">
+                <div class="corporate-video position-relative">
+                  {/* <img src="./assets/images/about.jpg" alt=""/> */}
+                  <div>
+                    <a
+                      href={videoURL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <img src={thumbnailURL} alt="YouTube Video Thumbnail" />
+                      <FontAwesomeIcon
+                        icon={faPlay}
+                        style={{
+                          position: "absolute",
+                          top: "50%",
+                          left: "50%",
+                          transform: "translate(-50%, -50%)",
+                          fontSize: "48px",
+                          color: "white",
+                          // background: 'rgba(0, 0, 0, 0.5)',
+                          borderRadius: "50%",
+                          padding: "10px",
+                        }}
+                      />
+                    </a>
                   </div>
                 </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
       
