@@ -39,7 +39,7 @@ const MapReview = ({ memberId }) => {
 
   return (
     <div className="contact-section">
-      <div className="contact-form">
+      {/* <div className="contact-form">
         <p className="small-text">Write To Us</p>
         <h2 className="title">Get In Touch</h2>
 
@@ -63,7 +63,7 @@ const MapReview = ({ memberId }) => {
             Send Enquiry
           </button>
         </form>
-      </div>
+      </div> */}
 
       {/* <div className="contact-map">
         <h3 className="map-title">
