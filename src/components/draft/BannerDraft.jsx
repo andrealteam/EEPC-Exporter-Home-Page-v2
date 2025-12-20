@@ -426,7 +426,7 @@ const BannerDraft = ({ memberId }) => {
                   // value={editedBanner.banner}
                   onChange={handleInputChange}
                   className="form-control"
-                  placeholder="Paste your product's YouTube video link here"
+                  placeholder="Paste your Company Profile’s YouTube video link, if any"
                   style={{ marginTop: "10px" }}
                 />
               </div>
