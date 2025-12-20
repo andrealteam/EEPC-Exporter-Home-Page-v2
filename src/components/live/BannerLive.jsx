@@ -512,13 +512,13 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                   </button>
                 )}
 
-              <button className="button" onClick={addFavoriteWithoutModal}>
+              {/* <button className="button" onClick={addFavoriteWithoutModal}>
                 {isFavorite === "added" ? (
                   <span>❤️ Added to Favorite</span>
                 ) : (
                   <span>🤍 Add to Favorite</span>
                 )}
-              </button>
+              </button> */}
 
               {/* <button className="btn favorite">Leave a Review</button> */}
               <button
@@ -593,9 +593,9 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                 &times;
               </button>
 
-              <h3 style={{ marginBottom: "20px", fontSize: "22px" }}>
+              {/* <h3 style={{ marginBottom: "20px", fontSize: "22px" }}>
                 Please provide your details to add to favorite
-              </h3>
+              </h3> */}
 
               <form onSubmit={handleSubmitFavorite}>
                 <input

@@ -302,9 +302,9 @@ function BannerPreview({ memberId }) {
               E-Catalogue
             </button> */}
 
-            <button class="button mt-3" disabled>
+            {/* <button class="button mt-3" disabled>
               ★ Add to favorite
-            </button>
+            </button> */}
 
             {/* <button className="btn favorite">Leave a Review</button> */}
             <button

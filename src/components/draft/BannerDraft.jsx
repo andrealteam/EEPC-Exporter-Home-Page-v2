@@ -582,7 +582,7 @@ const BannerDraft = ({ memberId }) => {
                 </a>
 
                 <button className="btn secondary">E-Catalogue</button>
-                <button className="btn favorite">★ Add to favorite</button>
+                {/* <button className="btn favorite">★ Add to favorite</button> */}
               </div>
               <div className="pdf-upload-wrapper">
                 {/* File input */}
@@ -851,8 +851,8 @@ const BannerDraft = ({ memberId }) => {
                 {/* <button className="btn secondary">E-Catalogue</button> */}
                 {/* <button className="btn favorite">★ Add to favorite</button> */}
                 <button class="button mt-3">E-Catalogue</button>
-
-                <button class="button mt-3">★ Add to favorite</button>
+{/* 
+                <button class="button mt-3">★ Add to favorite</button> */}
 
                 {/* <button className="btn favorite">Leave a Review</button> */}
                 <button
