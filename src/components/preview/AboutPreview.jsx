@@ -96,7 +96,7 @@ const AboutPreview = ({ memberId }) => {
             </div>
           </div>
         </div>
-        {/* <div class="col-lg-6">
+        <div class="col-lg-6">
           <div class="company-card">
             <div class="table-card">
               <div class="main-title">
@@ -256,7 +256,7 @@ const AboutPreview = ({ memberId }) => {
               </div>
             </div>
           </div>
-        </div> */}
+        </div>
       </div>
     </section>
   );
