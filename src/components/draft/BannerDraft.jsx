@@ -584,8 +584,8 @@ const BannerDraft = ({ memberId }) => {
                 <button className="btn secondary">E-Catalogue</button>
                 {/* <button className="btn favorite">★ Add to favorite</button> */}
               </div>
-              <div className="pdf-upload-wrapper">
-                <label className="simple-file-input">
+              <div className="pdf-upload-wrapper flex items-center gap-3">
+                <label className="file-input-button">
                   Choose File
                   <input
                     type="file"
@@ -603,8 +603,11 @@ const BannerDraft = ({ memberId }) => {
                     }}
                   />
                 </label>
+                <span className="file-name">
+                  {editedBanner?.brochure?.name || ''}
+                </span>
                 <style jsx>{`
-                  .simple-file-input {
+                  .file-input-button {
                     display: inline-block;
                     padding: 8px 16px;
                     border: 1px solid #ccc;
@@ -612,10 +615,20 @@ const BannerDraft = ({ memberId }) => {
                     cursor: pointer;
                     font-weight: 500;
                     background-color: #f8f9fa;
-                    transition: background-color 0.2s;
+                    transition: all 0.2s;
+                    white-space: nowrap;
                   }
-                  .simple-file-input:hover {
+                  .file-input-button:hover {
                     background-color: #e9ecef;
+                  }
+                  .file-name {
+                    font-size: 14px;
+                    color: #333;
+                    margin-left: 5px;
+                    max-width: 200px;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
                   }
                 `}</style>
 
