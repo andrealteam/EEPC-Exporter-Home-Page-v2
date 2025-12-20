@@ -426,7 +426,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
               <h2 className="company-name">{bannerData?.name}</h2>
               <p className="company-meta">
                 IEC No: <span>{bannerData?.eic_no}</span> | Member Code:{" "}
-                <span>{bannerData?.member_id}</span>
+                <span>M{bannerData?.member_id}</span>
               </p>
               <div
                 dangerouslySetInnerHTML={{

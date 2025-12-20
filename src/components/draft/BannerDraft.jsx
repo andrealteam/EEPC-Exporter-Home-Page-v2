@@ -440,7 +440,7 @@ const BannerDraft = ({ memberId }) => {
                 <h2 className="company-name">{bannerData?.name}</h2>
                 <p className="company-meta">
                   IEC No: <span>{bannerData?.eic_no}</span> | Member Code:{" "}
-                  <span>{bannerData?.member_id}</span>
+                  <span>M{bannerData?.member_id}</span>
                 </p>
                 <p className="company-description">
                   {/* <strong>Since 1974</strong> - Exporter & Manufacturer of
@@ -792,7 +792,7 @@ const BannerDraft = ({ memberId }) => {
                 <h2 className="company-name">{bannerData?.name}</h2>
                 <p className="company-meta">
                   IEC No: <span>{bannerData?.eic_no}</span> | Member Code:{" "}
-                  <span>{bannerData?.member_id}</span>
+                  <span>M{bannerData?.member_id}</span>
                 </p>
                 <div
                   dangerouslySetInnerHTML={{
