@@ -483,7 +483,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
               )}
 
               {/* <button className="btn secondary">E-Catalogue</button> */}
-              {/* <button className="btn favorite">★ Add to favorite</button> */}
+              <button className="btn favorite">★ Add to favorite</button>
               {Array.isArray(catalogueData?.data) &&
                 catalogueData.data.length > 0 && (
                   <button
