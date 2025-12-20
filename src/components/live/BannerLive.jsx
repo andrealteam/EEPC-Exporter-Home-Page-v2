@@ -233,14 +233,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
   const addFavoriteWithoutModal = async (e) => {
     if (email || name) {
       // add to favorite logic here
-      const timestamp = new Date().toISOString();
-      let res = await postAddToFavorite({ 
-        website_url, 
-        email, 
-        name, 
-        phone,
-        timestamp 
-      });
+      let res = await postAddToFavorite({ website_url, email, name, phone });
       if (res.status) {
         toast.success(res?.message || "Added to favorite");
         setIsFavorite(res.action);
@@ -254,13 +247,11 @@ function BannerLive({ website_url, isAdmin, member_id }) {
   const handleSubmitFavorite = async (e) => {
     e.preventDefault();
     if (modalEmail && modalName) {
-      const timestamp = new Date().toISOString();
       const formData = {
         website_url,
         name: modalName,
         email: modalEmail,
         phone: modalPhone,
-        timestamp
       };
       let res = await postAddToFavorite(formData);
       if (res.status) {
