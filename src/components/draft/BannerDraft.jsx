@@ -586,7 +586,7 @@ const BannerDraft = ({ memberId }) => {
               </div>
               <div className="pdf-upload-wrapper flex items-center gap-3">
                 <label className="file-input-button">
-                  Choose File
+                  {/* Choose File */}
                   <input
                     type="file"
                     accept="application/pdf"
