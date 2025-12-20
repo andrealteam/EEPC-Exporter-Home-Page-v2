@@ -146,7 +146,7 @@ const MapReviewLive = ({ website_url, isAdmin }) => {
   // console.log("addressData", addressData);
   return (
     <div className="contact-section" style={{ marginTop: "60px" }}>
-      {/* <div className="contact-form" id="get-in-touch">
+      <div className="contact-form" id="get-in-touch">
         <p className="small-text">write to us</p>
         <h2 className="title">Get In Touch</h2>
 
@@ -238,7 +238,7 @@ const MapReviewLive = ({ website_url, isAdmin }) => {
               : "Send Enquiry"}
           </button>
         </form>
-      </div> */}
+      </div>
 
       {/* <div className="contact-map">
         <h3 className="map-title">

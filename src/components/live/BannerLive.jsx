@@ -512,13 +512,13 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                   </button>
                 )}
 
-              {/* <button className="button" onClick={addFavoriteWithoutModal}>
+              <button className="button" onClick={addFavoriteWithoutModal}>
                 {isFavorite === "added" ? (
                   <span>❤️ Added to Favorite</span>
                 ) : (
                   <span>🤍 Add to Favorite</span>
                 )}
-              </button> */}
+              </button>
 
               {/* <button className="btn favorite">Leave a Review</button> */}
               <button
