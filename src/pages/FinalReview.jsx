@@ -21,9 +21,9 @@ const FinalReview = () => {
   return (
     <div className="center-screen">
       <div className="popup-container">
-        <h3 className="">Registration Submitted Successfully!</h3>
+        <h3 className="">Your Profile Published Successfully!</h3>
         <p>
-          Thank you for submitting your registration form. It is currently under review. Once approved, you will be able to create your profile.
+          Thank you for submitting your profile. It is currently under review. Once approved, your profile will go live on the EEPC India website
         </p>
 
         <p>
