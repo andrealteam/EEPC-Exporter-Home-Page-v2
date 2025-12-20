@@ -35,7 +35,7 @@ const WhoWeArePreview = ({ memberId }) => {
     <section class="pb-10" style={{ position: "relative", paddingBottom: "12px", marginBottom: "0" }}>
       <div class="container">
         <div class="row">
-          <div class={leftColumnClass}>
+          {/* <div class={leftColumnClass}>
             <div class="table-card">
               <div class="main-title">
                 <div>
@@ -103,7 +103,7 @@ const WhoWeArePreview = ({ memberId }) => {
                 </table>
               </div>
             </div>
-          </div>
+          </div> */}
           {videoID && (
             <div class={rightColumnClass}>
               <div class="video-wrapper">
