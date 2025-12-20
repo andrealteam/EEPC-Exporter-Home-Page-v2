@@ -585,55 +585,37 @@ const BannerDraft = ({ memberId }) => {
                 {/* <button className="btn favorite">★ Add to favorite</button> */}
               </div>
               <div className="pdf-upload-wrapper">
-                {/* Custom styled file input */}
-                <div className="relative">
-                  <label className="file-input-label">
-                    Choose File
-                    <input
-                      type="file"
-                      accept="application/pdf"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          setEditedBanner((prev) => ({
-                            ...prev,
-                            brochure: file,
-                          }));
-                          markAsChanged();
-                        }
-                      }}
-                    />
-                  </label>
-                  <div className="file-name-display">
-                    {editedBanner?.brochure?.name || 'No file chosen'}
-                  </div>
-                </div>
+                <label className="simple-file-input">
+                  Choose File
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        setEditedBanner((prev) => ({
+                          ...prev,
+                          brochure: file,
+                        }));
+                        markAsChanged();
+                      }
+                    }}
+                  />
+                </label>
                 <style jsx>{`
-                  .file-input-label {
+                  .simple-file-input {
                     display: inline-block;
                     padding: 8px 16px;
-                    background-color: #f0f0f0;
                     border: 1px solid #ccc;
                     border-radius: 4px;
                     cursor: pointer;
                     font-weight: 500;
-                    margin-right: 10px;
-                  }
-                  .file-input-label:hover {
-                    background-color: #e0e0e0;
-                  }
-                  .file-name-display {
-                    display: inline-block;
-                    margin-top: 5px;
-                    padding: 6px 12px;
-                    border: 1px solid #ddd;
-                    border-radius: 4px;
-                    font-weight: bold;
-                    min-width: 200px;
-                    min-height: 36px;
-                    line-height: 24px;
                     background-color: #f8f9fa;
+                    transition: background-color 0.2s;
+                  }
+                  .simple-file-input:hover {
+                    background-color: #e9ecef;
                   }
                 `}</style>
 
