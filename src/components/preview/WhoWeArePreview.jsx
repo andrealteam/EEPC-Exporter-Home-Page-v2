@@ -17,151 +17,128 @@ const WhoWeArePreview = ({ memberId }) => {
 
   // Extract YouTube Video ID
   const getYouTubeID = (url) => {
-    if (!url) return null;
     const regex =
       /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([\w-]{11})/;
-    const match = url.match(regex);
+    const match = url?.match(regex);
     return match ? match[1] : null;
   };
 
   const videoID = getYouTubeID(whoWeData?.video_link);
-  const thumbnailURL = videoID ? `https://img.youtube.com/vi/${videoID}/hqdefault.jpg` : '';
-  const videoURL = videoID ? `https://www.youtube.com/watch?v=${videoID}` : '';
+  const thumbnailURL = `https://img.youtube.com/vi/${videoID}/hqdefault.jpg`;
+  const videoURL = `https://www.youtube.com/watch?v=${videoID}`;
 
   // Determine the column classes based on whether there's a video
   const leftColumnClass = videoID ? "col-lg-6" : "col-12";
   const rightColumnClass = videoID ? "col-lg-6" : "d-none";
 
-  if (isLoading) {
-    return (
-      <section className="pb-10" style={{ position: "relative", padding: "40px 0" }}>
-        <div className="container">
-          <div className="text-center">Loading company information...</div>
-        </div>
-      </section>
-    );
-  }
-
-  if (isError) {
-    return (
-      <section className="pb-10" style={{ position: "relative", padding: "40px 0" }}>
-        <div className="container">
-          <div className="alert alert-danger">Error loading company information.</div>
-        </div>
-      </section>
-    );
-  }
-
   return (
-    <section className="pb-10" style={{ position: "relative", padding: "60px 0" }}>
-      <div className="container">
-        <div className="row align-items-center">
-          <div className={leftColumnClass}>
-            <div className="table-card" style={{ 
-              backgroundColor: '#fff', 
-              borderRadius: '8px', 
-              boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-              padding: '30px'
-            }}>
-              <div className="main-title mb-4">
-                <h2 className="mb-0">Who We Are</h2>
+    <section class="pb-10" style={{ position: "relative", paddingBottom: "12px", marginBottom: "0" }}>
+      <div class="container">
+        <div class="row">
+          <div class={leftColumnClass}>
+            <div class="table-card">
+              <div class="main-title">
+                <div>
+                  <span>Basic Information</span>
+                  <h2>
+                    Who we are
+                    <button class="edit-btn">
+                      <i class="fa-solid fa-pencil"></i>
+                    </button>
+                  </h2>
+                </div>
               </div>
-              <div className="table-responsive">
-                <table className="table table-borderless">
+              <div class="table-responsive basic-info-table">
+                <table class="table">
                   <tbody>
                     <tr>
-                      <th scope="row" style={{ width: '40%', color: '#555' }}>
+                      <th scope="row" class="">
                         Exporter and Manufacturer
                       </th>
-                      <td>{whoWeData?.nature_of_business || 'N/A'}</td>
+                      <td>{whoWeData?.nature_of_business}</td>
                     </tr>
                     <tr>
-                      <th scope="row" style={{ color: '#555' }}>
+                      <th scope="row" class="">
                         Additional Business
                       </th>
-                      <td>{whoWeData?.additional_business || 'N/A'}</td>
+                      <td>{whoWeData?.additional_business}</td>
                     </tr>
                     <tr>
-                      <th scope="row" style={{ color: '#555' }}>
+                      <th scope="row" class="">
                         Company CEO
                       </th>
-                      <td>{whoWeData?.company_ceo || 'N/A'}</td>
+                      <td>{whoWeData?.company_ceo}</td>
                     </tr>
                     <tr>
-                      <th scope="row" style={{ color: '#555' }}>
+                      <th scope="row" class="">
                         Registered Address
                       </th>
-                      <td>{whoWeData?.registered_address || 'N/A'}</td>
+                      <td>{whoWeData?.registered_address}</td>
                     </tr>
                     <tr>
-                      <th scope="row" style={{ color: '#555' }}>
-                        Total Employees
+                      <th scope="row" class="">
+                        Total Number of Employees
                       </th>
-                      <td>{whoWeData?.total_employees || 'N/A'}</td>
+                      <td>{whoWeData?.total_employees}</td>
                     </tr>
                     <tr>
-                      <th scope="row" style={{ color: '#555' }}>
+                      <th scope="row" class="">
                         Year of Establishment
                       </th>
-                      <td>{whoWeData?.year_of_est || 'N/A'}</td>
+                      <td>{whoWeData?.year_of_est}</td>
                     </tr>
                     <tr>
-                      <th scope="row" style={{ color: '#555' }}>
-                        Legal Status
+                      <th scope="row" class="">
+                        Legal Status of Firm
                       </th>
-                      <td>{whoWeData?.firm_status || 'N/A'}</td>
+                      <td>{whoWeData?.firm_status}</td>
                     </tr>
                     <tr>
-                      <th scope="row" style={{ color: '#555' }}>
+                      <th scope="row" class="">
                         Annual Turnover
                       </th>
-                      <td>{whoWeData?.annual_turnover || 'N/A'}</td>
+                      <td>{whoWeData?.annual_turnover}</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
             </div>
           </div>
-          
           {videoID && (
-            <div className={rightColumnClass}>
-              <div className="position-relative" style={{ borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}>
-                <a
-                  href={videoURL}
-                  className="d-block position-relative"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <img
-                    src={thumbnailURL}
-                    alt="Video Thumbnail"
-                    className="img-fluid w-100"
-                    style={{ display: 'block' }}
-                  />
-                  <div className="position-absolute" style={{
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    backgroundColor: 'rgba(0,0,0,0.6)',
-                    width: '80px',
-                    height: '80px',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#fff',
-                    fontSize: '24px',
-                    transition: 'all 0.3s ease',
-                    border: '2px solid #fff'
-                  }}>
-                    <FontAwesomeIcon icon={faPlay} style={{ marginLeft: '5px' }} />
+            <div class={rightColumnClass}>
+              <div class="video-wrapper">
+                <div class="corporate-video-wrapper position-relative">
+                  <div class="corporate-video position-relative">
+                    <div>
+                      <a
+                        href={videoURL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <img src={thumbnailURL} alt="YouTube Video Thumbnail" className="img-fluid" />
+                        <FontAwesomeIcon
+                          icon={faPlay}
+                          style={{
+                            position: "absolute",
+                            top: "50%",
+                            left: "50%",
+                            transform: "translate(-50%, -50%)",
+                            fontSize: "48px",
+                            color: "white",
+                            borderRadius: "50%",
+                            padding: "10px",
+                          }}
+                        />
+                      </a>
+                    </div>
                   </div>
-                </a>
+                </div>
               </div>
             </div>
           )}
         </div>
       </div>
+      
     </section>
   );
 };
