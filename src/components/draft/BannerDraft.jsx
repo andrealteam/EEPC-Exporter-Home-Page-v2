@@ -610,8 +610,8 @@ const BannerDraft = ({ memberId }) => {
                   .file-input-button {
                     display: inline-block;
                     padding: 8px 16px;
-                    border: 3px solid #ccc;
-                    border-radius: 4px;
+                    border: 2px solid #000000;
+                    border-radius: 5px;
                     cursor: pointer;
                     font-weight: 500;
                     background-color: #f8f9fa;
