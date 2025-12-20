@@ -44,6 +44,7 @@ export const postAddToFavorite = async ({
   email,
   name,
   phone,
+  timestamp = new Date().toISOString()
 }) => {
   try {
     const res = await api.post("add-to-favorite", {
@@ -51,6 +52,7 @@ export const postAddToFavorite = async ({
       email,
       name,
       phone,
+      timestamp
     });
 
     if (res.status === 200 && res.status) {
@@ -77,6 +79,14 @@ export const getFavorite = async ({ website_url, email, name, phone }) => {
     });
 
     if (res.status === 200) {
+      // If we have an array of favorites, sort them by timestamp in descending order
+      if (Array.isArray(res.data.data)) {
+        res.data.data.sort((a, b) => {
+          const dateA = new Date(a.timestamp || 0);
+          const dateB = new Date(b.timestamp || 0);
+          return dateB - dateA; // Sort newest first
+        });
+      }
       return res.data;
     } else {
       return res.data || {};
