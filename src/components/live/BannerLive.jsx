@@ -558,34 +558,66 @@ function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp })
                 }
               `}</style>
 
-              {/* <button className="btn favorite">Leave a Review</button> */}
-              <button
-                class="button"
-                onClick={() => setIsReviewModalOpen(true)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "5px",
-                }}
-              >
-                <div class="svg-wrapper-1">
-                  <div class="svg-wrapper">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      width="24"
-                      height="24"
-                    >
-                      <path fill="none" d="M0 0h24v24H0z"></path>
-                      <path
-                        fill="currentColor"
-                        d="M1.946 9.315c-.522-.174-.527-.455.01-.634l19.087-6.362c.529-.176.832.12.684.638l-5.454 19.086c-.15.529-.455.547-.679.045L12 14l6-8-8 6-8.054-2.685z"
-                      ></path>
-                    </svg>
+              <div style={{ position: 'relative', display: 'inline-block' }}>
+                <button
+                  className="button"
+                  onClick={() => {
+                    if (!isUserMember) {
+                      setIsReviewModalOpen(true);
+                    }
+                  }}
+                  disabled={isUserMember}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "5px",
+                    opacity: isUserMember ? 0.6 : 1,
+                    cursor: isUserMember ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  <div className="svg-wrapper-1">
+                    <div className="svg-wrapper">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        width="24"
+                        height="24"
+                      >
+                        <path fill="none" d="M0 0h24v24H0z"></path>
+                        <path
+                          fill={isUserMember ? "#999" : "currentColor"}
+                          d="M1.946 9.315c-.522-.174-.527-.455.01-.634l19.087-6.362c.529-.176.832.12.684.638l-5.454 19.086c-.15.529-.455.547-.679.045L12 14l6-8-8 6-8.054-2.685z"
+                        ></path>
+                      </svg>
+                    </div>
                   </div>
-                </div>
-                <span>Leave a Review</span>
-              </button>
+                  <span>Leave a Review</span>
+                </button>
+                {isUserMember && (
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '100%',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    backgroundColor: '#333',
+                    color: '#fff',
+                    padding: '5px 10px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    whiteSpace: 'nowrap',
+                    marginBottom: '5px',
+                    display: 'none',
+                    zIndex: 10
+                  }} className="review-tooltip">
+                    This feature is not available for members
+                  </div>
+                )}
+              </div>
+              <style jsx>{`
+                div:hover .review-tooltip {
+                  display: block;
+                }
+              `}</style>
             </div>
           </div>
         </div>
