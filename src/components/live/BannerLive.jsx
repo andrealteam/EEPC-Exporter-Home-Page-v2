@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { getBanner, getSocialMediaList } from "../../services/draftApi";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowDown } from "@fortawesome/free-solid-svg-icons";
 import { baseFileURL, getEcatalogue } from "../../services/api";
+import { isMember } from "../../utils/userRoles";
 import {
   getFavorite,
   getLiveBanner,
@@ -62,7 +63,10 @@ const colorMap = {
   telegram: "#0088cc",
 };
 
-function BannerLive({ website_url, isAdmin, member_id }) {
+function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp }) {
+  // Check if user is a member
+  const user = JSON.parse(localStorage.getItem("sessionData") || '{}');
+  const isUserMember = isMemberProp || isMember(user);
   const [playVideo, setPlayVideo] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -512,13 +516,47 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                   </button>
                 )}
 
-              <button className="button" onClick={addFavoriteWithoutModal}>
-                {isFavorite === "added" ? (
-                  <span>❤️ Added to Favorite</span>
-                ) : (
-                  <span>🤍 Add to Favorite</span>
+              <div style={{ position: 'relative', display: 'inline-block' }}>
+                <button 
+                  className="button" 
+                  onClick={addFavoriteWithoutModal}
+                  disabled={isUserMember}
+                  style={{
+                    opacity: isUserMember ? 0.6 : 1,
+                    cursor: isUserMember ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {isFavorite === "added" ? (
+                    <span>❤️ Added to Favorite</span>
+                  ) : (
+                    <span>🤍 Add to Favorite</span>
+                  )}
+                </button>
+                {isUserMember && (
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '100%',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    backgroundColor: '#333',
+                    color: '#fff',
+                    padding: '5px 10px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    whiteSpace: 'nowrap',
+                    marginBottom: '5px',
+                    display: 'none',
+                    zIndex: 10
+                  }} className="favorite-tooltip">
+                    This feature is not available for members
+                  </div>
                 )}
-              </button>
+              </div>
+              <style jsx>{`
+                div:hover .favorite-tooltip {
+                  display: block;
+                }
+              `}</style>
 
               {/* <button className="btn favorite">Leave a Review</button> */}
               <button
