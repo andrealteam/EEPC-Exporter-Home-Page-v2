@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { getBanner, getSocialMediaList } from "../../services/draftApi";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -30,6 +30,7 @@ import { get, set } from "react-hook-form";
 import toast from "react-hot-toast";
 import CryptoJS from "crypto-js";
 import { faTimes } from "@fortawesome/free-solid-svg-icons";
+import { setMemberCookie, getMemberIdFromCookie, MEMBER_COOKIE } from "../../utils/cookieUtils";
 
 const secretKey = "my-secret-key";
 
@@ -63,6 +64,19 @@ const colorMap = {
 };
 
 function BannerLive({ website_url, isAdmin, member_id }) {
+  // Set member cookie when member_id is available
+  useEffect(() => {
+    if (member_id) {
+      setMemberCookie(member_id);
+    }
+  }, [member_id]);
+  
+  // Check if current user is the member
+  const isCurrentUserMember = useCallback(() => {
+    if (!member_id) return false;
+    const currentMemberId = getMemberIdFromCookie();
+    return currentMemberId && currentMemberId === member_id.toString();
+  }, [member_id]);
   const [playVideo, setPlayVideo] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -168,12 +182,8 @@ function BannerLive({ website_url, isAdmin, member_id }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Get the current user's member ID from localStorage
-    const currentMemberId = localStorage.getItem('member_id');
-    const isCurrentUserMember = currentMemberId && member_id && currentMemberId === member_id.toString();
-    
-    // If the current user is the member, don't allow submission
-    if (isCurrentUserMember) {
+    // Check if current user is the member using cookie
+    if (isCurrentUserMember()) {
       toast.error("You cannot submit a review for your own website");
       return;
     }
@@ -244,7 +254,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
   };
 
   const addFavoriteWithoutModal = async (e) => {
-    if (member_id) {
+    if (isCurrentUserMember()) {
       toast.error("You cannot add your own website to favorites");
       return;
     }
@@ -539,12 +549,11 @@ function BannerLive({ website_url, isAdmin, member_id }) {
               </button>
 
               {/* <button className="btn favorite">Leave a Review</button> */}
-              {(!member_id || localStorage.getItem('member_id') !== member_id.toString()) && (
+              {!isCurrentUserMember() && (
                 <button
                   class="button"
                   onClick={() => {
-                    const currentMemberId = localStorage.getItem('member_id');
-                    if (member_id && currentMemberId === member_id.toString()) {
+                    if (isCurrentUserMember()) {
                       toast.error("You cannot review your own website");
                       return;
                     }
@@ -554,10 +563,10 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                     display: "flex",
                     alignItems: "center",
                     gap: "5px",
-                    opacity: member_id && localStorage.getItem('member_id') === member_id.toString() ? 0.6 : 1,
-                    cursor: member_id && localStorage.getItem('member_id') === member_id.toString() ? 'not-allowed' : 'pointer'
+                    opacity: isCurrentUserMember() ? 0.6 : 1,
+                    cursor: isCurrentUserMember() ? 'not-allowed' : 'pointer'
                   }}
-                  disabled={member_id && localStorage.getItem('member_id') === member_id.toString()}
+                  disabled={isCurrentUserMember()}
                 >
                   <div class="svg-wrapper-1">
                     <div class="svg-wrapper">
@@ -576,9 +585,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                     </div>
                   </div>
                   <span>
-                    {member_id && localStorage.getItem('member_id') === member_id.toString() 
-                      ? "Can't review own website" 
-                      : "Leave a Review"}
+                    {isCurrentUserMember() ? "Can't review own website" : "Leave a Review"}
                   </span>
                 </button>
               )}
@@ -727,7 +734,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                 regarding your experience!
               </h3>
 
-              {(isAdmin || (member_id && localStorage.getItem('member_id') === member_id.toString())) && (
+              {(isAdmin || isCurrentUserMember()) && (
                 <h6 style={{ color: "red", marginBottom: '15px' }}>
                   {isAdmin ? "Admins" : "You"} can't submit reviews for your own website.
                 </h6>
@@ -742,7 +749,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                     onChange={(e) => setModalName(e.target.value)}
                     required
                     style={inputStyle}
-                    disabled={!!name || (!!member_id && localStorage.getItem('member_id') === member_id.toString())}
+                    disabled={!!name || isCurrentUserMember()}
                   />
 
                   <input
@@ -759,7 +766,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                     type="email"
                     placeholder="Email"
                     value={modalEmail || email}
-                    disabled={!!email || (!!member_id && localStorage.getItem('member_id') === member_id.toString())}
+                    disabled={!!email || isCurrentUserMember()}
                     onChange={(e) => setModalEmail(e.target.value)}
                     required
                     style={inputStyle}
@@ -769,7 +776,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                     type="tel"
                     placeholder="Phone (Optional)"
                     value={modalPhone || phone}
-                    disabled={!!phone || (!!member_id && localStorage.getItem('member_id') === member_id.toString())}
+                    disabled={!!phone || isCurrentUserMember()}
                     onChange={(e) => setModalPhone(e.target.value)}
                     style={inputStyle}
                   />
