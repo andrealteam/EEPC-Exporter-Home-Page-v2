@@ -637,13 +637,7 @@ function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp })
               <div style={{ position: 'relative', display: 'inline-block' }}>
                 <button
                   className="button"
-                  onClick={() => {
-                    if (isUserMember) {
-                      toast.error('You are not eligible to review your own website.');
-                      return;
-                    }
-                    handleReviewClick();
-                  }}
+                  onClick={handleReviewClick}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -835,126 +829,116 @@ function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp })
                 &times;
               </button>
 
-              <h3 style={{ marginBottom: "20px", fontSize: "22px" }}>
-                It would mean a lot to us if you share your valuable feedback
-                regarding your experience!
-              </h3>
+      <h3 style={{ marginBottom: "20px", fontSize: "22px" }}>
+        It would mean a lot to us if you share your valuable feedback
+        regarding your experience!
+      </h3>
 
-              {isAdmin && (
-                <h6 style={{ color: "red" }}>
-                  You can’t submit a review for your own website.
-                </h6>
-              )}
+      {(isAdmin || isUserMember) && (
+        <h6 style={{ color: "red", marginBottom: '20px' }}>
+          {isAdmin ? "Admins " : "Members "} cannot submit reviews for their own website.
+        </h6>
+      )}
 
-              <form onSubmit={handleReviewSubmit}>
-                <div style={rowStyle}>
-                  <input
-                    type="text"
-                    placeholder="Name"
-                    value={modalName || name}
-                    onChange={(e) => setModalName(e.target.value)}
-                    required
-                    style={inputStyle}
-                    disabled={!!name}
-                  />
+      <form onSubmit={handleReviewSubmit}>
+        <div style={rowStyle}>
+          <input
+            type="text"
+            placeholder="Name"
+            value={modalName || name}
+            onChange={(e) => setModalName(e.target.value)}
+            required
+            style={inputStyle}
+            disabled={!!name || isAdmin || isUserMember}
+          />
 
-                  <input
-                    type="text"
-                    placeholder="Designation (Optional)"
-                    value={designation}
-                    onChange={(e) => setDesignation(e.target.value)}
-                    style={{ width: "100%", ...inputStyle }}
-                  />
-                </div>
+          <input
+            type="text"
+            placeholder="Designation (Optional)"
+            value={designation}
+            onChange={(e) => setDesignation(e.target.value)}
+            style={{ width: "100%", ...inputStyle }}
+            disabled={isAdmin || isUserMember}
+          />
+        </div>
 
-                <div style={rowStyle}>
-                  <input
-                    type="email"
-                    placeholder="Email"
-                    value={modalEmail || email}
-                    disabled={!!email}
-                    onChange={(e) => setModalEmail(e.target.value)}
-                    required
-                    style={inputStyle}
-                  />
+        <div style={rowStyle}>
+          <input
+            type="email"
+            placeholder="Email"
+            value={modalEmail || email}
+            disabled={!!email || isAdmin || isUserMember}
+            onChange={(e) => setModalEmail(e.target.value)}
+            required
+            style={inputStyle}
+          />
 
-                  <input
-                    type="tel"
-                    placeholder="Phone (Optional)"
-                    value={modalPhone || phone}
-                    disabled={!!phone}
-                    onChange={(e) => setModalPhone(e.target.value)}
-                    style={inputStyle}
-                  />
-                </div>
+          <input
+            type="tel"
+            placeholder="Phone (Optional)"
+            value={modalPhone || phone}
+            disabled={!!phone || isAdmin || isUserMember}
+            onChange={(e) => setModalPhone(e.target.value)}
+            style={inputStyle}
+          />
+        </div>
 
-                <textarea
-                  placeholder="Your Review"
-                  value={testimonial}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    // const words = value.trim().split(/\s+/).filter(Boolean);
-                    const chars = value.length;
+        <textarea
+          placeholder="Your Review"
+          value={testimonial}
+          onChange={(e) => {
+            if (isAdmin || isUserMember) return;
+            const value = e.target.value;
+            // const words = value.trim().split(/\s+/).filter(Boolean);
+            const chars = value.length;
 
-                    // ✅ Restrict both words and characters
-                    if (chars <= maxChars) {
-                      handleTestimonialChange(e);
-                    }
-                  }}
-                  required
-                  style={{ ...inputStyle, height: "100px", width: "100%" }}
-                ></textarea>
+            // ✅ Restrict both words and characters
+            if (chars <= maxChars) {
+              handleTestimonialChange(e);
+            }
+          }}
+          required
+          style={{ 
+            ...inputStyle, 
+            height: "100px", 
+            width: "100%",
+            backgroundColor: (isAdmin || isUserMember) ? '#f5f5f5' : 'white',
+            cursor: (isAdmin || isUserMember) ? 'not-allowed' : 'text'
+          }}
+          disabled={isAdmin || isUserMember}
+        ></textarea>
 
-                <p style={{ fontSize: "14px", color: "#666" }}>
-                  {/* {testimonial.trim().split(/\s+/).filter(Boolean).length} /{" "}
-                  {maxWords} words | */}
-                  {testimonial.length} / {maxChars} characters
-                </p>
+        <p style={{ fontSize: "14px", color: "#666" }}>
+          {/* {testimonial.trim().split(/\s+/).filter(Boolean).length} /{" "}
+          {maxWords} words | */}
+          {testimonial.length} / {maxChars} characters
+        </p>
 
-                <button
-                  type="submit"
-                  style={{
-                    marginTop: "10px",
-                    padding: "10px 15px",
-                    backgroundColor:
-                      !(
-                        (modalName || name) &&
-                        (modalEmail || email) &&
-                        testimonial
-                      ) || isAdmin
-                        ? "#ccc"
-                        : "#0195a3", // disable color
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: "5px",
-                    cursor:
-                      !(
-                        (modalName || name) &&
-                        (modalEmail || email) &&
-                        testimonial
-                      ) || isAdmin
-                        ? "not-allowed"
-                        : "pointer", // disable cursor
-                    width: "100%",
-                    opacity:
-                      !(
-                        (modalName || name) &&
-                        (modalEmail || email) &&
-                        testimonial
-                      ) || isAdmin
-                        ? 0.7
-                        : 1, // thoda fade effect
-                  }}
-                  disabled={
-                    !(
-                      (modalName || name) &&
-                      (modalEmail || email) &&
-                      testimonial
-                    ) || isAdmin
-                  }
-                >
-                  Submit
-                </button>
+        <button
+          type="submit"
+          style={{
+            marginTop: "10px",
+            padding: "10px 15px",
+            backgroundColor: isAdmin || isUserMember 
+              ? "#f5f5f5" 
+              : !(modalName || name) || !(modalEmail || email) || !testimonial
+                ? "#ccc"
+                : "#0195a3",
+            color: isAdmin || isUserMember ? "#999" : "#fff",
+            border: "none",
+            borderRadius: "5px",
+            cursor: isAdmin || isUserMember || !(modalName || name) || !(modalEmail || email) || !testimonial
+              ? "not-allowed"
+              : "pointer",
+            width: "100%",
+            opacity: isAdmin || isUserMember || !(modalName || name) || !(modalEmail || email) || !testimonial
+              ? 0.7
+              : 1,
+          }}
+          disabled={isAdmin || isUserMember || !(modalName || name) || !(modalEmail || email) || !testimonial}
+        >
+          Submit
+        </button>
               </form>
             </div>
           </div>
