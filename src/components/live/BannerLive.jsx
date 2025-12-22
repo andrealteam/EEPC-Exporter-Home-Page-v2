@@ -698,11 +698,6 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                 regarding your experience!
               </h3>
 
-              {(isAdmin || member_id) && (
-                <h6 style={{ color: "red", marginBottom: '15px' }}>
-                  {isAdmin ? "Admins" : "Members"} can't submit reviews for their own website.
-                </h6>
-              )}
 
               <form onSubmit={handleSubmit}>
                 <div style={rowStyle}>
@@ -779,7 +774,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                         (modalName || name) &&
                         (modalEmail || email) &&
                         testimonial
-                      ) || isAdmin || !!member_id
+                      )
                         ? "#ccc"
                         : "#0195a3", // disable color
                     color: "#fff",
@@ -790,7 +785,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                         (modalName || name) &&
                         (modalEmail || email) &&
                         testimonial
-                      ) || isAdmin || !!member_id
+                      )
                         ? "not-allowed"
                         : "pointer", // disable cursor
                     width: "100%",
@@ -799,7 +794,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                         (modalName || name) &&
                         (modalEmail || email) &&
                         testimonial
-                      ) || isAdmin || !!member_id
+                      )
                         ? 0.7
                         : 1, // thoda fade effect
                   }}
@@ -808,7 +803,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                       (modalName || name) &&
                       (modalEmail || email) &&
                       testimonial
-                    ) || isAdmin || !!member_id
+                    )
                   }
                 >
                   Submit
