@@ -176,7 +176,16 @@ const MapReviewLive = ({ website_url, isAdmin }) => {
             placeholder="Phone (Optional)"
             value={modalPhone || phone}
             disabled={!!phone}
-            onChange={(e) => setModalPhone(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              // Only allow numbers and limit to 10 digits
+              if (value === '' || (/^\d{0,10}$/.test(value))) {
+                setModalPhone(value);
+              }
+            }}
+            maxLength="10"
+            pattern="[0-9]{0,10}"
+            title="Please enter a valid 10-digit phone number"
             className="form-input"
           />
 
