@@ -598,8 +598,8 @@ function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp })
                     isFavorite === 'added' ? handleAddToFavorite() : handleAddToFavorite();
                   }}
                   style={{
-                    opacity: isUserMember ? 0.6 : 1,
-                    cursor: isUserMember ? 'not-allowed' : 'pointer'
+                    opacity: 1,
+                    cursor: 'pointer'
                   }}
                 >
                   {isFavorite === "added" ? (
@@ -648,8 +648,8 @@ function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp })
                     display: "flex",
                     alignItems: "center",
                     gap: "5px",
-                    opacity: isUserMember ? 0.6 : 1,
-                    cursor: isUserMember ? 'not-allowed' : 'pointer'
+                    opacity: 1,
+                    cursor: 'pointer'
                   }}
                 >
                   <div className="svg-wrapper-1">
