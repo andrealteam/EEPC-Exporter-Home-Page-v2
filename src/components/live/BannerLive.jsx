@@ -1,10 +1,9 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { getBanner, getSocialMediaList } from "../../services/draftApi";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowDown } from "@fortawesome/free-solid-svg-icons";
 import { baseFileURL, getEcatalogue } from "../../services/api";
-import { isMember, checkMemberRestrictions } from "../../utils/userRoles";
 import {
   getFavorite,
   getLiveBanner,
@@ -63,10 +62,7 @@ const colorMap = {
   telegram: "#0088cc",
 };
 
-function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp }) {
-  // Check if user is a member
-  const user = JSON.parse(localStorage.getItem("sessionData") || '{}');
-  const isUserMember = isMemberProp || isMember(user);
+function BannerLive({ website_url, isAdmin, member_id }) {
   const [playVideo, setPlayVideo] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -234,38 +230,6 @@ function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp })
     setTestimonial(text);
   };
 
-  const handleReviewSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (checkMemberRestrictions('review')) {
-      return;
-    }
-    
-    const response = await postReview(website_url, {
-      name,
-      email,
-      phone,
-      designation,
-      testimonial,
-    });
-    if (response) {
-      toast.success("Review submitted successfully!");
-      setIsReviewModalOpen(false);
-      setName("");
-      setEmail("");
-      setPhone("");
-      setDesignation("");
-      setTestimonial("");
-    }
-  };
-  
-  const handleReviewClick = () => {
-    if (checkMemberRestrictions('review')) {
-      return;
-    }
-    setIsReviewModalOpen(true);
-  };
-
   const addFavoriteWithoutModal = async (e) => {
     if (email || name) {
       // add to favorite logic here
@@ -280,45 +244,6 @@ function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp })
       setIsFavoriteModalOpen(true);
     }
   };
-
-  const handleAddToFavorite = async () => {
-    if (checkMemberRestrictions('favorite')) {
-      return;
-    }
-    
-    if (isFavorite === 'added') {
-      // Handle remove from favorite
-      const response = await postAddToFavorite(website_url, {
-        name: modalName,
-        email: modalEmail,
-        phone: modalPhone,
-        status: 'removed'
-      });
-      if (response) {
-        setIsFavorite('removed');
-        setIsFavoriteModalOpen(false);
-        toast.success('Removed from favorites!');
-      }
-    } else {
-      // Show modal to collect user info for adding to favorites
-      setIsFavoriteModalOpen(true);
-    }
-  };
-
-  const handleConfirmAddToFavorite = async () => {
-    const response = await postAddToFavorite(website_url, {
-      name: modalName,
-      email: modalEmail,
-      phone: modalPhone,
-      status: 'added'
-    });
-    if (response) {
-      setIsFavorite('added');
-      setIsFavoriteModalOpen(false);
-      toast.success('Added to favorites!');
-    }
-  };
-
   const handleSubmitFavorite = async (e) => {
     e.preventDefault();
     if (modalEmail && modalName) {
@@ -587,114 +512,42 @@ function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp })
                   </button>
                 )}
 
-              <div style={{ position: 'relative', display: 'inline-block' }}>
-                <button 
-                  className="button" 
-                  onClick={() => {
-                    if (isUserMember) {
-                      toast.error('You are not eligible to add this website to favorites.');
-                      return;
-                    }
-                    isFavorite === 'added' ? handleAddToFavorite() : handleAddToFavorite();
-                  }}
-                  style={{
-                    opacity: 1,
-                    cursor: 'pointer'
-                  }}
-                >
-                  {isFavorite === "added" ? (
-                    <span>❤️ Added to Favorite</span>
-                  ) : (
-                    <span>🤍 Add to Favorite</span>
-                  )}
-                </button>
-                {isUserMember && (
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '100%',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    backgroundColor: '#333',
-                    color: '#fff',
-                    padding: '5px 10px',
-                    borderRadius: '4px',
-                    fontSize: '12px',
-                    whiteSpace: 'nowrap',
-                    marginBottom: '5px',
-                    display: 'none',
-                    zIndex: 10
-                  }} className="favorite-tooltip">
-                    This feature is not available for members
-                  </div>
+              <button className="button" onClick={addFavoriteWithoutModal}>
+                {isFavorite === "added" ? (
+                  <span>❤️ Added to Favorite</span>
+                ) : (
+                  <span>🤍 Add to Favorite</span>
                 )}
-              </div>
-              <style jsx>{`
-                div:hover .favorite-tooltip {
-                  display: block;
-                }
-              `}</style>
+              </button>
 
-              <div style={{ position: 'relative', display: 'inline-block' }}>
-                <button
-                  className="button"
-                  onClick={() => {
-                    if (isUserMember) {
-                      toast.error('You are not eligible to review your own website.');
-                      return;
-                    }
-                    handleReviewClick();
-                  }}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "5px",
-                    opacity: 1,
-                    cursor: 'pointer'
-                  }}
-                >
-                  <div className="svg-wrapper-1">
-                    <div className="svg-wrapper">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        width="24"
-                        height="24"
-                      >
-                        <path fill="none" d="M0 0h24v24H0z"></path>
-                        <path
-                          fill={isUserMember ? "#999" : "currentColor"}
-                          d="M1.946 9.315c-.522-.174-.527-.455.01-.634l19.087-6.362c.529-.176.832.12.684.638l-5.454 19.086c-.15.529-.455.547-.679.045L12 14l6-8-8 6-8.054-2.685z"
-                        ></path>
-                      </svg>
-                    </div>
+              {/* <button className="btn favorite">Leave a Review</button> */}
+              <button
+                class="button"
+                onClick={() => setIsReviewModalOpen(true)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "5px",
+                }}
+              >
+                <div class="svg-wrapper-1">
+                  <div class="svg-wrapper">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      width="24"
+                      height="24"
+                    >
+                      <path fill="none" d="M0 0h24v24H0z"></path>
+                      <path
+                        fill="currentColor"
+                        d="M1.946 9.315c-.522-.174-.527-.455.01-.634l19.087-6.362c.529-.176.832.12.684.638l-5.454 19.086c-.15.529-.455.547-.679.045L12 14l6-8-8 6-8.054-2.685z"
+                      ></path>
+                    </svg>
                   </div>
-                  <span>Leave a Review</span>
-                </button>
-                {isUserMember && (
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '100%',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    backgroundColor: '#333',
-                    color: '#fff',
-                    padding: '5px 10px',
-                    borderRadius: '4px',
-                    fontSize: '12px',
-                    whiteSpace: 'nowrap',
-                    marginBottom: '5px',
-                    display: 'none',
-                    zIndex: 10
-                  }} className="review-tooltip">
-                    This feature is not available for members
-                  </div>
-                )}
-              </div>
-              <style jsx>{`
-                div:hover .review-tooltip {
-                  display: block;
-                }
-              `}</style>
+                </div>
+                <span>Leave a Review</span>
+              </button>
             </div>
           </div>
         </div>
@@ -846,7 +699,7 @@ function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp })
                 </h6>
               )}
 
-              <form onSubmit={handleReviewSubmit}>
+              <form onSubmit={handleSubmit}>
                 <div style={rowStyle}>
                   <input
                     type="text"
