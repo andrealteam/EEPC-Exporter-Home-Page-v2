@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowDown } from "@fortawesome/free-solid-svg-icons";
 import { baseFileURL, getEcatalogue } from "../../services/api";
-import { isMember } from "../../utils/userRoles";
+import { isMember, checkMemberRestrictions } from "../../utils/userRoles";
 import {
   getFavorite,
   getLiveBanner,
@@ -234,6 +234,38 @@ function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp })
     setTestimonial(text);
   };
 
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (checkMemberRestrictions('review')) {
+      return;
+    }
+    
+    const response = await postReview(website_url, {
+      name,
+      email,
+      phone,
+      designation,
+      testimonial,
+    });
+    if (response) {
+      toast.success("Review submitted successfully!");
+      setIsReviewModalOpen(false);
+      setName("");
+      setEmail("");
+      setPhone("");
+      setDesignation("");
+      setTestimonial("");
+    }
+  };
+  
+  const handleReviewClick = () => {
+    if (checkMemberRestrictions('review')) {
+      return;
+    }
+    setIsReviewModalOpen(true);
+  };
+
   const addFavoriteWithoutModal = async (e) => {
     if (email || name) {
       // add to favorite logic here
@@ -248,6 +280,45 @@ function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp })
       setIsFavoriteModalOpen(true);
     }
   };
+
+  const handleAddToFavorite = async () => {
+    if (checkMemberRestrictions('favorite')) {
+      return;
+    }
+    
+    if (isFavorite === 'added') {
+      // Handle remove from favorite
+      const response = await postAddToFavorite(website_url, {
+        name: modalName,
+        email: modalEmail,
+        phone: modalPhone,
+        status: 'removed'
+      });
+      if (response) {
+        setIsFavorite('removed');
+        setIsFavoriteModalOpen(false);
+        toast.success('Removed from favorites!');
+      }
+    } else {
+      // Show modal to collect user info for adding to favorites
+      setIsFavoriteModalOpen(true);
+    }
+  };
+
+  const handleConfirmAddToFavorite = async () => {
+    const response = await postAddToFavorite(website_url, {
+      name: modalName,
+      email: modalEmail,
+      phone: modalPhone,
+      status: 'added'
+    });
+    if (response) {
+      setIsFavorite('added');
+      setIsFavoriteModalOpen(false);
+      toast.success('Added to favorites!');
+    }
+  };
+
   const handleSubmitFavorite = async (e) => {
     e.preventDefault();
     if (modalEmail && modalName) {
@@ -519,7 +590,7 @@ function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp })
               <div style={{ position: 'relative', display: 'inline-block' }}>
                 <button 
                   className="button" 
-                  onClick={addFavoriteWithoutModal}
+                  onClick={isFavorite === 'added' ? handleAddToFavorite : () => !checkMemberRestrictions('favorite') && handleAddToFavorite()}
                   disabled={isUserMember}
                   style={{
                     opacity: isUserMember ? 0.6 : 1,
@@ -561,11 +632,7 @@ function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp })
               <div style={{ position: 'relative', display: 'inline-block' }}>
                 <button
                   className="button"
-                  onClick={() => {
-                    if (!isUserMember) {
-                      setIsReviewModalOpen(true);
-                    }
-                  }}
+                  onClick={handleReviewClick}
                   disabled={isUserMember}
                   style={{
                     display: "flex",
@@ -769,7 +836,7 @@ function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp })
                 </h6>
               )}
 
-              <form onSubmit={handleSubmit}>
+              <form onSubmit={handleReviewSubmit}>
                 <div style={rowStyle}>
                   <input
                     type="text"
