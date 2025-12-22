@@ -698,11 +698,27 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                 regarding your experience!
               </h3>
 
-              {(isAdmin || member_id) && (
-                <h6 style={{ color: "red", marginBottom: '15px' }}>
-                  {isAdmin ? "Admins" : "Members"} can't submit reviews for their own website.
-                </h6>
-              )}
+              {(() => {
+                // Get logged-in member ID from cookies
+                const cookies = document.cookie.split(';').reduce((cookies, cookie) => {
+                  const [name, value] = cookie.split('=').map(c => c.trim());
+                  cookies[name] = value;
+                  return cookies;
+                }, {});
+                const loggedInMemberId = cookies.member_id || null;
+                
+                // Check if the logged-in user is the website owner
+                const isWebsiteOwner = loggedInMemberId && member_id && (loggedInMemberId === member_id.toString());
+                
+                if (isAdmin || isWebsiteOwner) {
+                  return (
+                    <h6 style={{ color: "red", marginBottom: '15px' }}>
+                      {isAdmin ? "Admins" : "You"} can't submit reviews for your own website.
+                    </h6>
+                  );
+                }
+                return null;
+              })()}
 
               <form onSubmit={handleSubmit}>
                 <div style={rowStyle}>
@@ -713,7 +729,15 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                     onChange={(e) => setModalName(e.target.value)}
                     required
                     style={inputStyle}
-                    disabled={!!name || !!member_id}
+                    disabled={!!name || (() => {
+                      const cookies = document.cookie.split(';').reduce((cookies, cookie) => {
+                        const [name, value] = cookie.split('=').map(c => c.trim());
+                        cookies[name] = value;
+                        return cookies;
+                      }, {});
+                      const loggedInMemberId = cookies.member_id || null;
+                      return loggedInMemberId && member_id && (loggedInMemberId === member_id.toString());
+                    })()}
                   />
 
                   <input
@@ -730,7 +754,15 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                     type="email"
                     placeholder="Email"
                     value={modalEmail || email}
-                    disabled={!!email || !!member_id}
+                    disabled={!!email || (() => {
+                      const cookies = document.cookie.split(';').reduce((cookies, cookie) => {
+                        const [name, value] = cookie.split('=').map(c => c.trim());
+                        cookies[name] = value;
+                        return cookies;
+                      }, {});
+                      const loggedInMemberId = cookies.member_id || null;
+                      return loggedInMemberId && member_id && (loggedInMemberId === member_id.toString());
+                    })()}
                     onChange={(e) => setModalEmail(e.target.value)}
                     required
                     style={inputStyle}
@@ -740,7 +772,15 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                     type="tel"
                     placeholder="Phone (Optional)"
                     value={modalPhone || phone}
-                    disabled={!!phone || !!member_id}
+                    disabled={!!phone || (() => {
+                      const cookies = document.cookie.split(';').reduce((cookies, cookie) => {
+                        const [name, value] = cookie.split('=').map(c => c.trim());
+                        cookies[name] = value;
+                        return cookies;
+                      }, {});
+                      const loggedInMemberId = cookies.member_id || null;
+                      return loggedInMemberId && member_id && (loggedInMemberId === member_id.toString());
+                    })()}
                     onChange={(e) => setModalPhone(e.target.value)}
                     style={inputStyle}
                   />
