@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import React, { use, useEffect, useRef, useState } from "react";
-import { checkMemberRestrictions } from "../../utils/userRoles";
+import { checkMemberRestrictions, isMember } from "../../utils/userRoles";
+import toast from "react-hot-toast";
 import {
   getLiveHeader,
   getMessages,
@@ -154,7 +155,12 @@ const ChatWidget = ({ website_url, isAdmin }) => {
   }, [messages]);
 
   const toggleChat = () => {
-    if (checkMemberRestrictions('chat')) {
+    const user = JSON.parse(localStorage.getItem("sessionData")) || {};
+    if (isMember(user)) {
+      toast.error("You are not eligible to use the chat feature.", {
+        duration: 4000,
+        position: 'top-center',
+      });
       return; // Don't open chat if member
     }
     setIsOpen((prev) => !prev);
