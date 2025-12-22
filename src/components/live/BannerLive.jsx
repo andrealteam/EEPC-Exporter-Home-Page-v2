@@ -639,17 +639,22 @@ function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp })
               <div style={{ position: 'relative', display: 'inline-block' }}>
                 <button
                   className="button"
-                  onClick={handleReviewClick}
+                  onClick={() => {
+                    if (isUserMember) {
+                      toast.error('You are not eligible to submit reviews.');
+                      return;
+                    }
+                    setIsReviewModalOpen(true);
+                  }}
                   style={{
                     display: "flex",
                     alignItems: "center",
                     gap: "5px",
-                    opacity: 1,
-                    cursor: 'pointer',
+                    opacity: isUserMember ? 0.7 : 1,
+                    cursor: isUserMember ? 'not-allowed' : 'pointer',
                     backgroundColor: isUserMember ? '#f0f0f0' : '',
                     color: isUserMember ? '#999' : ''
                   }}
-                  disabled={isUserMember}
                 >
                   <div className="svg-wrapper-1">
                     <div className="svg-wrapper">
