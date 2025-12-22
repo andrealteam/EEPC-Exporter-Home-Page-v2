@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { getBanner, getSocialMediaList } from "../../services/draftApi";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -30,7 +30,6 @@ import { get, set } from "react-hook-form";
 import toast from "react-hot-toast";
 import CryptoJS from "crypto-js";
 import { faTimes } from "@fortawesome/free-solid-svg-icons";
-import { setMemberCookie, getMemberIdFromCookie, MEMBER_COOKIE } from "../../utils/cookieUtils";
 
 const secretKey = "my-secret-key";
 
@@ -64,19 +63,6 @@ const colorMap = {
 };
 
 function BannerLive({ website_url, isAdmin, member_id }) {
-  // Set member cookie when member_id is available
-  useEffect(() => {
-    if (member_id) {
-      setMemberCookie(member_id);
-    }
-  }, [member_id]);
-  
-  // Check if current user is the member
-  const isCurrentUserMember = useCallback(() => {
-    if (!member_id) return false;
-    const currentMemberId = getMemberIdFromCookie();
-    return currentMemberId && currentMemberId === member_id.toString();
-  }, [member_id]);
   const [playVideo, setPlayVideo] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -181,13 +167,6 @@ function BannerLive({ website_url, isAdmin, member_id }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Check if current user is the member using cookie
-    if (isCurrentUserMember()) {
-      toast.error("You cannot submit a review for your own website");
-      return;
-    }
-    
     const formData = {
       website_url,
       name: modalName || name,
@@ -196,9 +175,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
       testimonial,
       designation,
     };
-    
-    // Include the current user's member ID in the review submission
-    let res = await postReview(formData, website_url, currentMemberId);
+    let res = await postReview(formData, website_url);
     if (res.status) {
       if (!name || !email) {
         const data = {
@@ -254,7 +231,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
   };
 
   const addFavoriteWithoutModal = async (e) => {
-    if (isCurrentUserMember()) {
+    if (member_id) {
       toast.error("You cannot add your own website to favorites");
       return;
     }
@@ -549,46 +526,33 @@ function BannerLive({ website_url, isAdmin, member_id }) {
               </button>
 
               {/* <button className="btn favorite">Leave a Review</button> */}
-              {!isCurrentUserMember() && (
-                <button
-                  class="button"
-                  onClick={() => {
-                    if (isCurrentUserMember()) {
-                      toast.error("You cannot review your own website");
-                      return;
-                    }
-                    setIsReviewModalOpen(true);
-                  }}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "5px",
-                    opacity: isCurrentUserMember() ? 0.6 : 1,
-                    cursor: isCurrentUserMember() ? 'not-allowed' : 'pointer'
-                  }}
-                  disabled={isCurrentUserMember()}
-                >
-                  <div class="svg-wrapper-1">
-                    <div class="svg-wrapper">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        width="24"
-                        height="24"
-                      >
-                        <path fill="none" d="M0 0h24v24H0z"></path>
-                        <path
-                          fill="currentColor"
-                          d="M1.946 9.315c-.522-.174-.527-.455.01-.634l19.087-6.362c.529-.176.832.12.684.638l-5.454 19.086c-.15.529-.455.547-.679.045L12 14l6-8-8 6-8.054-2.685z"
-                        ></path>
-                      </svg>
-                    </div>
+              <button
+                class="button"
+                onClick={() => setIsReviewModalOpen(true)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "5px",
+                }}
+              >
+                <div class="svg-wrapper-1">
+                  <div class="svg-wrapper">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      width="24"
+                      height="24"
+                    >
+                      <path fill="none" d="M0 0h24v24H0z"></path>
+                      <path
+                        fill="currentColor"
+                        d="M1.946 9.315c-.522-.174-.527-.455.01-.634l19.087-6.362c.529-.176.832.12.684.638l-5.454 19.086c-.15.529-.455.547-.679.045L12 14l6-8-8 6-8.054-2.685z"
+                      ></path>
+                    </svg>
                   </div>
-                  <span>
-                    {isCurrentUserMember() ? "Can't review own website" : "Leave a Review"}
-                  </span>
-                </button>
-              )}
+                </div>
+                <span>Leave a Review</span>
+              </button>
             </div>
           </div>
         </div>
@@ -734,9 +698,9 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                 regarding your experience!
               </h3>
 
-              {(isAdmin || isCurrentUserMember()) && (
+              {(isAdmin || member_id) && (
                 <h6 style={{ color: "red", marginBottom: '15px' }}>
-                  {isAdmin ? "Admins" : "You"} can't submit reviews for your own website.
+                  {isAdmin ? "Admins" : "Members"} can't submit reviews for their own website.
                 </h6>
               )}
 
@@ -749,7 +713,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                     onChange={(e) => setModalName(e.target.value)}
                     required
                     style={inputStyle}
-                    disabled={!!name || isCurrentUserMember()}
+                    disabled={!!name || !!member_id}
                   />
 
                   <input
@@ -766,7 +730,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                     type="email"
                     placeholder="Email"
                     value={modalEmail || email}
-                    disabled={!!email || isCurrentUserMember()}
+                    disabled={!!email || !!member_id}
                     onChange={(e) => setModalEmail(e.target.value)}
                     required
                     style={inputStyle}
@@ -776,7 +740,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                     type="tel"
                     placeholder="Phone (Optional)"
                     value={modalPhone || phone}
-                    disabled={!!phone || isCurrentUserMember()}
+                    disabled={!!phone || !!member_id}
                     onChange={(e) => setModalPhone(e.target.value)}
                     style={inputStyle}
                   />
@@ -815,7 +779,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                         (modalName || name) &&
                         (modalEmail || email) &&
                         testimonial
-                      ) || isAdmin || (!!member_id && localStorage.getItem('member_id') === member_id.toString())
+                      ) || isAdmin || !!member_id
                         ? "#ccc"
                         : "#0195a3", // disable color
                     color: "#fff",
@@ -826,7 +790,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                         (modalName || name) &&
                         (modalEmail || email) &&
                         testimonial
-                      ) || isAdmin || (!!member_id && localStorage.getItem('member_id') === member_id.toString())
+                      ) || isAdmin || !!member_id
                         ? "not-allowed"
                         : "pointer", // disable cursor
                     width: "100%",
@@ -835,8 +799,8 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                         (modalName || name) &&
                         (modalEmail || email) &&
                         testimonial
-                      ) || isAdmin || (!!member_id && localStorage.getItem('member_id') === member_id.toString())
-                        ? 0.6
+                      ) || isAdmin || !!member_id
+                        ? 0.7
                         : 1, // thoda fade effect
                   }}
                   disabled={
@@ -844,7 +808,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                       (modalName || name) &&
                       (modalEmail || email) &&
                       testimonial
-                    ) || isAdmin || (!!member_id && localStorage.getItem('member_id') === member_id.toString())
+                    ) || isAdmin || !!member_id
                   }
                 >
                   Submit
