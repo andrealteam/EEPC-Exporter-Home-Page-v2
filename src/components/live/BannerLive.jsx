@@ -590,8 +590,13 @@ function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp })
               <div style={{ position: 'relative', display: 'inline-block' }}>
                 <button 
                   className="button" 
-                  onClick={isFavorite === 'added' ? handleAddToFavorite : () => !checkMemberRestrictions('favorite') && handleAddToFavorite()}
-                  disabled={isUserMember}
+                  onClick={() => {
+                    if (isUserMember) {
+                      toast.error('You are not eligible to add this website to favorites.');
+                      return;
+                    }
+                    isFavorite === 'added' ? handleAddToFavorite() : handleAddToFavorite();
+                  }}
                   style={{
                     opacity: isUserMember ? 0.6 : 1,
                     cursor: isUserMember ? 'not-allowed' : 'pointer'
@@ -632,8 +637,13 @@ function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp })
               <div style={{ position: 'relative', display: 'inline-block' }}>
                 <button
                   className="button"
-                  onClick={handleReviewClick}
-                  disabled={isUserMember}
+                  onClick={() => {
+                    if (isUserMember) {
+                      toast.error('You are not eligible to review your own website.');
+                      return;
+                    }
+                    handleReviewClick();
+                  }}
                   style={{
                     display: "flex",
                     alignItems: "center",
