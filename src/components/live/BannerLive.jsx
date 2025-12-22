@@ -391,7 +391,6 @@ function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp })
     );
   return (
     <>
-      <style>{globalStyles}</style>
       <section class="position-relative" style={{ marginTop: "60px" }}>
         <div className="company-card">
           <div className="company-card-left">
@@ -600,10 +599,8 @@ function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp })
                   }}
                   style={{
                     opacity: 1,
-                    cursor: 'pointer',
-                    position: 'relative'
+                    cursor: 'pointer'
                   }}
-                  title={isUserMember ? "" : (isFavorite === "added" ? "Remove from favorites" : "Add to your favorites list")}
                 >
                   {isFavorite === "added" ? (
                     <span>❤️ Added to Favorite</span>
@@ -631,6 +628,11 @@ function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp })
                   </div>
                 )}
               </div>
+              <style jsx>{`
+                div:hover .favorite-tooltip {
+                  display: block;
+                }
+              `}</section>
 
               <div style={{ position: 'relative', display: 'inline-block' }}>
                 <button
@@ -647,10 +649,8 @@ function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp })
                     alignItems: "center",
                     gap: "5px",
                     opacity: 1,
-                    cursor: 'pointer',
-                    position: 'relative'
+                    cursor: 'pointer'
                   }}
-                  title={isUserMember ? "" : "Share your experience with this company"}
                 >
                   <div className="svg-wrapper-1">
                     <div className="svg-wrapper">
@@ -690,26 +690,11 @@ function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp })
                   </div>
                 )}
               </div>
-              <div style={{ position: 'relative', display: 'inline-block' }}>
-                <button
-                  className="button"
-                  onClick={() => {
-                    // Add chat online functionality here
-                    toast.success('Chat online feature will be available soon!');
-                  }}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "5px",
-                    opacity: 1,
-                    cursor: 'pointer',
-                    position: 'relative'
-                  }}
-                  title="Chat with our support team in real-time"
-                >
-                  <span>💬 Chat Online</span>
-                </button>
-              </div>
+              <style jsx>{`
+                div:hover .review-tooltip {
+                  display: block;
+                }
+              `}</style>
             </div>
           </div>
         </div>
@@ -1003,48 +988,6 @@ function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp })
     </>
   );
 }
-
-// Common tooltip styles
-const tooltipStyle = {
-  position: 'absolute',
-  bottom: '100%',
-  left: '50%',
-  transform: 'translateX(-50%)',
-  backgroundColor: '#333',
-  color: '#fff',
-  padding: '5px 10px',
-  borderRadius: '4px',
-  fontSize: '12px',
-  whiteSpace: 'nowrap',
-  marginBottom: '5px',
-  display: 'none',
-  zIndex: 10
-};
-
-// Add global styles for tooltips
-const globalStyles = `
-  [data-tooltip]:hover::before {
-    content: attr(data-tooltip);
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: #333;
-    color: #fff;
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-size: 12px;
-    white-space: nowrap;
-    margin-bottom: 5px;
-    z-index: 1000;
-    pointer-events: none;
-    opacity: 0.9;
-  }
-  
-  [data-tooltip][disabled]::before {
-    display: none !important;
-  }
-`;
 
 const inputStyle = {
   width: "100%",
