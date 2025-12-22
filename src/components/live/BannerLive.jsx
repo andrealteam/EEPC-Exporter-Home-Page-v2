@@ -708,7 +708,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                     onChange={(e) => setModalName(e.target.value)}
                     required
                     style={inputStyle}
-                    disabled={!!name || !!member_id}
+                    disabled={false}
                   />
 
                   <input
@@ -725,7 +725,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                     type="email"
                     placeholder="Email"
                     value={modalEmail || email}
-                    disabled={!!email || !!member_id}
+                    disabled={false}
                     onChange={(e) => setModalEmail(e.target.value)}
                     required
                     style={inputStyle}
@@ -735,7 +735,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                     type="tel"
                     placeholder="Phone (Optional)"
                     value={modalPhone || phone}
-                    disabled={!!phone || !!member_id}
+                    disabled={false}
                     onChange={(e) => setModalPhone(e.target.value)}
                     style={inputStyle}
                   />
