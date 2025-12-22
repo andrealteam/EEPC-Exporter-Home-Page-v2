@@ -260,9 +260,7 @@ function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp })
   };
   
   const handleReviewClick = () => {
-    const user = JSON.parse(localStorage.getItem("sessionData") || '{}');
-    if (isMember(user)) {
-      toast.error('You are not eligible to submit reviews.');
+    if (checkMemberRestrictions('review')) {
       return;
     }
     setIsReviewModalOpen(true);
@@ -641,19 +639,17 @@ function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp })
                   className="button"
                   onClick={() => {
                     if (isUserMember) {
-                      toast.error('You are not eligible to submit reviews.');
+                      toast.error('You are not eligible to review your own website.');
                       return;
                     }
-                    setIsReviewModalOpen(true);
+                    handleReviewClick();
                   }}
                   style={{
                     display: "flex",
                     alignItems: "center",
                     gap: "5px",
-                    opacity: isUserMember ? 0.7 : 1,
-                    cursor: isUserMember ? 'not-allowed' : 'pointer',
-                    backgroundColor: isUserMember ? '#f0f0f0' : '',
-                    color: isUserMember ? '#999' : ''
+                    opacity: 1,
+                    cursor: 'pointer'
                   }}
                 >
                   <div className="svg-wrapper-1">
