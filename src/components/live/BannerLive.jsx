@@ -588,26 +588,53 @@ function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp })
                 )}
 
               <div style={{ position: 'relative', display: 'inline-block' }}>
-                <button 
-                  className="button" 
-                  onClick={() => {
-                    if (isUserMember) {
-                      toast.error('You are not eligible to add this website to favorites.');
-                      return;
-                    }
-                    isFavorite === 'added' ? handleAddToFavorite() : handleAddToFavorite();
-                  }}
-                  style={{
-                    opacity: 1,
-                    cursor: 'pointer'
-                  }}
-                >
-                  {isFavorite === "added" ? (
-                    <span>❤️ Added to Favorite</span>
-                  ) : (
-                    <span>🤍 Add to Favorite</span>
+                <div style={{ position: 'relative', display: 'inline-block' }}>
+                  <button 
+                    className="button" 
+                    onClick={() => {
+                      if (isUserMember) {
+                        toast.error('You are not eligible to add this website to favorites.');
+                        return;
+                      }
+                      isFavorite === 'added' ? handleAddToFavorite() : handleAddToFavorite();
+                    }}
+                    style={{
+                      opacity: 1,
+                      cursor: 'pointer',
+                      position: 'relative'
+                    }}
+                  >
+                    {isFavorite === "added" ? (
+                      <span>❤️ Added to Favorite</span>
+                    ) : (
+                      <span>🤍 Add to Favorite</span>
+                    )}
+                  </button>
+                  {isUserMember && (
+                    <div style={{
+                      position: 'absolute',
+                      bottom: '100%',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      backgroundColor: '#333',
+                      color: '#fff',
+                      padding: '5px 10px',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      whiteSpace: 'nowrap',
+                      marginBottom: '5px',
+                      display: 'none',
+                      zIndex: 10
+                    }} className="favorite-tooltip">
+                      You are not eligible to add to favorite
+                    </div>
                   )}
-                </button>
+                </div>
+                <style jsx>{`
+                  div:hover .favorite-tooltip {
+                    display: block !important;
+                  }
+                `}</style>
                 {isUserMember && (
                   <div style={{
                     position: 'absolute',
@@ -635,41 +662,68 @@ function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp })
               `}</style>
 
               <div style={{ position: 'relative', display: 'inline-block' }}>
-                <button
-                  className="button"
-                  onClick={() => {
-                    if (isUserMember) {
-                      toast.error('You are not eligible to review your own website.');
-                      return;
-                    }
-                    handleReviewClick();
-                  }}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "5px",
-                    opacity: 1,
-                    cursor: 'pointer'
-                  }}
-                >
-                  <div className="svg-wrapper-1">
-                    <div className="svg-wrapper">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        width="24"
-                        height="24"
-                      >
-                        <path fill="none" d="M0 0h24v24H0z"></path>
-                        <path
-                          fill={isUserMember ? "#999" : "currentColor"}
-                          d="M1.946 9.315c-.522-.174-.527-.455.01-.634l19.087-6.362c.529-.176.832.12.684.638l-5.454 19.086c-.15.529-.455.547-.679.045L12 14l6-8-8 6-8.054-2.685z"
-                        ></path>
-                      </svg>
+                <div style={{ position: 'relative', display: 'inline-block' }}>
+                  <button
+                    className="button"
+                    onClick={() => {
+                      if (isUserMember) {
+                        toast.error('You are not eligible to review your own website.');
+                        return;
+                      }
+                      handleReviewClick();
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "5px",
+                      opacity: 1,
+                      cursor: 'pointer',
+                      position: 'relative'
+                    }}
+                  >
+                    <div className="svg-wrapper-1">
+                      <div className="svg-wrapper">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          width="24"
+                          height="24"
+                        >
+                          <path fill="none" d="M0 0h24v24H0z"></path>
+                          <path
+                            fill={isUserMember ? "#999" : "currentColor"}
+                            d="M1.946 9.315c-.522-.174-.527-.455.01-.634l19.087-6.362c.529-.176.832.12.684.638l-5.454 19.086c-.15.529-.455.547-.679.045L12 14l6-8-8 6-8.054-2.685z"
+                          ></path>
+                        </svg>
+                      </div>
                     </div>
-                  </div>
-                  <span>Leave a Review</span>
-                </button>
+                    <span>Leave a Review</span>
+                  </button>
+                  {isUserMember && (
+                    <div style={{
+                      position: 'absolute',
+                      bottom: '100%',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      backgroundColor: '#333',
+                      color: '#fff',
+                      padding: '5px 10px',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      whiteSpace: 'nowrap',
+                      marginBottom: '5px',
+                      display: 'none',
+                      zIndex: 10
+                    }} className="review-tooltip">
+                      You are not eligible to review
+                    </div>
+                  )}
+                </div>
+                <style jsx>{`
+                  div:hover .review-tooltip {
+                    display: block !important;
+                  }
+                `}</style>
                 {isUserMember && (
                   <div style={{
                     position: 'absolute',
