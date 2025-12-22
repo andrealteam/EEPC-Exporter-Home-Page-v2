@@ -260,7 +260,9 @@ function BannerLive({ website_url, isAdmin, member_id, isMember: isMemberProp })
   };
   
   const handleReviewClick = () => {
-    if (checkMemberRestrictions('review')) {
+    const user = JSON.parse(localStorage.getItem("sessionData") || '{}');
+    if (isMember(user)) {
+      toast.error('You are not eligible to submit reviews.');
       return;
     }
     setIsReviewModalOpen(true);
