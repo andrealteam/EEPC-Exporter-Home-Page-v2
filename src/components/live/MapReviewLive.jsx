@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import React, { useEffect, useState } from "react";
-import { checkMemberRestrictions } from "../../utils/userRoles";
+import React, { useEffect, useState, useMemo } from "react";
+import { checkMemberRestrictions, isMember } from "../../utils/userRoles";
 import { getAddress } from "../../services/draftApi";
 import Skeleton from "react-loading-skeleton";
 import { getLiveAddress, postGetInTouch } from "../../services/liveApi";
@@ -9,7 +9,7 @@ import CryptoJS from "crypto-js";
 
 const secretKey = "my-secret-key";
 
-const MapReviewLive = ({ website_url, isAdmin }) => {
+const MapReviewLive = ({ website_url, isAdmin, isMember: isMemberProp }) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -129,9 +129,12 @@ const MapReviewLive = ({ website_url, isAdmin }) => {
 
   // Encode the address for URL safety
   const mapSrc = `https://www.google.com/maps?q=${encodeURIComponent(
-    addressData?.address
+    addressData?.address || ''
   )}&output=embed`;
-
+  
+  // Check if user is a member
+  const user = JSON.parse(localStorage.getItem("sessionData") || '{}');
+  const isUserMember = isMemberProp || isMember(user);
 
   if (isLoading) {
     return (
@@ -157,7 +160,12 @@ const MapReviewLive = ({ website_url, isAdmin }) => {
         <p className="small-text">write to us</p>
         <h2 className="title">Get In Touch</h2>
 
-        <form>
+        {isUserMember && (
+          <div className="alert alert-info" style={{ marginBottom: '20px' }}>
+            <p>You need to be logged in as a registered member to submit a review.</p>
+          </div>
+        )}
+        <form onSubmit={handleSubmit} style={isUserMember ? { opacity: 0.6, pointerEvents: 'none' } : {}}>
           <input
             type="text"
             className="form-input"
@@ -197,39 +205,41 @@ const MapReviewLive = ({ website_url, isAdmin }) => {
           />
 
           <textarea
-            className="form-textarea"
-            placeholder="Type your message here (limit 150 words)..."
+            className="form-input"
+            placeholder="Your Message"
             value={message}
             onChange={handleTestimonialChange}
-            required
-          ></textarea>
+            maxLength={maxWords * 5}
+            rows={5}
+          />
 
           <button
-            className="button"
-            onClick={handleSubmit}
+            type="submit"
+            className="btn btn-primary w-100"
             disabled={
               isAdmin ||
+              isUserMember ||
               !(modalName || name) ||
               !(modalEmail || email) ||
               !message.trim()
             }
             style={{
               backgroundColor:
-                isAdmin ||
+                isAdmin || isUserMember ||
                 !(modalName || name) ||
                 !(modalEmail || email) ||
                 !message.trim()
                   ? "#ccc"
                   : "#0195a3",
               cursor:
-                isAdmin ||
+                isAdmin || isUserMember ||
                 !(modalName || name) ||
                 !(modalEmail || email) ||
                 !message.trim()
                   ? "not-allowed"
                   : "pointer",
               opacity:
-                isAdmin ||
+                isAdmin || isUserMember ||
                 !(modalName || name) ||
                 !(modalEmail || email) ||
                 !message.trim()
@@ -245,13 +255,13 @@ const MapReviewLive = ({ website_url, isAdmin }) => {
               transition: "0.2s ease",
             }}
           >
-            {isAdmin
-              ? "Disabled for Admin"
-              : !(modalName || name) ||
-                !(modalEmail || email) ||
-                !message.trim()
-              ? "Fill all required fields"
-              : "Send Enquiry"}
+            {isUserMember 
+              ? "Reviews Disabled" 
+              : isAdmin
+                ? "Disabled for Admin"
+                : !(modalName || name) || !(modalEmail || email) || !message.trim()
+                  ? "Fill all required fields"
+                  : "Send Enquiry"}
           </button>
         </form>
       </div>
