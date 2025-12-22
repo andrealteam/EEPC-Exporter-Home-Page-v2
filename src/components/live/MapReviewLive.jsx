@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
+import { checkMemberRestrictions } from "../../utils/userRoles";
 import { getAddress } from "../../services/draftApi";
 import Skeleton from "react-loading-skeleton";
 import { getLiveAddress, postGetInTouch } from "../../services/liveApi";
@@ -56,6 +57,12 @@ const MapReviewLive = ({ website_url, isAdmin }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Check if user is a member trying to submit a review
+    if (checkMemberRestrictions('review')) {
+      return; // Stop the submission if member
+    }
+    
     const formData = {
       website_url,
       name: modalName || name,

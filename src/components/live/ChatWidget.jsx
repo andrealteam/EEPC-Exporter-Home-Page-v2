@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import React, { use, useEffect, useRef, useState } from "react";
+import { checkMemberRestrictions } from "../../utils/userRoles";
 import {
   getLiveHeader,
   getMessages,
@@ -153,6 +154,9 @@ const ChatWidget = ({ website_url, isAdmin }) => {
   }, [messages]);
 
   const toggleChat = () => {
+    if (checkMemberRestrictions('chat')) {
+      return; // Don't open chat if member
+    }
     setIsOpen((prev) => !prev);
   };
 
