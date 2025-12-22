@@ -698,9 +698,9 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                 regarding your experience!
               </h3>
 
-              {isAdmin && (
-                <h6 style={{ color: "red" }}>
-                  You can’t submit a review for your own website.
+              {(isAdmin || member_id) && (
+                <h6 style={{ color: "red", marginBottom: '15px' }}>
+                  {isAdmin ? "Admins" : "Members"} can't submit reviews for their own website.
                 </h6>
               )}
 
@@ -713,7 +713,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                     onChange={(e) => setModalName(e.target.value)}
                     required
                     style={inputStyle}
-                    disabled={!!name}
+                    disabled={!!name || !!member_id}
                   />
 
                   <input
@@ -730,7 +730,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                     type="email"
                     placeholder="Email"
                     value={modalEmail || email}
-                    disabled={!!email}
+                    disabled={!!email || !!member_id}
                     onChange={(e) => setModalEmail(e.target.value)}
                     required
                     style={inputStyle}
@@ -740,7 +740,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                     type="tel"
                     placeholder="Phone (Optional)"
                     value={modalPhone || phone}
-                    disabled={!!phone}
+                    disabled={!!phone || !!member_id}
                     onChange={(e) => setModalPhone(e.target.value)}
                     style={inputStyle}
                   />
@@ -779,7 +779,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                         (modalName || name) &&
                         (modalEmail || email) &&
                         testimonial
-                      ) || isAdmin
+                      ) || isAdmin || !!member_id
                         ? "#ccc"
                         : "#0195a3", // disable color
                     color: "#fff",
@@ -790,7 +790,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                         (modalName || name) &&
                         (modalEmail || email) &&
                         testimonial
-                      ) || isAdmin
+                      ) || isAdmin || !!member_id
                         ? "not-allowed"
                         : "pointer", // disable cursor
                     width: "100%",
@@ -799,7 +799,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                         (modalName || name) &&
                         (modalEmail || email) &&
                         testimonial
-                      ) || isAdmin
+                      ) || isAdmin || !!member_id
                         ? 0.7
                         : 1, // thoda fade effect
                   }}
@@ -808,7 +808,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                       (modalName || name) &&
                       (modalEmail || email) &&
                       testimonial
-                    ) || isAdmin
+                    ) || isAdmin || !!member_id
                   }
                 >
                   Submit
