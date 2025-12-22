@@ -698,7 +698,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                 regarding your experience!
               </h3>
 
-              {(isAdmin || member_id) && (
+              {(isAdmin || (member_id && localStorage.getItem('member_id') === member_id.toString())) && (
                 <h6 style={{ color: "red", marginBottom: '15px' }}>
                   {isAdmin ? "Admins" : "Members"} can't submit reviews for their own website.
                 </h6>
@@ -713,7 +713,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                     onChange={(e) => setModalName(e.target.value)}
                     required
                     style={inputStyle}
-                    disabled={!!name || !!member_id}
+                    disabled={!!name || (!!member_id && localStorage.getItem('member_id') === member_id.toString())}
                   />
 
                   <input
@@ -730,7 +730,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                     type="email"
                     placeholder="Email"
                     value={modalEmail || email}
-                    disabled={!!email || !!member_id}
+                    disabled={!!email || (!!member_id && localStorage.getItem('member_id') === member_id.toString())}
                     onChange={(e) => setModalEmail(e.target.value)}
                     required
                     style={inputStyle}
@@ -740,7 +740,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                     type="tel"
                     placeholder="Phone (Optional)"
                     value={modalPhone || phone}
-                    disabled={!!phone || !!member_id}
+                    disabled={!!phone || (!!member_id && localStorage.getItem('member_id') === member_id.toString())}
                     onChange={(e) => setModalPhone(e.target.value)}
                     style={inputStyle}
                   />
@@ -779,7 +779,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                         (modalName || name) &&
                         (modalEmail || email) &&
                         testimonial
-                      ) || isAdmin || !!member_id
+                      ) || isAdmin || (!!member_id && localStorage.getItem('member_id') === member_id.toString())
                         ? "#ccc"
                         : "#0195a3", // disable color
                     color: "#fff",
@@ -790,7 +790,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                         (modalName || name) &&
                         (modalEmail || email) &&
                         testimonial
-                      ) || isAdmin || !!member_id
+                      ) || isAdmin || (!!member_id && localStorage.getItem('member_id') === member_id.toString())
                         ? "not-allowed"
                         : "pointer", // disable cursor
                     width: "100%",
@@ -799,8 +799,8 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                         (modalName || name) &&
                         (modalEmail || email) &&
                         testimonial
-                      ) || isAdmin || !!member_id
-                        ? 0.7
+                      ) || isAdmin || (!!member_id && localStorage.getItem('member_id') === member_id.toString())
+                        ? 0.6
                         : 1, // thoda fade effect
                   }}
                   disabled={
@@ -808,7 +808,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                       (modalName || name) &&
                       (modalEmail || email) &&
                       testimonial
-                    ) || isAdmin || !!member_id
+                    ) || isAdmin || (!!member_id && localStorage.getItem('member_id') === member_id.toString())
                   }
                 >
                   Submit
