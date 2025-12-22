@@ -886,7 +886,7 @@ const BannerDraft = ({ memberId }) => {
                 <button class="button mt-3">★ Add to favorite</button> */}
 
                 {/* <button className="btn favorite">Leave a Review</button> */}
-                <button
+                {/* <button
                   class="button mt-3"
                   style={{
                     display: "flex",
@@ -911,7 +911,7 @@ const BannerDraft = ({ memberId }) => {
                     </div>
                   </div>
                   <span>Leave a Review</span>
-                </button>
+                </button> */}
               </div>
             </div>
           </div>

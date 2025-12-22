@@ -307,7 +307,7 @@ function BannerPreview({ memberId }) {
             </button> */}
 
             {/* <button className="btn favorite">Leave a Review</button> */}
-            <button
+            {/* <button
               class="button mt-3"
               style={{
                 display: "flex",
@@ -332,7 +332,7 @@ function BannerPreview({ memberId }) {
                 </div>
               </div>
               <span>Leave a Review</span>
-            </button>
+            </button> */}
           </div>
         </div>
       </div>
