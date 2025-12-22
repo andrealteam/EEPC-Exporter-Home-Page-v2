@@ -362,7 +362,8 @@ const Live = () => {
           isMember={isMember}
         />
       </div>
-      {!isMember && <ChatWidget website_url={website_url} isAdmin={isAdmin} />}
+      
+      <ChatWidget website_url={website_url} isAdmin={isAdmin} isMember={isMember} />
       <WhatsAppPopUp website_url={website_url} />
       <FooterLive website_url={website_url} />
     </>

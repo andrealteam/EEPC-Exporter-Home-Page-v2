@@ -19,7 +19,7 @@ import CryptoJS from "crypto-js";
 
 const secretKey = "my-secret-key";
 
-const ChatWidget = ({ website_url, isAdmin }) => {
+const ChatWidget = ({ website_url, isAdmin, isMember }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -155,13 +155,17 @@ const ChatWidget = ({ website_url, isAdmin }) => {
   }, [messages]);
 
   const toggleChat = () => {
-    const user = JSON.parse(localStorage.getItem("sessionData")) || {};
-    if (isMember(user)) {
+    if (isMember) {
       toast.error("You are not eligible to use the chat feature.", {
         duration: 4000,
         position: 'top-center',
       });
       return; // Don't open chat if member
+    }
+    // If user is not logged in, show the login form by toggling isOpen
+    if (!data) {
+      setIsOpen(true);
+      return;
     }
     setIsOpen((prev) => !prev);
   };
@@ -266,8 +270,8 @@ const ChatWidget = ({ website_url, isAdmin }) => {
       {!isOpen ? (
         <div className="chat-popup" onClick={toggleChat}>
           <div className="chat-message">
-            <p className="chat-text">We're Online!</p>
-            <p className="chat-subtext">How may I help you today?</p>
+            <p className="chat-text">{isMember ? 'Chat' : "We're Online!"}</p>
+            <p className="chat-subtext">{isMember ? 'Contact support for assistance' : "How may I help you today?"}</p>
           </div>
           <div className="chat-icon" style={{ position: "relative" }}>
             <FontAwesomeIcon icon={faCommentDots} size="lg" />
