@@ -779,7 +779,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                         (modalName || name) &&
                         (modalEmail || email) &&
                         testimonial
-                      ) || isAdmin
+                      ) || isAdmin || !!member_id
                         ? "#ccc"
                         : "#0195a3", // disable color
                     color: "#fff",
@@ -790,7 +790,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                         (modalName || name) &&
                         (modalEmail || email) &&
                         testimonial
-                      ) || isAdmin
+                      ) || isAdmin || !!member_id
                         ? "not-allowed"
                         : "pointer", // disable cursor
                     width: "100%",
@@ -799,7 +799,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                         (modalName || name) &&
                         (modalEmail || email) &&
                         testimonial
-                      ) || isAdmin
+                      ) || isAdmin || !!member_id
                         ? 0.7
                         : 1, // thoda fade effect
                   }}
@@ -808,7 +808,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                       (modalName || name) &&
                       (modalEmail || email) &&
                       testimonial
-                    ) || isAdmin
+                    ) || isAdmin || !!member_id
                   }
                 >
                   Submit
