@@ -231,6 +231,11 @@ function BannerLive({ website_url, isAdmin, member_id }) {
   };
 
   const addFavoriteWithoutModal = async (e) => {
+    if (member_id) {
+      toast.error("You cannot add your own website to favorites");
+      return;
+    }
+    
     if (email || name) {
       // add to favorite logic here
       let res = await postAddToFavorite({ website_url, email, name, phone });
