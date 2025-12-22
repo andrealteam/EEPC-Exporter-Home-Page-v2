@@ -167,6 +167,17 @@ function BannerLive({ website_url, isAdmin, member_id }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Get the current user's member ID from localStorage
+    const currentMemberId = localStorage.getItem('member_id');
+    const isCurrentUserMember = currentMemberId && member_id && currentMemberId === member_id.toString();
+    
+    // If the current user is the member, don't allow submission
+    if (isCurrentUserMember) {
+      toast.error("You cannot submit a review for your own website");
+      return;
+    }
+    
     const formData = {
       website_url,
       name: modalName || name,
@@ -175,7 +186,9 @@ function BannerLive({ website_url, isAdmin, member_id }) {
       testimonial,
       designation,
     };
-    let res = await postReview(formData, website_url);
+    
+    // Include the current user's member ID in the review submission
+    let res = await postReview(formData, website_url, currentMemberId);
     if (res.status) {
       if (!name || !email) {
         const data = {
@@ -526,33 +539,49 @@ function BannerLive({ website_url, isAdmin, member_id }) {
               </button>
 
               {/* <button className="btn favorite">Leave a Review</button> */}
-              <button
-                class="button"
-                onClick={() => setIsReviewModalOpen(true)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "5px",
-                }}
-              >
-                <div class="svg-wrapper-1">
-                  <div class="svg-wrapper">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      width="24"
-                      height="24"
-                    >
-                      <path fill="none" d="M0 0h24v24H0z"></path>
-                      <path
-                        fill="currentColor"
-                        d="M1.946 9.315c-.522-.174-.527-.455.01-.634l19.087-6.362c.529-.176.832.12.684.638l-5.454 19.086c-.15.529-.455.547-.679.045L12 14l6-8-8 6-8.054-2.685z"
-                      ></path>
-                    </svg>
+              {(!member_id || localStorage.getItem('member_id') !== member_id.toString()) && (
+                <button
+                  class="button"
+                  onClick={() => {
+                    const currentMemberId = localStorage.getItem('member_id');
+                    if (member_id && currentMemberId === member_id.toString()) {
+                      toast.error("You cannot review your own website");
+                      return;
+                    }
+                    setIsReviewModalOpen(true);
+                  }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "5px",
+                    opacity: member_id && localStorage.getItem('member_id') === member_id.toString() ? 0.6 : 1,
+                    cursor: member_id && localStorage.getItem('member_id') === member_id.toString() ? 'not-allowed' : 'pointer'
+                  }}
+                  disabled={member_id && localStorage.getItem('member_id') === member_id.toString()}
+                >
+                  <div class="svg-wrapper-1">
+                    <div class="svg-wrapper">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        width="24"
+                        height="24"
+                      >
+                        <path fill="none" d="M0 0h24v24H0z"></path>
+                        <path
+                          fill="currentColor"
+                          d="M1.946 9.315c-.522-.174-.527-.455.01-.634l19.087-6.362c.529-.176.832.12.684.638l-5.454 19.086c-.15.529-.455.547-.679.045L12 14l6-8-8 6-8.054-2.685z"
+                        ></path>
+                      </svg>
+                    </div>
                   </div>
-                </div>
-                <span>Leave a Review</span>
-              </button>
+                  <span>
+                    {member_id && localStorage.getItem('member_id') === member_id.toString() 
+                      ? "Can't review own website" 
+                      : "Leave a Review"}
+                  </span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -700,7 +729,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
 
               {(isAdmin || (member_id && localStorage.getItem('member_id') === member_id.toString())) && (
                 <h6 style={{ color: "red", marginBottom: '15px' }}>
-                  {isAdmin ? "Admins" : "Members"} can't submit reviews for their own website.
+                  {isAdmin ? "Admins" : "You"} can't submit reviews for your own website.
                 </h6>
               )}
 

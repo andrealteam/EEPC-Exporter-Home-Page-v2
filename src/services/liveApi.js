@@ -295,15 +295,22 @@ export const postMessages = async (data, website_url) => {
 };
 
 // Post Review in testimonial
-export const postReview = async (data, website_url) => {
+export const postReview = async (data, website_url, member_id = null) => {
   try {
-    const res = await api.post(`exporter-testimonial-submit`, {
+    const postData = {
       url: website_url,
       name: data.name,
       testimonial: data.testimonial,
       email: data.email,
       designation: data?.designation,
-    });
+    };
+    
+    // Add member_id to the request if available
+    if (member_id) {
+      postData.member_id = member_id;
+    }
+    
+    const res = await api.post(`exporter-testimonial-submit`, postData);
 
     if (res.status === 201 && res.status) {
       return res.data;
