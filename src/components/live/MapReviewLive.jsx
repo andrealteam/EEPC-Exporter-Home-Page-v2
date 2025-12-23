@@ -58,6 +58,12 @@ const MapReviewLive = ({ website_url, isAdmin, isMember: isMemberProp }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Prevent admin from submitting reviews
+    if (isAdmin) {
+      toast.error("Admins cannot submit reviews");
+      return;
+    }
+    
     // Check if user is a member trying to submit a review
     if (checkMemberRestrictions('review')) {
       return; // Stop the submission if member
@@ -265,20 +271,19 @@ const MapReviewLive = ({ website_url, isAdmin, isMember: isMemberProp }) => {
           </button>
         </form>
       </div>
-
-      {/* <div className="contact-map">
-        <h3 className="map-title">
-          <span className="map-icon">📍</span> Locate us on map
-        </h3>
-        <div className="map-container">
+      {addressData?.address && (
+        <div className="contact-map">
           <iframe
+            title="Location Map"
             src={mapSrc}
+            width="100%"
+            height="100%"
+            style={{ border: 0 }}
             allowFullScreen=""
             loading="lazy"
-            title="Google Map"
           ></iframe>
         </div>
-      </div> */}
+      )}
     </div>
   );
 };
