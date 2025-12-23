@@ -140,13 +140,12 @@ const Live = () => {
   }, []);
 
   useEffect(() => {
-    const allowedOrigins = [
-      "https://www.eepcindia.org",
-      "https://eepc-exporter-home-page-v2.vercel.app"
-    ];
+    const allowedOrigin =
+      // "https://www.eepcindia.org";
+      "https://www.eepcindia.org";
 
     function onMessage(event) {
-      if (!allowedOrigins.includes(event.origin)) return;
+      if (event.origin !== allowedOrigin) return;
 
       const data = event.data;
 
