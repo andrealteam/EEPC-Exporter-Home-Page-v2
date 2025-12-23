@@ -140,29 +140,35 @@ const Live = () => {
   }, []);
 
   useEffect(() => {
+    // Check for admin status in localStorage on component mount
+    const storedAdminStatus = localStorage.getItem('isAdmin');
+    if (storedAdminStatus) {
+      setIsAdmin(storedAdminStatus === 'true');
+    }
+
     const allowedOrigins = [
       "https://www.eepcindia.org",
-      "https://eepc-exporter-home-page-v2.vercel.app"
+      "https://eepc-exporter-home-page-v2.vercel.app",
+      "http://localhost:3000"
     ];
 
     function onMessage(event) {
-      if (!allowedOrigins.includes(event.origin)) return;
+      if (!allowedOrigins.includes(event.origin)) {
+        console.log('Origin not allowed:', event.origin);
+        return;
+      }
 
       const data = event.data;
+      let isAdminUser = false;
 
       if (data.Rdata) {
-        // 🔹 Get old data from localStorage (if any)
-        // const existingData =
-        //   JSON.parse(localStorage.getItem(website_url)) || {};
         const storedData = localStorage.getItem(website_url);
-
-        let decryptedData = {}; // use let instead of const
+        let decryptedData = {};
 
         if (storedData) {
           try {
             const decryptedBytes = CryptoJS.AES.decrypt(storedData, secretKey);
             const decryptedText = decryptedBytes.toString(CryptoJS.enc.Utf8);
-
             if (decryptedText) {
               decryptedData = JSON.parse(decryptedText);
             }
@@ -171,41 +177,37 @@ const Live = () => {
           }
         }
 
-        // 🔹 Merge old + new data (new data overwrites old only for matching keys)
-        const mergedData = {
-          ...decryptedData,
-          ...data.Rdata,
-        };
+        const mergedData = { ...decryptedData, ...data.Rdata };
+        isAdminUser = data.Rdata?.adminCompany && 
+                     data.Rdata.adminCompany === sectionData?.company;
 
-        if (
-          data.Rdata?.adminCompany !== "" &&
-          data.Rdata?.adminCompany === sectionData?.company
-        ) {
-          setIsAdmin(true);
+        try {
+          const encrypted = CryptoJS.AES.encrypt(
+            JSON.stringify(mergedData),
+            secretKey
+          ).toString();
+          localStorage.setItem(website_url, encrypted);
+          window.dispatchEvent(new Event("localStorageUpdated"));
+        } catch (err) {
+          console.error("❌ Error saving to localStorage:", err);
         }
-        // 🔹 Save merged data to localStorage
-
-        // Encrypt before saving
-        const encrypted = CryptoJS.AES.encrypt(
-          JSON.stringify(mergedData),
-          secretKey
-        ).toString();
-        localStorage.setItem(website_url, encrypted);
-
-        // localStorage.setItem(website_url, JSON.stringify(mergedData));
-
-        window.dispatchEvent(new Event("localStorageUpdated"));
       }
 
+      // Update admin status from direct flag if present
       if (data.isAdmin !== undefined) {
-        // handle admin logic
+        isAdminUser = data.isAdmin;
+      }
+
+      // Persist admin status
+      if (isAdminUser) {
+        localStorage.setItem('isAdmin', 'true');
         setIsAdmin(true);
       }
     }
 
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [sectionData]);
+  }, [sectionData?.company, website_url]);
 
   // ✅ Restore the Set from localStorage when the component mounts
   useEffect(() => {

@@ -62,7 +62,7 @@ const colorMap = {
   telegram: "#0088cc",
 };
 
-function BannerLive({ website_url, isAdmin, member_id }) {
+function BannerLive({ website_url, isAdmin: propIsAdmin, member_id }) {
   const [playVideo, setPlayVideo] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -76,6 +76,34 @@ function BannerLive({ website_url, isAdmin, member_id }) {
   const [modalPhone, setModalPhone] = useState("");
   const [isFavorite, setIsFavorite] = useState("removed");
   const [isCatalogueModalOpen, setIsCatalogueModalOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(propIsAdmin);
+
+  // Handle admin status changes from props or localStorage
+  useEffect(() => {
+    // Update local state when prop changes
+    setIsAdmin(propIsAdmin);
+    
+    // Also check localStorage in case of cache clear
+    const storedAdmin = localStorage.getItem('isAdmin') === 'true';
+    if (storedAdmin !== propIsAdmin) {
+      setIsAdmin(storedAdmin);
+    }
+
+    // Listen for storage changes (from other tabs/windows)
+    const handleStorageChange = (e) => {
+      if (e.key === 'isAdmin') {
+        const newAdminStatus = e.newValue === 'true';
+        if (newAdminStatus !== isAdmin) {
+          setIsAdmin(newAdminStatus);
+          // Force re-render to update UI
+          window.location.reload();
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [propIsAdmin]);
 
   const {
     data: bannerData,

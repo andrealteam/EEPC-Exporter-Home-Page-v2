@@ -12,33 +12,60 @@ import {
   faPaperPlane,
   faRightFromBracket,
 } from "@fortawesome/free-solid-svg-icons";
-import { faCommentDots } from "@fortawesome/free-regular-svg-icons";
+import {
+  faCommentDots
+} from "@fortawesome/free-regular-svg-icons";
 import CryptoJS from "crypto-js";
 
 const secretKey = "my-secret-key";
 
-const ChatWidget = ({ website_url, isAdmin }) => {
+const ChatWidget = ({ website_url, isAdmin: propIsAdmin, member_id }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [data, setData] = useState("");
   const [refresh, setRefresh] = useState(false);
-  const messagesEndRef = useRef(null);
-  const [msgNotificationLength, setMsgNotificationLength] = useState(0);
-
-  const [messages, setMessages] = useState([
-    // {
-    //   from_user: "member",
-    //   text: "Hey there, welcome to Chegg! How can I help you today? 😊",
-    //   updated_at: Date.now(),
-    // },
-  ]);
   const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [msgNotificationLength, setMsgNotificationLength] = useState(0);
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(propIsAdmin);
+  const messagesEndRef = useRef(null);
+
+  // Handle admin status changes from props or localStorage
+  useEffect(() => {
+    // Update local state when prop changes
+    setIsAdmin(propIsAdmin);
+    
+    // Also check localStorage in case of cache clear
+    const storedAdmin = localStorage.getItem('isAdmin') === 'true';
+    if (storedAdmin !== propIsAdmin) {
+      setIsAdmin(storedAdmin);
+    }
+
+    // Listen for storage changes (from other tabs/windows)
+    const handleStorageChange = (e) => {
+      if (e.key === 'isAdmin') {
+        const newAdminStatus = e.newValue === 'true';
+        if (newAdminStatus !== isAdmin) {
+          setIsAdmin(newAdminStatus);
+          // Force re-render to update UI
+          window.location.reload();
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [propIsAdmin]);
 
   const {
     data: headerData,
-    isLoading,
+    isLoading: isHeaderLoading,
     isError,
     error: headerError,
   } = useQuery({
