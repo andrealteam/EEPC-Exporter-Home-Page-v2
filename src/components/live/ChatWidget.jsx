@@ -251,10 +251,6 @@ const ChatWidget = ({ website_url, isAdmin }) => {
   // If data is not available (null/undefined), don't render
   if (!headerData) return null;
 
-  if (isAdmin) {
-    return null; // Don't show chat widget at all for admin
-  }
-
   return (
     <div className="chat-container">
       {!isOpen ? (
