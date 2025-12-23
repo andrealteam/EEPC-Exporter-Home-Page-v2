@@ -142,8 +142,7 @@ const Live = () => {
   useEffect(() => {
     const allowedOrigins = [
       "https://www.eepcindia.org",
-      "https://eepc-exporter-home-page-v2.vercel.app",
-      "https://eepc-exporter-home-page-v2-whhx.vercel.app"
+      "https://eepc-exporter-home-page-v2.vercel.app"
     ];
 
     function onMessage(event) {
