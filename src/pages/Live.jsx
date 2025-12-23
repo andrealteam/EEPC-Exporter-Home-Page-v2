@@ -28,7 +28,6 @@ const Live = () => {
   // ✅ Persisted Set (shared across event calls)
   const companySetRef = useRef(new Set());
   const [isAdmin, setIsAdmin] = useState(false);
-  const [adminOrigin, setAdminOrigin] = useState(null);
   const [customer, setCustomer] = useState(() => {
     const stored = localStorage.getItem("sessionData");
     return stored ? JSON.parse(stored) : null;
@@ -83,140 +82,41 @@ const Live = () => {
     enabled: !!website_url,
   });
 
-  // 🔹 Primary admin detection from localStorage and sessionData
   useEffect(() => {
-    const checkAdminStatus = () => {
-      let isAdminDetected = false;
-      let detectedOrigin = null;
-      
-      // 1. Check encrypted localStorage data
-      const storedData = localStorage.getItem(website_url);
-      if (storedData) {
-        try {
-          const decryptedBytes = CryptoJS.AES.decrypt(storedData, secretKey);
-          const decryptedText = decryptedBytes.toString(CryptoJS.enc.Utf8);
-          if (decryptedText) {
-            const decryptedData = JSON.parse(decryptedText);
-            const adminStoreCompany = decryptedData?.adminCompany || "";
-            
-            if (adminStoreCompany && sectionData?.company && 
-                adminStoreCompany === sectionData?.company) {
-              isAdminDetected = true;
-              detectedOrigin = decryptedData?.adminOrigin || "localStorage";
-            }
-          }
-        } catch (error) {
-          console.error("❌ Error decrypting data:", error);
+    // const storedData = localStorage.getItem(website_url);
+
+    const storedData = localStorage.getItem(website_url);
+    let decryptedData = {}; // declare outside so it’s accessible later
+
+    if (storedData) {
+      try {
+        const decryptedBytes = CryptoJS.AES.decrypt(storedData, secretKey);
+        const decryptedText = decryptedBytes.toString(CryptoJS.enc.Utf8);
+
+        if (decryptedText) {
+          decryptedData = JSON.parse(decryptedText);
         }
-      }
-      
-      // 2. Check sessionData (fallback when cache is cleared)
-      const sessionData = localStorage.getItem("sessionData");
-      if (sessionData && sectionData?.company) {
-        try {
-          const session = JSON.parse(sessionData);
-          if (session?.member_name && session.member_name === sectionData?.company) {
-            isAdminDetected = true;
-            detectedOrigin = session?.origin || "sessionData";
-          }
-        } catch (e) {
-          console.error("Error parsing sessionData:", e);
-        }
-      }
-      
-      // 3. Check companySet (another fallback)
-      if (sectionData?.company && companySetRef.current.has(sectionData.company)) {
-        isAdminDetected = true;
-        detectedOrigin = "companySet";
-      }
-      
-      setIsAdmin(isAdminDetected);
-      if (detectedOrigin) {
-        setAdminOrigin(detectedOrigin);
-      }
-    };
-    
-    checkAdminStatus();
-  }, [sectionData, website_url]);
-
-  // 🔹 Handle window.message events for admin detection - FROM BOTH ORIGINS
-  useEffect(() => {
-    // Define ALLOWED ORIGINS that can set admin status
-    const allowedOrigins = [
-      "https://www.eepcindia.org",
-      "https://eepc-exporter-home-page-v2.vercel.app",
-      "https://eepc-exporter-home-page-v2-whhx.vercel.app"
-    ];
-    
-    function onMessage(event) {
-      // Only accept messages from allowed origins
-      if (!allowedOrigins.includes(event.origin)) {
-        console.log("Message rejected from origin:", event.origin);
-        return;
-      }
-
-      const data = event.data;
-      console.log("Message received from origin:", event.origin, "Data:", data);
-
-      if (data.Rdata) {
-        // Get existing data from localStorage
-        const storedData = localStorage.getItem(website_url);
-        let decryptedData = {};
-        
-        if (storedData) {
-          try {
-            const decryptedBytes = CryptoJS.AES.decrypt(storedData, secretKey);
-            const decryptedText = decryptedBytes.toString(CryptoJS.enc.Utf8);
-            if (decryptedText) {
-              decryptedData = JSON.parse(decryptedText);
-            }
-          } catch (err) {
-            console.error("❌ Error decrypting localStorage data:", err);
-          }
-        }
-
-        // Merge old + new data
-        const mergedData = {
-          ...decryptedData,
-          ...data.Rdata,
-          adminOrigin: event.origin, // Store which origin made this user admin
-        };
-
-        // Check admin status from Rdata
-        const adminCompany = data.Rdata?.adminCompany;
-        const memberName = data.Rdata?.member_name;
-        const currentCompany = sectionData?.company;
-        
-        if ((adminCompany && adminCompany === currentCompany) || 
-            (memberName && memberName === currentCompany)) {
-          console.log("Admin detected from message:", event.origin);
-          setIsAdmin(true);
-          setAdminOrigin(event.origin);
-        }
-        
-        // Save merged data to localStorage
-        const encrypted = CryptoJS.AES.encrypt(
-          JSON.stringify(mergedData),
-          secretKey
-        ).toString();
-        localStorage.setItem(website_url, encrypted);
-        
-        window.dispatchEvent(new Event("localStorageUpdated"));
-      }
-
-      // Direct admin flag from message
-      if (data.isAdmin !== undefined) {
-        setIsAdmin(data.isAdmin);
-        if (data.isAdmin) {
-          setAdminOrigin(event.origin);
-          console.log("Direct admin flag from:", event.origin);
-        }
+      } catch (error) {
+        console.error("❌ Error decrypting data:", error);
       }
     }
 
-    window.addEventListener("message", onMessage);
-    return () => window.removeEventListener("message", onMessage);
-  }, [sectionData, website_url]);
+    // ✅ Get adminCompany safely
+    let adminStoreCompany = decryptedData?.adminCompany || "";
+
+    if (storedData) {
+      // let data = JSON.parse(storedData);
+      adminStoreCompany = decryptedData?.adminCompany;
+    }
+
+    if (
+      adminStoreCompany &&
+      sectionData?.company &&
+      adminStoreCompany === sectionData?.company
+    ) {
+      setIsAdmin(true);
+    }
+  }, [sectionData]);
 
   // Close/redirect this tab when the user logs out (sessionData removed elsewhere).
   useEffect(() => {
@@ -234,26 +134,90 @@ const Live = () => {
     return () => window.removeEventListener("storage", handleLogout);
   }, []);
 
+  useEffect(() => {
+    const allowedOrigin =
+      // "https://www.eepcindia.org";
+      "https://www.eepcindia.org";
+
+    function onMessage(event) {
+      if (event.origin !== allowedOrigin) return;
+
+      const data = event.data;
+
+      if (data.Rdata) {
+        // 🔹 Get old data from localStorage (if any)
+        // const existingData =
+        //   JSON.parse(localStorage.getItem(website_url)) || {};
+        const storedData = localStorage.getItem(website_url);
+
+        let decryptedData = {}; // use let instead of const
+
+        if (storedData) {
+          try {
+            const decryptedBytes = CryptoJS.AES.decrypt(storedData, secretKey);
+            const decryptedText = decryptedBytes.toString(CryptoJS.enc.Utf8);
+
+            if (decryptedText) {
+              decryptedData = JSON.parse(decryptedText);
+            }
+          } catch (err) {
+            console.error("❌ Error decrypting localStorage data:", err);
+          }
+        }
+
+        // 🔹 Merge old + new data (new data overwrites old only for matching keys)
+        const mergedData = {
+          ...decryptedData,
+          ...data.Rdata,
+        };
+
+        if (
+          data.Rdata?.adminCompany !== "" &&
+          data.Rdata?.adminCompany === sectionData?.company
+        ) {
+          setIsAdmin(true);
+        }
+        // 🔹 Save merged data to localStorage
+
+        // Encrypt before saving
+        const encrypted = CryptoJS.AES.encrypt(
+          JSON.stringify(mergedData),
+          secretKey
+        ).toString();
+        localStorage.setItem(website_url, encrypted);
+
+        // localStorage.setItem(website_url, JSON.stringify(mergedData));
+
+        window.dispatchEvent(new Event("localStorageUpdated"));
+      }
+
+      if (data.isAdmin !== undefined) {
+        // handle admin logic
+        setIsAdmin(true);
+      }
+    }
+
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [sectionData]);
+
   // ✅ Restore the Set from localStorage when the component mounts
   useEffect(() => {
     const savedSet = localStorage.getItem("companySet");
     if (savedSet) {
-      try {
-        const parsed = JSON.parse(savedSet);
-        companySetRef.current = new Set(parsed);
-        
-        // If the restored Set already contains the company, mark as admin
-        if (sectionData?.company && companySetRef.current.has(sectionData.company)) {
-          setIsAdmin(true);
-          setAdminOrigin("companySet");
-        }
-      } catch (e) {
-        console.error("Error parsing companySet:", e);
-      }
+      const parsed = JSON.parse(savedSet);
+      companySetRef.current = new Set(parsed);
+    }
+
+    // If the restored Set already contains the company, mark as admin
+    if (
+      sectionData?.company &&
+      companySetRef.current.has(sectionData.company)
+    ) {
+      setIsAdmin(true);
     }
   }, [sectionData]);
 
-  // 🔹 Listen for sessionData changes (for admin detection)
   useEffect(() => {
     const handleStorageChange = (event) => {
       if (event.key === "sessionData") {
@@ -267,19 +231,14 @@ const Live = () => {
             "companySet",
             JSON.stringify(Array.from(companySetRef.current))
           );
-          
-          // Check if this is the admin
-          if (newData.member_name === sectionData?.company) {
-            setIsAdmin(true);
-            setAdminOrigin("storageEvent");
-          }
         }
 
-        if (newData?.member_name &&
-            (newData.member_name === sectionData?.company ||
-             companySetRef.current.has(sectionData?.company))) {
+        if (
+          newData?.member_name &&
+          (newData.member_name === sectionData?.company ||
+            companySetRef.current.has(sectionData?.company))
+        ) {
           setIsAdmin(true);
-          setAdminOrigin("storageEvent");
         }
 
         setCustomer(newData);
