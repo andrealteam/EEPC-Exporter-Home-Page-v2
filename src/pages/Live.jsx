@@ -137,7 +137,7 @@ const Live = () => {
   useEffect(() => {
     const allowedOrigin =
       // "https://www.eepcindia.org";
-      "https://eepc-exporter-home-page-v2.vercel.app";
+      "https://www.eepcindia.org";
 
     function onMessage(event) {
       if (event.origin !== allowedOrigin) return;
