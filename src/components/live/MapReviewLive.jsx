@@ -4,7 +4,6 @@ import { checkMemberRestrictions, isMember } from "../../utils/userRoles";
 import { getAddress } from "../../services/draftApi";
 import Skeleton from "react-loading-skeleton";
 import { getLiveAddress, postGetInTouch } from "../../services/liveApi";
-import { validateTokenOnServer } from "../../services/authApi";
 import toast from "react-hot-toast";
 import CryptoJS from "crypto-js";
 
@@ -18,12 +17,9 @@ const MapReviewLive = ({ website_url, isAdmin, isMember: isMemberProp }) => {
   const [modalEmail, setModalEmail] = useState("");
   const [modalPhone, setModalPhone] = useState("");
   const [message, setMessages] = useState("");
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  const [isUserMember, setIsUserMember] = useState(false);
-  
   const {
     data: addressData,
-    isLoading: isLoadingAddress,
+    isLoading,
     isError,
     error: addressError,
   } = useQuery({
@@ -31,60 +27,27 @@ const MapReviewLive = ({ website_url, isAdmin, isMember: isMemberProp }) => {
     queryFn: () => getLiveAddress(website_url),
   });
 
-  // Handle authentication state and token validation
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        // Check for token in URL first
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
-        
-        if (token) {
-          // Validate the token with the server
-          const userData = await validateTokenOnServer(token);
-          if (userData) {
-            localStorage.setItem("sessionData", JSON.stringify(userData));
-            setIsUserMember(isMember(userData));
-            return;
-          }
-        }
-        
-        // If no token or invalid token, check localStorage
-        const storedUser = localStorage.getItem("sessionData");
-        const user = storedUser ? JSON.parse(storedUser) : {};
-        setIsUserMember(isMember(user) || isMemberProp);
-      } catch (error) {
-        console.error('Auth check failed:', error);
-        setIsUserMember(true); // Default to restricted access on error
-      } finally {
-        setIsLoadingAuth(false);
-      }
-    };
-
-    checkAuth();
-  }, [isMemberProp]);
-
-  // Load saved form data
   useEffect(() => {
     const loadData = () => {
       const storedData = localStorage.getItem(website_url);
       if (storedData) {
-        try {
-          const decryptedBytes = CryptoJS.AES.decrypt(storedData, secretKey);
-          const decryptedData = JSON.parse(
-            decryptedBytes.toString(CryptoJS.enc.Utf8)
-          );
-          setName(decryptedData.name || "");
-          setEmail(decryptedData.email || "");
-          setPhone(decryptedData.phone || "");
-        } catch (error) {
-          console.error('Error decrypting stored data:', error);
-        }
+        const decryptedBytes = CryptoJS.AES.decrypt(storedData, secretKey);
+        const decryptedData = JSON.parse(
+          decryptedBytes.toString(CryptoJS.enc.Utf8)
+        );
+        // const parsedData = JSON.parse(storedData);
+        setName(decryptedData.name || "");
+        setEmail(decryptedData.email || "");
+        setPhone(decryptedData.phone || "");
       }
     };
 
+    // pehle load
     loadData();
+
+    // listener lagao
     window.addEventListener("localStorageUpdated", loadData);
+
     return () => {
       window.removeEventListener("localStorageUpdated", loadData);
     };
@@ -96,9 +59,8 @@ const MapReviewLive = ({ website_url, isAdmin, isMember: isMemberProp }) => {
     e.preventDefault();
     
     // Check if user is a member trying to submit a review
-    const isRestricted = await checkMemberRestrictions('review');
-    if (isRestricted) {
-      return; // Stop the submission if member or not logged in
+    if (checkMemberRestrictions('review')) {
+      return; // Stop the submission if member
     }
     
     const formData = {
@@ -108,56 +70,61 @@ const MapReviewLive = ({ website_url, isAdmin, isMember: isMemberProp }) => {
       phone: modalPhone || phone,
       message,
     };
-    
-    try {
-      let res = await postGetInTouch(formData, website_url);
-      if (res.status) {
-        if (!name || !email) {
-          const savedData = {
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-          };
+    let res = await postGetInTouch(formData, website_url);
+    if (res.status) {
+      if (!name || !email) {
+        const savedData = {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+        };
 
-          const encrypted = CryptoJS.AES.encrypt(
-            JSON.stringify(savedData),
-            secretKey
-          ).toString();
+        const encrypted = CryptoJS.AES.encrypt(
+          JSON.stringify(savedData),
+          secretKey
+        ).toString();
 
-          localStorage.setItem(website_url, encrypted);
-          setName(savedData.name);
-          setEmail(savedData.email);
-          setPhone(savedData.phone);
-          window.dispatchEvent(new Event("localStorageUpdated"));
-        }
+        localStorage.setItem(website_url, encrypted);
+        // localStorage.setItem(website_url, JSON.stringify(savedData));
 
-        toast.success(res?.message || "Message sent successfully!");
-        setModalName("");
-        setModalEmail("");
-        setModalPhone("");
-        setMessages("");
-      } else {
-        throw new Error(res?.message || "Failed to send message");
+        // 👇 localStorage set karne ke baad turant state update
+        setName(savedData.name);
+        setEmail(savedData.email);
+        setPhone(savedData.phone);
+
+        // custom event dispatch
+        window.dispatchEvent(new Event("localStorageUpdated"));
       }
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      toast.error(error.message || "Error submitting review");
+
+      toast.success(res?.message);
+      setModalName("");
+      setModalEmail("");
+      setModalPhone("");
+      setMessages("");
+    } else {
+      setModalName("");
+      setModalEmail("");
+      setModalPhone("");
+      setMessages("");
+
+      toast.error(res?.message || "Error submitting review");
     }
   };
 
   const maxWords = 150;
 
   const handleTestimonialChange = (e) => {
-    const text = e.target.value;
-    const words = text.trim().split(/\s+/);
-    
+    let text = e.target.value;
+
+    // Words split karke count karte hai
+    let words = text.trim().split(/\s+/);
+
     if (words.length > maxWords) {
-      const truncatedText = words.slice(0, maxWords).join(" ");
-      setMessages(truncatedText);
-      toast.error(`Maximum ${maxWords} words allowed`);
-    } else {
-      setMessages(text);
+      // 200 words tak hi allow karenge
+      text = words.slice(0, maxWords).join(" ");
     }
+
+    setMessages(text);
   };
 
   // Encode the address for URL safety
@@ -165,16 +132,9 @@ const MapReviewLive = ({ website_url, isAdmin, isMember: isMemberProp }) => {
     addressData?.address || ''
   )}&output=embed`;
   
-  // Show loading state while checking authentication
-  if (isLoadingAuth) {
-    return (
-      <div className="contact-section">
-        <div className="contact-form">
-          <Skeleton height={50} count={5} />
-        </div>
-      </div>
-    );
-  }
+  // Check if user is a member
+  const user = JSON.parse(localStorage.getItem("sessionData") || '{}');
+  const isUserMember = isMemberProp || isMember(user);
 
   if (isLoading) {
     return (

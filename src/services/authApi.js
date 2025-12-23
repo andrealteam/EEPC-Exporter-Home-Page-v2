@@ -1,26 +1,7 @@
 import axios from "axios";
 import { api } from "./api";
-
 export const memberBaseUrl = "https://members.eepcindia.com/";
 export const memberLogin = "oauth/validate_user";
-
-/**
- * Validates a token with the server
- * @param {string} token - The authentication token to validate
- * @returns {Promise<Object|null>} User data if token is valid, null otherwise
- */
-export const validateTokenOnServer = async (token) => {
-  try {
-    const response = await api.get(`/validate-token?token=${encodeURIComponent(token)}`);
-    if (response.data.valid && response.data.user) {
-      return response.data.user;
-    }
-    return null;
-  } catch (error) {
-    console.error('Token validation error:', error);
-    return null;
-  }
-};
 
 export const loginMember = async (mem_id, password) => {
   const url = memberBaseUrl + memberLogin;
