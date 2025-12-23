@@ -144,35 +144,24 @@ const Live = () => {
 
       const data = event.data;
 
-      if (data?.Rdata) {
-        // Initialize with empty object as fallback
-        let decryptedData = {};
+      if (data.Rdata) {
+        // 🔹 Get old data from localStorage (if any)
+        // const existingData =
+        //   JSON.parse(localStorage.getItem(website_url)) || {};
         const storedData = localStorage.getItem(website_url);
+
+        let decryptedData = {}; // use let instead of const
 
         if (storedData) {
           try {
-            const decryptedBytes = CryptoJS.AES.decrypt(storedData.toString(), secretKey);
+            const decryptedBytes = CryptoJS.AES.decrypt(storedData, secretKey);
             const decryptedText = decryptedBytes.toString(CryptoJS.enc.Utf8);
-            
-            // Only parse if we have valid JSON
-            if (decryptedText && decryptedText.trim() !== '') {
-              try {
-                decryptedData = JSON.parse(decryptedText);
-                // Ensure decryptedData is an object
-                if (typeof decryptedData !== 'object' || decryptedData === null) {
-                  console.warn('Decrypted data is not an object, using empty object');
-                  decryptedData = {};
-                }
-              } catch (parseError) {
-                console.error('Error parsing decrypted data:', parseError);
-                // Clear corrupted data
-                localStorage.removeItem(website_url);
-              }
+
+            if (decryptedText) {
+              decryptedData = JSON.parse(decryptedText);
             }
-          } catch (decryptError) {
-            console.error('❌ Error decrypting localStorage data:', decryptError);
-            // Clear corrupted data
-            localStorage.removeItem(website_url);
+          } catch (err) {
+            console.error("❌ Error decrypting localStorage data:", err);
           }
         }
 
