@@ -18,7 +18,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getRejectionSection } from "../services/draftApi";
 import { ChangeTrackerProvider } from "../contexts/ChangeTrackerContext";
 
-const LOGIN_URL = "https://prodis.eepcindia.org/auth/login";
+const LOGIN_URL = "https://eepc-exporter-home-page-v2.vercel.app/auth/login";
 
 const Draft = () => {
   const location = useLocation();
@@ -95,7 +95,7 @@ const Draft = () => {
   //       <button
   //         onClick={() =>
   //           (window.location.href =
-  //             "https://prodis.eepcindia.org/auth/login")
+  //             "https://eepc-exporter-home-page-v2.vercel.app/auth/login")
   //         }
   //         style={{
   //           padding: "10px 20px",
