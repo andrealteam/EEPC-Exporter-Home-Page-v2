@@ -39,14 +39,14 @@ const Login = () => {
           navigate("/edit", { state: { exporterData: payload, token: token } });
         } else {
           window.location.href =
-            // "https://eepc-exporter-home-page-v2.vercel.app/auth/login"
-            "https://eepc-exporter-home-page-v2.vercel.app/auth/login";
+            // "https://prodis.eepcindia.org/auth/login"
+            "https://prodis.eepcindia.org/auth/login";
         }
       });
     } else {
       window.location.href =
-        // "https://eepc-exporter-home-page-v2.vercel.app/auth/login"
-        "https://eepc-exporter-home-page-v2.vercel.app/auth/login";
+        // "https://prodis.eepcindia.org/auth/login"
+        "https://prodis.eepcindia.org/auth/login";
     }
   }, []);
 
