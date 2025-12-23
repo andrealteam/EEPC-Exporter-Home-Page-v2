@@ -240,6 +240,7 @@ const ChatWidget = ({ website_url, isAdmin }) => {
     setData("");
     setMessages([]);
   }
+  console.log(isAdmin);
 
   // Optional: log error or loading
   if (isLoading) return null; // Wait silently (render nothing)
@@ -264,6 +265,7 @@ const ChatWidget = ({ website_url, isAdmin }) => {
               className="chat-button" 
               onClick={toggleChat}
               title={isAdmin ? "Chat is disabled for admin" : "Chat with us"}
+             
             >
               {!isAdmin && msgNotificationLength > 0 && (
                 <span className="notification-badge">{msgNotificationLength}</span>
