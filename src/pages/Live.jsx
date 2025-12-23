@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import HeaderLive from "../components/live/HeaderLive";
 import BannerLive from "../components/live/BannerLive";
 import AboutLive from "../components/live/AboutLive";
@@ -32,11 +32,6 @@ const Live = () => {
     const stored = localStorage.getItem("sessionData");
     return stored ? JSON.parse(stored) : null;
   });
-  
-  // Check if current user is a member
-  const isMember = useMemo(() => {
-    return customer?.role === 'member' || !customer?.isAdmin;
-  }, [customer]);
   
   // Redirect to login if in edit mode without authentication
   useEffect(() => {
@@ -140,68 +135,71 @@ const Live = () => {
   }, []);
 
   useEffect(() => {
-  const allowedOrigins = [
-    "https://www.eepcindia.org",
-    "https://eepc-exporter-home-page-v2.vercel.app"
-  ];
+    const allowedOrigin =
+      // "https://www.eepcindia.org";
+      "https://www.eepcindia.org";
 
-  function onMessage(event) {
-    if (!allowedOrigins.includes(event.origin)) return;
+    function onMessage(event) {
+      if (event.origin !== allowedOrigin) return;
 
-    const data = event.data;
+      const data = event.data;
 
-    if (data.Rdata) {
-      const storedData = localStorage.getItem(website_url);
-      let decryptedData = {};
+      if (data.Rdata) {
+        // 🔹 Get old data from localStorage (if any)
+        // const existingData =
+        //   JSON.parse(localStorage.getItem(website_url)) || {};
+        const storedData = localStorage.getItem(website_url);
 
-      if (storedData) {
-        try {
-          const decryptedBytes = CryptoJS.AES.decrypt(storedData, secretKey);
-          const decryptedText = decryptedBytes.toString(CryptoJS.enc.Utf8);
-          if (decryptedText) {
-            decryptedData = JSON.parse(decryptedText);
+        let decryptedData = {}; // use let instead of const
+
+        if (storedData) {
+          try {
+            const decryptedBytes = CryptoJS.AES.decrypt(storedData, secretKey);
+            const decryptedText = decryptedBytes.toString(CryptoJS.enc.Utf8);
+
+            if (decryptedText) {
+              decryptedData = JSON.parse(decryptedText);
+            }
+          } catch (err) {
+            console.error("❌ Error decrypting localStorage data:", err);
           }
-        } catch (err) {
-          console.error("❌ Error decrypting localStorage data:", err);
         }
+
+        // 🔹 Merge old + new data (new data overwrites old only for matching keys)
+        const mergedData = {
+          ...decryptedData,
+          ...data.Rdata,
+        };
+
+        if (
+          data.Rdata?.adminCompany !== "" &&
+          data.Rdata?.adminCompany === sectionData?.company
+        ) {
+          setIsAdmin(true);
+        }
+        // 🔹 Save merged data to localStorage
+
+        // Encrypt before saving
+        const encrypted = CryptoJS.AES.encrypt(
+          JSON.stringify(mergedData),
+          secretKey
+        ).toString();
+        localStorage.setItem(website_url, encrypted);
+
+        // localStorage.setItem(website_url, JSON.stringify(mergedData));
+
+        window.dispatchEvent(new Event("localStorageUpdated"));
       }
 
-      // Merge old + new data
-      const mergedData = {
-        ...decryptedData,
-        ...data.Rdata,
-      };
-
-      // Check admin status based on the latest sectionData
-      const isAdminUser = (
-        data.Rdata?.adminCompany && 
-        sectionData?.company && 
-        data.Rdata.adminCompany === sectionData.company
-      );
-
-      // Update admin state if needed
-      if (isAdminUser) {
+      if (data.isAdmin !== undefined) {
+        // handle admin logic
         setIsAdmin(true);
       }
-
-      // Save merged data to localStorage
-      const encrypted = CryptoJS.AES.encrypt(
-        JSON.stringify(mergedData),
-        secretKey
-      ).toString();
-      localStorage.setItem(website_url, encrypted);
-
-      window.dispatchEvent(new Event("localStorageUpdated"));
     }
 
-    if (data.isAdmin !== undefined) {
-      setIsAdmin(data.isAdmin);
-    }
-  }
-
-  window.addEventListener("message", onMessage);
-  return () => window.removeEventListener("message", onMessage);
-}, [sectionData, website_url]); // Add website_url to dependencies
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [sectionData]);
 
   // ✅ Restore the Set from localStorage when the component mounts
   useEffect(() => {
@@ -353,14 +351,9 @@ const Live = () => {
         {/* {sectionData?.data?.includes(4) && (
           <WhoWeAreLive website_url={website_url} />
         )} */}
-        <MapReviewLive 
-          website_url={website_url} 
-          isAdmin={isAdmin} 
-          isMember={isMember}
-        />
+        <MapReviewLive website_url={website_url} isAdmin={isAdmin} />
       </div>
-      
-      <ChatWidget website_url={website_url} isAdmin={isAdmin} isMember={isMember} />
+      <ChatWidget website_url={website_url} isAdmin={isAdmin} />
       <WhatsAppPopUp website_url={website_url} />
       <FooterLive website_url={website_url} />
     </>

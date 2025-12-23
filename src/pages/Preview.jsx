@@ -16,7 +16,7 @@ import GalleryPreview from "../components/preview/GalleryPreview";
 import ParticipationPreview from "../components/preview/ParticipationPreview";
 import MapReview from "../components/draft/MapReview";
 
-const LOGIN_URL = "https://eepc-exporter-home-page-v2.vercel.app/auth/login";
+const LOGIN_URL = "https://prodis.eepcindia.org/auth/login";
 
 const Preview = () => {
   const [member, setMember] = useState(null);
@@ -57,14 +57,14 @@ const Preview = () => {
   useEffect(() => {
     const verifyAndSetMember = async () => {
       if (!token) {
-        window.location.replace("https://eepc-exporter-home-page-v2.vercel.app/auth/login");
+        window.location.replace("https://prodis.eepcindia.org/auth/login");
         return;
       }
 
       const payload = await verifyToken(token);
 
       if (!payload?.memberId) {
-        window.location.replace("https://eepc-exporter-home-page-v2.vercel.app/auth/login");
+        window.location.replace("https://prodis.eepcindia.org/auth/login");
         return;
       }
 
