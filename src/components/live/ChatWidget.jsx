@@ -66,31 +66,17 @@ const ChatWidget = ({ website_url, isAdmin }) => {
 
   useEffect(() => {
     const loadData = () => {
-      try {
-        const storedData = localStorage.getItem(`chat-user`);
-        if (storedData) {
-          const decryptedBytes = CryptoJS.AES.decrypt(storedData, secretKey);
-          const decryptedText = decryptedBytes.toString(CryptoJS.enc.Utf8);
-          
-          // Check if decrypted text is not empty before parsing
-          if (decryptedText) {
-            const decryptedData = JSON.parse(decryptedText);
-            setName(decryptedData.name || "");
-            setEmail(decryptedData.email || "");
-            setPhone(decryptedData.phone || "");
-            setData(decryptedData.name || "");
-          } else {
-            console.warn('Decrypted data is empty');
-          }
-        }
-      } catch (error) {
-        console.error('Error loading chat data:', error);
-        // Clear invalid data from localStorage
-        localStorage.removeItem(`chat-user`);
-        setName("");
-        setEmail("");
-        setPhone("");
-        setData("");
+      const storedData = localStorage.getItem(`chat-user`);
+      if (storedData) {
+        const decryptedBytes = CryptoJS.AES.decrypt(storedData, secretKey);
+        const decryptedData = JSON.parse(
+          decryptedBytes.toString(CryptoJS.enc.Utf8)
+        );
+        // const parsedData = JSON.parse(storedData);
+        setName(decryptedData.name || "");
+        setEmail(decryptedData.email || "");
+        setPhone(decryptedData.phone || "");
+        setData(decryptedData.name || "");
       }
     };
 
