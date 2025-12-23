@@ -24,6 +24,7 @@ const Live = () => {
   // ✅ Persisted Set (shared across event calls)
   const companySetRef = useRef(new Set());
   const [isAdmin, setIsAdmin] = useState(false);
+  const [adminOrigin, setAdminOrigin] = useState(null); // Track which origin made user admin
   const [customer, setCustomer] = useState(() => {
     const stored = localStorage.getItem("sessionData");
     return stored ? JSON.parse(stored) : null;
@@ -44,6 +45,7 @@ const Live = () => {
   useEffect(() => {
     const checkAdminStatus = () => {
       let isAdminDetected = false;
+      let detectedOrigin = null;
       
       // 1. Check encrypted localStorage data
       const storedData = localStorage.getItem(website_url);
@@ -58,6 +60,7 @@ const Live = () => {
             if (adminStoreCompany && sectionData?.company && 
                 adminStoreCompany === sectionData?.company) {
               isAdminDetected = true;
+              detectedOrigin = decryptedData?.adminOrigin || "localStorage";
             }
           }
         } catch (error) {
@@ -72,6 +75,7 @@ const Live = () => {
           const session = JSON.parse(sessionData);
           if (session?.member_name && session.member_name === sectionData?.company) {
             isAdminDetected = true;
+            detectedOrigin = session?.origin || "sessionData";
           }
         } catch (e) {
           console.error("Error parsing sessionData:", e);
@@ -81,20 +85,29 @@ const Live = () => {
       // 3. Check companySet (another fallback)
       if (sectionData?.company && companySetRef.current.has(sectionData.company)) {
         isAdminDetected = true;
+        detectedOrigin = "companySet";
       }
       
       setIsAdmin(isAdminDetected);
+      if (detectedOrigin) {
+        setAdminOrigin(detectedOrigin);
+      }
     };
     
     checkAdminStatus();
   }, [sectionData, website_url]);
 
-  // 🔹 Handle window.message events for admin detection
+  // 🔹 Handle window.message events for admin detection - ONLY from allowed origins
   useEffect(() => {
-    const allowedOrigin = "https://www.eepcindia.org";
+    // Define allowed origins that can set admin status
+    const allowedOrigins = [
+      "https://www.eepcindia.org",
+      "https://eepc-exporter-home-page-v2.vercel.app"
+    ];
     
     function onMessage(event) {
-      if (event.origin !== allowedOrigin) return;
+      // Only accept messages from allowed origins
+      if (!allowedOrigins.includes(event.origin)) return;
 
       const data = event.data;
 
@@ -119,6 +132,7 @@ const Live = () => {
         const mergedData = {
           ...decryptedData,
           ...data.Rdata,
+          adminOrigin: event.origin, // Store which origin made this user admin
         };
 
         // Check admin status from Rdata
@@ -129,6 +143,7 @@ const Live = () => {
         if ((adminCompany && adminCompany === currentCompany) || 
             (memberName && memberName === currentCompany)) {
           setIsAdmin(true);
+          setAdminOrigin(event.origin);
         }
         
         // Save merged data to localStorage
@@ -144,6 +159,9 @@ const Live = () => {
       // Direct admin flag from message
       if (data.isAdmin !== undefined) {
         setIsAdmin(data.isAdmin);
+        if (data.isAdmin) {
+          setAdminOrigin(event.origin);
+        }
       }
     }
 
@@ -162,6 +180,7 @@ const Live = () => {
         // If the restored Set already contains the company, mark as admin
         if (sectionData?.company && companySetRef.current.has(sectionData.company)) {
           setIsAdmin(true);
+          setAdminOrigin("companySet");
         }
       } catch (e) {
         console.error("Error parsing companySet:", e);
@@ -187,6 +206,7 @@ const Live = () => {
           // Check if this is the admin
           if (newData.member_name === sectionData?.company) {
             setIsAdmin(true);
+            setAdminOrigin("storageEvent");
           }
         }
 
@@ -194,6 +214,7 @@ const Live = () => {
             (newData.member_name === sectionData?.company ||
              companySetRef.current.has(sectionData?.company))) {
           setIsAdmin(true);
+          setAdminOrigin("storageEvent");
         }
 
         setCustomer(newData);
