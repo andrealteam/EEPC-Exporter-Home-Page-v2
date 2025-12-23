@@ -27,10 +27,22 @@ const Live = () => {
   
   // ✅ Persisted Set (shared across event calls)
   const companySetRef = useRef(new Set());
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(() => {
+    const stored = localStorage.getItem("isAdmin");
+    return stored === 'true';
+  });
   const [customer, setCustomer] = useState(() => {
     const stored = localStorage.getItem("sessionData");
-    return stored ? JSON.parse(stored) : null;
+    if (stored) {
+      const data = JSON.parse(stored);
+      // Set admin status if user is admin
+      if (data.role === 'admin') {
+        localStorage.setItem('isAdmin', 'true');
+        setIsAdmin(true);
+      }
+      return data;
+    }
+    return null;
   });
   
   // Redirect to login if in edit mode without authentication
@@ -53,6 +65,8 @@ const Live = () => {
           // Token expired
           localStorage.removeItem('sessionData');
           localStorage.removeItem('isValidToken');
+          localStorage.removeItem('isAdmin');
+          setIsAdmin(false);
           if (isEditMode) {
             window.location.href = '/auth/login';
           }
@@ -137,7 +151,7 @@ const Live = () => {
   useEffect(() => {
     const allowedOrigin =
       // "https://www.eepcindia.org";
-      "https://www.eepcindia.org";
+      "https://eepc-exporter-home-page-v2.vercel.app/";
 
     function onMessage(event) {
       if (event.origin !== allowedOrigin) return;
@@ -353,8 +367,12 @@ const Live = () => {
         )} */}
         <MapReviewLive website_url={website_url} isAdmin={isAdmin} />
       </div>
-      <ChatWidget website_url={website_url} isAdmin={isAdmin} />
-      <WhatsAppPopUp website_url={website_url} />
+      {!isAdmin && (
+        <>
+          <ChatWidget website_url={website_url} isAdmin={isAdmin} />
+          <WhatsAppPopUp website_url={website_url} />
+        </>
+      )}
       <FooterLive website_url={website_url} />
     </>
   );
