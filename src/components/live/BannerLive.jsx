@@ -167,13 +167,6 @@ function BannerLive({ website_url, isAdmin, member_id }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Don't allow admin to submit reviews
-    if (isAdmin) {
-      toast.error("You can't submit a review for your own website.");
-      return;
-    }
-    
     const formData = {
       website_url,
       name: modalName || name,
@@ -251,16 +244,8 @@ function BannerLive({ website_url, isAdmin, member_id }) {
       setIsFavoriteModalOpen(true);
     }
   };
-  
   const handleSubmitFavorite = async (e) => {
     e.preventDefault();
-    
-    // Don't allow admin to add their own company to favorites
-    if (isAdmin) {
-      toast.error("You can't add your own company to favorites.");
-      return;
-    }
-    
     if (modalEmail && modalName) {
       const formData = {
         website_url,
@@ -441,7 +426,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
               <h2 className="company-name">{bannerData?.name}</h2>
               <p className="company-meta">
                 IEC No: <span>{bannerData?.eic_no}</span> | Member Code:{" "}
-                <span>{bannerData?.member_id}</span>
+                <span>M{bannerData?.member_id}</span>
               </p>
               <div
                 dangerouslySetInnerHTML={{
@@ -528,13 +513,10 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                 )}
 
               <button 
-                className="button" 
+                className={`button ${isAdmin ? 'disabled-btn' : ''}`} 
                 onClick={addFavoriteWithoutModal}
                 disabled={isAdmin}
-                style={{
-                  opacity: isAdmin ? 0.7 : 1,
-                  cursor: isAdmin ? "not-allowed" : "pointer"
-                }}
+                title={isAdmin ? "Admin cannot add their own company to favorites" : ""}
               >
                 {isFavorite === "added" ? (
                   <span>❤️ Added to Favorite</span>
@@ -545,22 +527,17 @@ function BannerLive({ website_url, isAdmin, member_id }) {
 
               {/* <button className="btn favorite">Leave a Review</button> */}
               <button
-                class="button"
-                onClick={() => {
-                  if (isAdmin) {
-                    toast.error("You can't submit a review for your own website.");
-                  } else {
-                    setIsReviewModalOpen(true);
-                  }
-                }}
+                class={`button ${isAdmin ? 'disabled-btn' : ''}`}
+                onClick={() => !isAdmin && setIsReviewModalOpen(true)}
                 disabled={isAdmin}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: "5px",
                   opacity: isAdmin ? 0.7 : 1,
-                  cursor: isAdmin ? "not-allowed" : "pointer"
+                  cursor: isAdmin ? 'not-allowed' : 'pointer'
                 }}
+                title={isAdmin ? "Admin cannot leave a review for their own company" : ""}
               >
                 <div class="svg-wrapper-1">
                   <div class="svg-wrapper">
@@ -625,15 +602,9 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                 &times;
               </button>
 
-              <h3 style={{ marginBottom: "20px", fontSize: "22px" }}>
+              {/* <h3 style={{ marginBottom: "20px", fontSize: "22px" }}>
                 Please provide your details to add to favorite
-              </h3>
-
-              {isAdmin && (
-                <h6 style={{ color: "red", marginBottom: "10px" }}>
-                  You can't add your own company to favorites.
-                </h6>
-              )}
+              </h3> */}
 
               <form onSubmit={handleSubmitFavorite}>
                 <input
@@ -643,7 +614,6 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                   onChange={(e) => setModalName(e.target.value)}
                   required
                   style={inputStyle}
-                  disabled={isAdmin}
                 />
 
                 <input
@@ -653,7 +623,6 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                   onChange={(e) => setModalEmail(e.target.value)}
                   required
                   style={inputStyle}
-                  disabled={isAdmin}
                 />
 
                 <input
@@ -662,7 +631,6 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                   value={modalPhone}
                   onChange={(e) => setModalPhone(e.target.value)}
                   style={inputStyle}
-                  disabled={isAdmin}
                 />
                 <button
                   type="submit"
@@ -670,16 +638,16 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                     marginTop: "10px",
                     padding: "10px 15px",
                     backgroundColor:
-                      !modalEmail || !modalName || isAdmin ? "#ccc" : "#0195a3", // disable color
+                      !modalEmail || !modalName ? "#ccc" : "#0195a3", // disable color
                     color: "#fff",
                     border: "none",
                     borderRadius: "5px",
                     cursor:
-                      !modalEmail || !modalName || isAdmin ? "not-allowed" : "pointer", // disable cursor
+                      !modalEmail || !modalName ? "not-allowed" : "pointer", // disable cursor
                     width: "100%",
-                    opacity: !modalEmail || !modalName || isAdmin ? 0.7 : 1, // thoda fade effect
+                    opacity: !modalEmail || !modalName ? 0.7 : 1, // thoda fade effect
                   }}
-                  disabled={!modalEmail || !modalName || isAdmin}
+                  disabled={!modalEmail || !modalName}
                 >
                   Submit
                 </button>
@@ -735,8 +703,8 @@ function BannerLive({ website_url, isAdmin, member_id }) {
               </h3>
 
               {isAdmin && (
-                <h6 style={{ color: "red", marginBottom: "10px" }}>
-                  You can't submit a review for your own website.
+                <h6 style={{ color: "red" }}>
+                  You can’t submit a review for your own website.
                 </h6>
               )}
 
@@ -749,7 +717,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                     onChange={(e) => setModalName(e.target.value)}
                     required
                     style={inputStyle}
-                    disabled={!!name || isAdmin}
+                    disabled={!!name}
                   />
 
                   <input
@@ -758,7 +726,6 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                     value={designation}
                     onChange={(e) => setDesignation(e.target.value)}
                     style={{ width: "100%", ...inputStyle }}
-                    disabled={isAdmin}
                   />
                 </div>
 
@@ -767,7 +734,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                     type="email"
                     placeholder="Email"
                     value={modalEmail || email}
-                    disabled={!!email || isAdmin}
+                    disabled={!!email}
                     onChange={(e) => setModalEmail(e.target.value)}
                     required
                     style={inputStyle}
@@ -777,7 +744,7 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                     type="tel"
                     placeholder="Phone (Optional)"
                     value={modalPhone || phone}
-                    disabled={!!phone || isAdmin}
+                    disabled={!!phone}
                     onChange={(e) => setModalPhone(e.target.value)}
                     style={inputStyle}
                   />
@@ -787,22 +754,22 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                   placeholder="Your Review"
                   value={testimonial}
                   onChange={(e) => {
-                    if (!isAdmin) {
-                      const value = e.target.value;
-                      const chars = value.length;
+                    const value = e.target.value;
+                    // const words = value.trim().split(/\s+/).filter(Boolean);
+                    const chars = value.length;
 
-                      // ✅ Restrict both words and characters
-                      if (chars <= maxChars) {
-                        handleTestimonialChange(e);
-                      }
+                    // ✅ Restrict both words and characters
+                    if (chars <= maxChars) {
+                      handleTestimonialChange(e);
                     }
                   }}
                   required
                   style={{ ...inputStyle, height: "100px", width: "100%" }}
-                  disabled={isAdmin}
                 ></textarea>
 
                 <p style={{ fontSize: "14px", color: "#666" }}>
+                  {/* {testimonial.trim().split(/\s+/).filter(Boolean).length} /{" "}
+                  {maxWords} words | */}
                   {testimonial.length} / {maxChars} characters
                 </p>
 
