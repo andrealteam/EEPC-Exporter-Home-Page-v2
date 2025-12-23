@@ -512,7 +512,12 @@ function BannerLive({ website_url, isAdmin, member_id }) {
                   </button>
                 )}
 
-              <button className="button" onClick={addFavoriteWithoutModal}>
+              <button 
+                className={`button ${isAdmin ? 'disabled-btn' : ''}`} 
+                onClick={addFavoriteWithoutModal}
+                disabled={isAdmin}
+                title={isAdmin ? "Admin cannot add their own company to favorites" : ""}
+              >
                 {isFavorite === "added" ? (
                   <span>❤️ Added to Favorite</span>
                 ) : (
@@ -522,13 +527,17 @@ function BannerLive({ website_url, isAdmin, member_id }) {
 
               {/* <button className="btn favorite">Leave a Review</button> */}
               <button
-                class="button"
-                onClick={() => setIsReviewModalOpen(true)}
+                class={`button ${isAdmin ? 'disabled-btn' : ''}`}
+                onClick={() => !isAdmin && setIsReviewModalOpen(true)}
+                disabled={isAdmin}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: "5px",
+                  opacity: isAdmin ? 0.7 : 1,
+                  cursor: isAdmin ? 'not-allowed' : 'pointer'
                 }}
+                title={isAdmin ? "Admin cannot leave a review for their own company" : ""}
               >
                 <div class="svg-wrapper-1">
                   <div class="svg-wrapper">

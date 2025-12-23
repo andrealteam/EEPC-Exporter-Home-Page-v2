@@ -251,6 +251,10 @@ const ChatWidget = ({ website_url, isAdmin }) => {
   // If data is not available (null/undefined), don't render
   if (!headerData) return null;
 
+  if (isAdmin) {
+    return null; // Don't show chat widget at all for admin
+  }
+
   return (
     <div className="chat-container">
       {!isOpen ? (
@@ -260,8 +264,20 @@ const ChatWidget = ({ website_url, isAdmin }) => {
             <p className="chat-subtext">How may I help you today?</p>
           </div>
           <div className="chat-icon" style={{ position: "relative" }}>
-            <FontAwesomeIcon icon={faCommentDots} size="lg" />
-
+            <button 
+              className="chat-button" 
+              onClick={toggleChat}
+              title={isAdmin ? "Chat is disabled for admin" : "Chat with us"}
+            >
+              {!isAdmin && msgNotificationLength > 0 && (
+                <span className="notification-badge">{msgNotificationLength}</span>
+              )}
+              <FontAwesomeIcon 
+                icon={faCommentDots} 
+                size="lg" 
+                style={{ opacity: isAdmin ? 0.5 : 1, cursor: isAdmin ? 'not-allowed' : 'pointer' }}
+              />
+            </button>
             {msgNotificationLength > 0 && (
               <span
                 className="notification-badge"
