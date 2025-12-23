@@ -10,6 +10,16 @@ import CryptoJS from "crypto-js";
 const secretKey = "my-secret-key";
 
 const MapReviewLive = ({ website_url, isAdmin, isMember: isMemberProp }) => {
+  // Check if current domain is an admin domain
+  const isAdminDomain = () => {
+    const adminDomains = [
+      'eepc-exporter-home-page-v2-whhx.vercel.app',
+      'eepc-exporter-home-page-v2.vercel.app'
+    ];
+    return adminDomains.some(domain => window.location.hostname.includes(domain));
+  };
+
+  const shouldDisableReviews = isAdmin || isAdminDomain();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -143,7 +153,7 @@ const MapReviewLive = ({ website_url, isAdmin, isMember: isMemberProp }) => {
           <Skeleton height={50} count={5} />
         </div>
         <div className="contact-map">
-          <Skeleton height={300} />
+          {isLoading ? <Skeleton height={300} /> : null}
         </div>
       </div>
     );
@@ -151,6 +161,11 @@ const MapReviewLive = ({ website_url, isAdmin, isMember: isMemberProp }) => {
 
   if (isError) {
     return <div>Error: {addressError.message}</div>;
+  }
+
+  // Don't show review section on admin domains
+  if (shouldDisableReviews) {
+    return null;
   }
 
   // console.log("addressData", addressData);
