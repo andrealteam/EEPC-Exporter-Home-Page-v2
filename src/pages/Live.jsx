@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import HeaderLive from "../components/live/HeaderLive";
 import BannerLive from "../components/live/BannerLive";
 import AboutLive from "../components/live/AboutLive";
@@ -18,13 +18,9 @@ import WhatsAppPopUp from "../components/live/WhatsAppPopUp";
 import MapReviewLive from "../components/live/MapReviewLive";
 import CryptoJS from "crypto-js";
 
-const secretKey = "fgghw53ujf8836d";
-const LOGIN_URL = "https://eepc-exporter-home-page-v2-whhx.vercel.app/auth/login";
+const secretKey = "my-secret-key";
 
 const Live = () => {
-  // Check for edit mode in URL
-  const isEditMode = window.location.pathname.includes('/edit');
-  
   // ✅ Persisted Set (shared across event calls)
   const companySetRef = useRef(new Set());
   const [isAdmin, setIsAdmin] = useState(false);
@@ -32,49 +28,6 @@ const Live = () => {
     const stored = localStorage.getItem("sessionData");
     return stored ? JSON.parse(stored) : null;
   });
-  
-  // Check if current user is a member
-  const isMember = useMemo(() => {
-    return customer?.role === 'member' || !customer?.isAdmin;
-  }, [customer]);
-  
-  // Redirect to login if in edit mode without authentication
-  useEffect(() => {
-    if (isEditMode && !customer) {
-      // Clear any existing session data
-      localStorage.removeItem('sessionData');
-      localStorage.removeItem('isValidToken');
-      // Redirect to login
-      window.location.href = '/auth/login';
-      return;
-    }
-    
-    // If we have a customer, verify the token
-    if (customer) {
-      try {
-        // Verify token expiration
-        const currentTime = Date.now() / 1000;
-        if (customer.exp && customer.exp < currentTime) {
-          // Token expired
-          localStorage.removeItem('sessionData');
-          localStorage.removeItem('isValidToken');
-          if (isEditMode) {
-            window.location.href = '/auth/login';
-          }
-        } else {
-          // Token is valid
-          localStorage.setItem('isValidToken', 'true');
-        }
-      } catch (error) {
-        console.error('Token verification failed:', error);
-        localStorage.removeItem('sessionData');
-        localStorage.removeItem('isValidToken');
-        if (isEditMode) {
-          window.location.href = '/auth/login';
-        }
-      }
-    }
-  }, [customer, isEditMode]);
 
   const { website_url } = useParams();
   const {
@@ -87,84 +40,69 @@ const Live = () => {
     enabled: !!website_url,
   });
 
+  // 🔹 Primary admin detection from localStorage and sessionData
   useEffect(() => {
-    // const storedData = localStorage.getItem(website_url);
-
-    const storedData = localStorage.getItem(website_url);
-    let decryptedData = {}; // declare outside so it’s accessible later
-
-    if (storedData) {
-      try {
-        const decryptedBytes = CryptoJS.AES.decrypt(storedData, secretKey);
-        const decryptedText = decryptedBytes.toString(CryptoJS.enc.Utf8);
-
-        if (decryptedText) {
-          decryptedData = JSON.parse(decryptedText);
+    const checkAdminStatus = () => {
+      let isAdminDetected = false;
+      
+      // 1. Check encrypted localStorage data
+      const storedData = localStorage.getItem(website_url);
+      if (storedData) {
+        try {
+          const decryptedBytes = CryptoJS.AES.decrypt(storedData, secretKey);
+          const decryptedText = decryptedBytes.toString(CryptoJS.enc.Utf8);
+          if (decryptedText) {
+            const decryptedData = JSON.parse(decryptedText);
+            const adminStoreCompany = decryptedData?.adminCompany || "";
+            
+            if (adminStoreCompany && sectionData?.company && 
+                adminStoreCompany === sectionData?.company) {
+              isAdminDetected = true;
+            }
+          }
+        } catch (error) {
+          console.error("❌ Error decrypting data:", error);
         }
-      } catch (error) {
-        console.error("❌ Error decrypting data:", error);
       }
-    }
-
-    // ✅ Get adminCompany safely
-    let adminStoreCompany = decryptedData?.adminCompany || "";
-
-    if (storedData) {
-      // let data = JSON.parse(storedData);
-      adminStoreCompany = decryptedData?.adminCompany;
-    }
-
-    if (
-      adminStoreCompany &&
-      sectionData?.company &&
-      adminStoreCompany === sectionData?.company
-    ) {
-      setIsAdmin(true);
-    }
-  }, [sectionData]);
-
-  // Close/redirect this tab when the user logs out (sessionData removed elsewhere).
-  useEffect(() => {
-    const handleLogout = (event) => {
-      if (event && event.key && event.key !== "sessionData") return;
-      if (localStorage.getItem("sessionData")) return;
-
-      window.close();
-      setTimeout(() => {
-        window.location.replace(LOGIN_URL);
-      }, 150);
+      
+      // 2. Check sessionData (fallback when cache is cleared)
+      const sessionData = localStorage.getItem("sessionData");
+      if (sessionData && sectionData?.company) {
+        try {
+          const session = JSON.parse(sessionData);
+          if (session?.member_name && session.member_name === sectionData?.company) {
+            isAdminDetected = true;
+          }
+        } catch (e) {
+          console.error("Error parsing sessionData:", e);
+        }
+      }
+      
+      // 3. Check companySet (another fallback)
+      if (sectionData?.company && companySetRef.current.has(sectionData.company)) {
+        isAdminDetected = true;
+      }
+      
+      setIsAdmin(isAdminDetected);
     };
+    
+    checkAdminStatus();
+  }, [sectionData, website_url]);
 
-    window.addEventListener("storage", handleLogout);
-    return () => window.removeEventListener("storage", handleLogout);
-  }, []);
-
+  // 🔹 Handle window.message events for admin detection
   useEffect(() => {
-    // Check for admin status in localStorage on component mount
-    const storedAdminStatus = localStorage.getItem('isAdmin');
-    if (storedAdminStatus) {
-      setIsAdmin(storedAdminStatus === 'true');
-    }
-
-    const allowedOrigins = [
-      "https://www.eepcindia.org",
-      "https://eepc-exporter-home-page-v2.vercel.app",
-      "http://localhost:3000"
-    ];
-
+    const allowedOrigin = "https://www.eepcindia.org";
+    
     function onMessage(event) {
-      if (!allowedOrigins.includes(event.origin)) {
-        console.log('Origin not allowed:', event.origin);
-        return;
-      }
+      if (event.origin !== allowedOrigin) return;
 
       const data = event.data;
-      let isAdminUser = false;
 
       if (data.Rdata) {
+        // Get existing data from localStorage
         const storedData = localStorage.getItem(website_url);
         let decryptedData = {};
-
+        
         if (storedData) {
           try {
             const decryptedBytes = CryptoJS.AES.decrypt(storedData, secretKey);
@@ -177,55 +115,61 @@ const Live = () => {
           }
         }
 
-        const mergedData = { ...decryptedData, ...data.Rdata };
-        isAdminUser = data.Rdata?.adminCompany && 
-                     data.Rdata.adminCompany === sectionData?.company;
+        // Merge old + new data
+        const mergedData = {
+          ...decryptedData,
+          ...data.Rdata,
+        };
 
-        try {
-          const encrypted = CryptoJS.AES.encrypt(
-            JSON.stringify(mergedData),
-            secretKey
-          ).toString();
-          localStorage.setItem(website_url, encrypted);
-          window.dispatchEvent(new Event("localStorageUpdated"));
-        } catch (err) {
-          console.error("❌ Error saving to localStorage:", err);
+        // Check admin status from Rdata
+        const adminCompany = data.Rdata?.adminCompany;
+        const memberName = data.Rdata?.member_name;
+        const currentCompany = sectionData?.company;
+        
+        if ((adminCompany && adminCompany === currentCompany) || 
+            (memberName && memberName === currentCompany)) {
+          setIsAdmin(true);
         }
+        
+        // Save merged data to localStorage
+        const encrypted = CryptoJS.AES.encrypt(
+          JSON.stringify(mergedData),
+          secretKey
+        ).toString();
+        localStorage.setItem(website_url, encrypted);
+        
+        window.dispatchEvent(new Event("localStorageUpdated"));
       }
 
-      // Update admin status from direct flag if present
+      // Direct admin flag from message
       if (data.isAdmin !== undefined) {
-        isAdminUser = data.isAdmin;
-      }
-
-      // Persist admin status
-      if (isAdminUser) {
-        localStorage.setItem('isAdmin', 'true');
-        setIsAdmin(true);
+        setIsAdmin(data.isAdmin);
       }
     }
 
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [sectionData?.company, website_url]);
+  }, [sectionData, website_url]);
 
   // ✅ Restore the Set from localStorage when the component mounts
   useEffect(() => {
     const savedSet = localStorage.getItem("companySet");
     if (savedSet) {
-      const parsed = JSON.parse(savedSet);
-      companySetRef.current = new Set(parsed);
-    }
-
-    // If the restored Set already contains the company, mark as admin
-    if (
-      sectionData?.company &&
-      companySetRef.current.has(sectionData.company)
-    ) {
-      setIsAdmin(true);
+      try {
+        const parsed = JSON.parse(savedSet);
+        companySetRef.current = new Set(parsed);
+        
+        // If the restored Set already contains the company, mark as admin
+        if (sectionData?.company && companySetRef.current.has(sectionData.company)) {
+          setIsAdmin(true);
+        }
+      } catch (e) {
+        console.error("Error parsing companySet:", e);
+      }
     }
   }, [sectionData]);
 
+  // 🔹 Listen for sessionData changes (for admin detection)
   useEffect(() => {
     const handleStorageChange = (event) => {
       if (event.key === "sessionData") {
@@ -239,13 +183,16 @@ const Live = () => {
             "companySet",
             JSON.stringify(Array.from(companySetRef.current))
           );
+          
+          // Check if this is the admin
+          if (newData.member_name === sectionData?.company) {
+            setIsAdmin(true);
+          }
         }
 
-        if (
-          newData?.member_name &&
-          (newData.member_name === sectionData?.company ||
-            companySetRef.current.has(sectionData?.company))
-        ) {
+        if (newData?.member_name &&
+            (newData.member_name === sectionData?.company ||
+             companySetRef.current.has(sectionData?.company))) {
           setIsAdmin(true);
         }
 
@@ -258,22 +205,7 @@ const Live = () => {
   }, [sectionData]);
 
   // Still loading, show nothing or loader
-  // Show loading state or redirect based on auth status
-  if (isLoading) {
-    if (isEditMode && !customer) {
-      // If we're still loading but we know we need to be logged in, show a loading state
-      return (
-        <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-        </div>
-      );
-    }
-    return null;
-  }
-
-  // console.log("sectionError", sectionError);
+  if (isLoading) return null;
 
   if (sectionData?.link_expire_status === "true") {
     return (
@@ -285,7 +217,7 @@ const Live = () => {
             className="renew-btn"
             onClick={() =>
               (window.location.href =
-                "https://eepc-exporter-home-page-v2-whhx.vercel.app/dashboard/exporter-home-page")
+                "https://eepc-exporter-home-page.vercel.app/dashboard/exporter-home-page")
             }
           >
             Renew Now
@@ -309,9 +241,13 @@ const Live = () => {
           justifyContent: "center",
           alignItems: "center",
           backgroundColor: "#f8f9fa",
+          color: "#333",
+          fontFamily: "Arial, sans-serif",
+          textAlign: "center",
         }}
       >
-        <p style={{ fontSize: "20px", margin: 0 }}>Content not available right now. Please try again.</p>
+        <h1 style={{ fontSize: "100px", margin: 0 }}>404</h1>
+        <p style={{ fontSize: "24px", marginBottom: "20px" }}>Page Not Found</p>
       </div>
     );
   }
@@ -359,14 +295,9 @@ const Live = () => {
         {/* {sectionData?.data?.includes(4) && (
           <WhoWeAreLive website_url={website_url} />
         )} */}
-        <MapReviewLive 
-          website_url={website_url} 
-          isAdmin={isAdmin} 
-          isMember={isMember}
-        />
+        <MapReviewLive website_url={website_url} isAdmin={isAdmin} />
       </div>
-      
-      <ChatWidget website_url={website_url} isAdmin={isAdmin} isMember={isMember} />
+      <ChatWidget website_url={website_url} isAdmin={isAdmin} />
       <WhatsAppPopUp website_url={website_url} />
       <FooterLive website_url={website_url} />
     </>

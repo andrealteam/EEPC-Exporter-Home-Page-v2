@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import React, { use, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   getLiveHeader,
   getMessages,
@@ -12,60 +12,27 @@ import {
   faPaperPlane,
   faRightFromBracket,
 } from "@fortawesome/free-solid-svg-icons";
-import {
-  faCommentDots
-} from "@fortawesome/free-regular-svg-icons";
+import { faCommentDots } from "@fortawesome/free-regular-svg-icons";
 import CryptoJS from "crypto-js";
 
 const secretKey = "my-secret-key";
 
-const ChatWidget = ({ website_url, isAdmin: propIsAdmin, member_id }) => {
+const ChatWidget = ({ website_url, isAdmin = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [data, setData] = useState("");
   const [refresh, setRefresh] = useState(false);
-  const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState([]);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [msgNotificationLength, setMsgNotificationLength] = useState(0);
-  const [showNotification, setShowNotification] = useState(false);
-  const [notificationMessage, setNotificationMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(propIsAdmin);
   const messagesEndRef = useRef(null);
+  const [msgNotificationLength, setMsgNotificationLength] = useState(0);
 
-  // Handle admin status changes from props or localStorage
-  useEffect(() => {
-    // Update local state when prop changes
-    setIsAdmin(propIsAdmin);
-    
-    // Also check localStorage in case of cache clear
-    const storedAdmin = localStorage.getItem('isAdmin') === 'true';
-    if (storedAdmin !== propIsAdmin) {
-      setIsAdmin(storedAdmin);
-    }
-
-    // Listen for storage changes (from other tabs/windows)
-    const handleStorageChange = (e) => {
-      if (e.key === 'isAdmin') {
-        const newAdminStatus = e.newValue === 'true';
-        if (newAdminStatus !== isAdmin) {
-          setIsAdmin(newAdminStatus);
-          // Force re-render to update UI
-          window.location.reload();
-        }
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, [propIsAdmin]);
+  const [messages, setMessages] = useState([]);
+  const [message, setMessage] = useState("");
 
   const {
     data: headerData,
-    isLoading: isHeaderLoading,
+    isLoading,
     isError,
     error: headerError,
   } = useQuery({
@@ -95,22 +62,26 @@ const ChatWidget = ({ website_url, isAdmin: propIsAdmin, member_id }) => {
     const loadData = () => {
       const storedData = localStorage.getItem(`chat-user`);
       if (storedData) {
-        const decryptedBytes = CryptoJS.AES.decrypt(storedData, secretKey);
-        const decryptedData = JSON.parse(
-          decryptedBytes.toString(CryptoJS.enc.Utf8)
-        );
-        // const parsedData = JSON.parse(storedData);
-        setName(decryptedData.name || "");
-        setEmail(decryptedData.email || "");
-        setPhone(decryptedData.phone || "");
-        setData(decryptedData.name || "");
+        try {
+          const decryptedBytes = CryptoJS.AES.decrypt(storedData, secretKey);
+          const decryptedText = decryptedBytes.toString(CryptoJS.enc.Utf8);
+          if (decryptedText) {
+            const decryptedData = JSON.parse(decryptedText);
+            setName(decryptedData.name || "");
+            setEmail(decryptedData.email || "");
+            setPhone(decryptedData.phone || "");
+            setData(decryptedData.name || "");
+          }
+        } catch (error) {
+          console.error("❌ Error decrypting chat-user data:", error);
+        }
       }
     };
 
-    // pehle load
+    // Load initially
     loadData();
 
-    // listener lagao
+    // Add listener
     window.addEventListener("localStorageUpdated", loadData);
 
     return () => {
@@ -131,15 +102,11 @@ const ChatWidget = ({ website_url, isAdmin: propIsAdmin, member_id }) => {
       parseInt(localStorage.getItem(`${website_url}-msg`)) || 0;
 
     if (isOpen) {
-      const diff = msgs?.length - lastMsgLength;
-      setMsgNotificationLength(0); // No badge when chat is open
+      // No badge when chat is open
+      setMsgNotificationLength(0);
     } else {
-      const diff = msgsData?.length - lastMsgLength;
-      if (diff > 0) {
-        setMsgNotificationLength(diff);
-      } else {
-        setMsgNotificationLength(0);
-      }
+      const diff = (msgsData?.length || 0) - lastMsgLength;
+      setMsgNotificationLength(diff > 0 ? diff : 0);
     }
   }, [msgsData, isOpen]);
 
@@ -154,20 +121,21 @@ const ChatWidget = ({ website_url, isAdmin: propIsAdmin, member_id }) => {
     return () =>
       document.removeEventListener("visibilitychange", onVisibilityChange);
   }, [data, isOpen]);
-  // ✅ include isOpen in deps
+
   const safeMsgs = Array.isArray(msgs) ? msgs : [];
+  
   useEffect(() => {
-    if (isSuccess && msgs) {
+    if (isSuccess && msgs && headerData?.name) {
       setMessages([
         {
           from_user: "member",
-          message: `Hey there, welcome to ${headerData?.name}! How can I help you today? 😊`,
+          message: `Hey there, welcome to ${headerData.name}! How can I help you today? 😊`,
           updated_at: Date.now(),
         },
         ...safeMsgs,
       ]);
     }
-  }, [msgs, isSuccess]);
+  }, [msgs, isSuccess, headerData]);
 
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
@@ -180,6 +148,8 @@ const ChatWidget = ({ website_url, isAdmin: propIsAdmin, member_id }) => {
   }, [messages]);
 
   const toggleChat = () => {
+    // Don't allow admin to open chat
+    if (isAdmin) return;
     setIsOpen((prev) => !prev);
   };
 
@@ -203,6 +173,7 @@ const ChatWidget = ({ website_url, isAdmin: propIsAdmin, member_id }) => {
       alert("Please enter a valid email address.");
       return;
     }
+    
     // Handle form submission logic here
     const data = { name, email, phone };
 
@@ -213,9 +184,6 @@ const ChatWidget = ({ website_url, isAdmin: propIsAdmin, member_id }) => {
     ).toString();
 
     localStorage.setItem("chat-user", encrypted);
-
-    // localStorage.setItem(`chat-user`, JSON.stringify({ name, email, phone }));
-
     window.dispatchEvent(new Event("localStorageUpdated"));
 
     // Reset form fields
@@ -228,13 +196,16 @@ const ChatWidget = ({ website_url, isAdmin: propIsAdmin, member_id }) => {
   };
 
   const handleSend = async () => {
+    // Don't allow admin to send messages
+    if (isAdmin) return;
+    
     const text = message.trim();
     if (!text) return;
 
     // Show user message instantly
     setMessages((prev) => [
       ...prev,
-      { from_user: "user", text, updated_at: Date.now() },
+      { from_user: "user", message: text, updated_at: Date.now() },
     ]);
     setMessage(""); // clear input
 
@@ -253,7 +224,8 @@ const ChatWidget = ({ website_url, isAdmin: propIsAdmin, member_id }) => {
         ...prev,
         {
           from_user: "member",
-          text: "Error sending message. Please try again.",
+          message: "Error sending message. Please try again.",
+          updated_at: Date.now(),
         },
       ]);
     }
@@ -290,6 +262,7 @@ const ChatWidget = ({ website_url, isAdmin: propIsAdmin, member_id }) => {
             <button 
               className="chat-button" 
               onClick={toggleChat}
+              disabled={isAdmin}
               title={isAdmin ? "Chat is disabled for admin" : "Chat with us"}
             >
               {!isAdmin && msgNotificationLength > 0 && (
@@ -298,10 +271,13 @@ const ChatWidget = ({ website_url, isAdmin: propIsAdmin, member_id }) => {
               <FontAwesomeIcon 
                 icon={faCommentDots} 
                 size="lg" 
-                style={{ opacity: isAdmin ? 0.5 : 1, cursor: isAdmin ? 'not-allowed' : 'pointer' }}
+                style={{ 
+                  opacity: isAdmin ? 0.5 : 1, 
+                  cursor: isAdmin ? 'not-allowed' : 'pointer' 
+                }}
               />
             </button>
-            {msgNotificationLength > 0 && (
+            {!isAdmin && msgNotificationLength > 0 && (
               <span
                 className="notification-badge"
                 style={{
@@ -329,22 +305,18 @@ const ChatWidget = ({ website_url, isAdmin: propIsAdmin, member_id }) => {
               <div
                 className="chat-toggle-floating"
                 onClick={toggleChat}
-                // onClick={() => setChatStep(1)}
               >
                 <FontAwesomeIcon icon={faChevronDown} />
-                {/* ⌄ */}
               </div>
               <div className="chat-box">
                 <div className="chat-header">
                   <div
-                    // onClick={toggleChat}
                     style={{
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
                     }}
                   >
-                    {/* <span className="chat-avatar">C</span> */}
                     <img
                       src={baseFileURL + headerData?.logo}
                       alt="Logo"
@@ -352,23 +324,13 @@ const ChatWidget = ({ website_url, isAdmin: propIsAdmin, member_id }) => {
                       style={{ borderRadius: "50%" }}
                     />
                     <div style={{ marginLeft: "8px" }}>
-                      {/* <div className="chat-title">Cea</div> */}
                       <div className="chat-subtitle">{headerData?.name}</div>
                     </div>
                   </div>
-
-                  {/* <button className="logout-btn" onClick={logout}>
-                    <FontAwesomeIcon
-                      icon={faRightFromBracket}
-                      width={20}
-                      style={{ height: "16px" }}
-                    />
-                  </button> */}
                 </div>
                 <div className="chat-body">
-                  {messages.length < 1 && <div class="loader"></div>}
-                  <div class="chat-info-banner">
-                    {/* <span class="chat-lock-icon">🔒</span> */}
+                  {messages.length < 1 && <div className="loader"></div>}
+                  <div className="chat-info-banner">
                     Our team will respond to your queries shortly. We appreciate
                     your patience in the meantime.
                   </div>
@@ -393,14 +355,6 @@ const ChatWidget = ({ website_url, isAdmin: propIsAdmin, member_id }) => {
                     </div>
                   ))}
 
-                  {/* ✅ Only show if first user message sent (assuming welcome + user message = 2) */}
-                  {/* {messages.length === 2 &&
-                    messages[1]?.from_user === "user" && (
-                      <div className="chat-msg bot-msg">
-                        {`Thank you for reaching out to us and sharing your enquiry. Our team will review your query and respond with an appropriate answer shortly. You will also receive a copy of the response on your registered email address. We appreciate your patience in the meantime.`}
-                      </div>
-                    )} */}
-
                   {/* Auto-scroll ref */}
                   <div ref={messagesEndRef} />
                 </div>
@@ -423,7 +377,7 @@ const ChatWidget = ({ website_url, isAdmin: propIsAdmin, member_id }) => {
                     className="input chat-input"
                     disabled={isAdmin}
                     style={{
-                      backgroundColor: isAdmin ? "" : "",
+                      backgroundColor: isAdmin ? "#f5f5f5" : "white",
                       cursor: isAdmin ? "not-allowed" : "text",
                       opacity: isAdmin ? 0.7 : 1,
                     }}
@@ -462,14 +416,11 @@ const ChatWidget = ({ website_url, isAdmin: propIsAdmin, member_id }) => {
               <div
                 className="chat-toggle-floating"
                 onClick={toggleChat}
-                // onClick={() => setChatStep(1)}
               >
                 <FontAwesomeIcon icon={faChevronDown} />
-                {/* ⌄ */}
               </div>
               <div className="chat-box">
                 <div className="chat-header" onClick={toggleChat}>
-                  {/* <span className="chat-avatar">C</span> */}
                   {headerData?.logo && (
                     <img
                       src={baseFileURL + headerData?.logo}
@@ -481,10 +432,8 @@ const ChatWidget = ({ website_url, isAdmin: propIsAdmin, member_id }) => {
                   )}
 
                   <div style={{ marginLeft: "8px" }}>
-                    {/* <div className="chat-title">Cea</div> */}
                     <div className="chat-subtitle">{headerData?.name}</div>
                   </div>
-                  {/* <span className="chat-toggle">⬇</span> */}
                 </div>
 
                 <div className="chat-form">
@@ -495,6 +444,7 @@ const ChatWidget = ({ website_url, isAdmin: propIsAdmin, member_id }) => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
+                    disabled={isAdmin}
                   />
                   <input
                     type="email"
@@ -503,6 +453,7 @@ const ChatWidget = ({ website_url, isAdmin: propIsAdmin, member_id }) => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    disabled={isAdmin}
                   />
                   <input
                     type="tel"
@@ -510,13 +461,35 @@ const ChatWidget = ({ website_url, isAdmin: propIsAdmin, member_id }) => {
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="Enter Your Phone Number (optional)"
                     className="input"
+                    disabled={isAdmin}
                   />
 
                   <div className="btn-group">
-                    <button className="continue-btn" onClick={handleSubmit}>
+                    <button 
+                      className="continue-btn" 
+                      onClick={handleSubmit}
+                      disabled={isAdmin}
+                      style={{
+                        opacity: isAdmin ? 0.7 : 1,
+                        cursor: isAdmin ? "not-allowed" : "pointer"
+                      }}
+                    >
                       Continue
                     </button>
                   </div>
+                  
+                  {isAdmin && (
+                    <h6
+                      style={{
+                        color: "red",
+                        marginTop: "10px",
+                        fontSize: "13px",
+                        textAlign: "center"
+                      }}
+                    >
+                      Chat is disabled for admin users.
+                    </h6>
+                  )}
                 </div>
               </div>
             </>
