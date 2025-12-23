@@ -27,16 +27,7 @@ const Live = () => {
   
   // ✅ Persisted Set (shared across event calls)
   const companySetRef = useRef(new Set());
-  const [isAdmin, setIsAdmin] = useState(() => {
-    // Check if user is admin from session data
-    const stored = localStorage.getItem("sessionData");
-    if (stored) {
-      const session = JSON.parse(stored);
-      return session?.role === 'admin' || session?.isAdmin === true;
-    }
-    return false;
-  });
-  
+  const [isAdmin, setIsAdmin] = useState(false);
   const [customer, setCustomer] = useState(() => {
     const stored = localStorage.getItem("sessionData");
     return stored ? JSON.parse(stored) : null;
@@ -127,47 +118,6 @@ const Live = () => {
     }
   }, [sectionData]);
 
-  // Check admin status when component mounts or customer changes
-  useEffect(() => {
-    if (customer) {
-      const isUserAdmin = customer?.role === 'admin' || customer?.isAdmin === true;
-      setIsAdmin(isUserAdmin);
-      
-      // Store admin status in localStorage for persistence
-      if (isUserAdmin) {
-        localStorage.setItem('isAdmin', 'true');
-      } else {
-        localStorage.removeItem('isAdmin');
-      }
-    } else {
-      setIsAdmin(false);
-      localStorage.removeItem('isAdmin');
-    }
-  }, [customer]);
-
-  // Handle admin company check
-  useEffect(() => {
-    const storedData = localStorage.getItem(website_url);
-    if (!storedData || !sectionData?.company) return;
-
-    try {
-      const decryptedBytes = CryptoJS.AES.decrypt(storedData, secretKey);
-      const decryptedText = decryptedBytes.toString(CryptoJS.enc.Utf8);
-      
-      if (decryptedText) {
-        const decryptedData = JSON.parse(decryptedText);
-        const adminStoreCompany = decryptedData?.adminCompany;
-        
-        if (adminStoreCompany && adminStoreCompany === sectionData.company) {
-          setIsAdmin(true);
-          localStorage.setItem('isAdmin', 'true');
-        }
-      }
-    } catch (error) {
-      console.error("❌ Error decrypting data:", error);
-    }
-  }, [sectionData]);
-
   // Close/redirect this tab when the user logs out (sessionData removed elsewhere).
   useEffect(() => {
     const handleLogout = (event) => {
@@ -185,17 +135,12 @@ const Live = () => {
   }, []);
 
   useEffect(() => {
-    const allowedOrigins = [
-      "https://www.eepcindia.org",
-      "https://eepc-exporter-home-page-v2.vercel.app"
-    ];
-    
-    const isAllowedOrigin = (origin) => {
-      return allowedOrigins.some(allowed => origin === allowed);
-    };
+    const allowedOrigin =
+      // "https://www.eepcindia.org";
+      "https://www.eepcindia.org";
 
     function onMessage(event) {
-      if (!isAllowedOrigin(event.origin)) return;
+      if (event.origin !== allowedOrigin) return;
 
       const data = event.data;
 
@@ -406,14 +351,10 @@ const Live = () => {
         {/* {sectionData?.data?.includes(4) && (
           <WhoWeAreLive website_url={website_url} />
         )} */}
-        <MapReviewLive website_url={website_url} isAdmin={isAdmin} isMember={isAdmin} />
+        <MapReviewLive website_url={website_url} isAdmin={isAdmin} />
       </div>
-      {!isAdmin && (
-        <>
-          <ChatWidget website_url={website_url} isAdmin={isAdmin} />
-          <WhatsAppPopUp website_url={website_url} />
-        </>
-      )}
+      <ChatWidget website_url={website_url} isAdmin={isAdmin} />
+      <WhatsAppPopUp website_url={website_url} />
       <FooterLive website_url={website_url} />
     </>
   );

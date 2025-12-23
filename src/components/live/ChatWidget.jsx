@@ -247,35 +247,257 @@ const ChatWidget = ({ website_url, isAdmin }) => {
     console.error("Header fetch error:", headerError);
     return null; // Or show an error UI if needed
   }
-  
-  // Don't show chat widget for admin users
-  if (isAdmin) {
-    return (
-      <div className="chat-widget">
-        <div className="admin-chat-message">
-          <p>Chat is not available for admin users.</p>
-        </div>
-      </div>
-    );
-  }
+
+  // If data is not available (null/undefined), don't render
+  if (!headerData) return null;
 
   return (
-    <div className="chat-widget">
-      {isOpen ? (
-        <div className="chat-box">
-          {/* Chat box content */}
-        </div>
-      ) : (
+    <div className="chat-container">
+      {!isOpen ? (
         <div className="chat-popup" onClick={toggleChat}>
           <div className="chat-message">
             <p className="chat-text">We're Online!</p>
             <p className="chat-subtext">How may I help you today?</p>
           </div>
-          <div className="chat-icon">
-            <FontAwesomeIcon icon={faCommentDots} size="lg" />
+          <div className="chat-icon" style={{ position: "relative" }}>
+            <button 
+              className="chat-button" 
+              onClick={toggleChat}
+              title={isAdmin ? "Chat is disabled for admin" : "Chat with us"}
+            >
+              {!isAdmin && msgNotificationLength > 0 && (
+                <span className="notification-badge">{msgNotificationLength}</span>
+              )}
+              <FontAwesomeIcon 
+                icon={faCommentDots} 
+                size="lg" 
+                style={{ opacity: isAdmin ? 0.5 : 1, cursor: isAdmin ? 'not-allowed' : 'pointer' }}
+              />
+            </button>
+            {msgNotificationLength > 0 && (
+              <span
+                className="notification-badge"
+                style={{
+                  position: "absolute",
+                  top: "-5px",
+                  right: "-5px",
+                  backgroundColor: "red",
+                  color: "white",
+                  borderRadius: "50%",
+                  padding: "3px 6px",
+                  fontSize: "12px",
+                  fontWeight: "bold",
+                  lineHeight: 1,
+                }}
+              >
+                {msgNotificationLength}
+              </span>
+            )}
           </div>
         </div>
+      ) : (
+        <>
+          {data ? (
+            <>
+              <div
+                className="chat-toggle-floating"
+                onClick={toggleChat}
+                // onClick={() => setChatStep(1)}
+              >
+                <FontAwesomeIcon icon={faChevronDown} />
+                {/* ⌄ */}
+              </div>
+              <div className="chat-box">
+                <div className="chat-header">
+                  <div
+                    // onClick={toggleChat}
+                    style={{
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    {/* <span className="chat-avatar">C</span> */}
+                    <img
+                      src={baseFileURL + headerData?.logo}
+                      alt="Logo"
+                      width="40"
+                      style={{ borderRadius: "50%" }}
+                    />
+                    <div style={{ marginLeft: "8px" }}>
+                      {/* <div className="chat-title">Cea</div> */}
+                      <div className="chat-subtitle">{headerData?.name}</div>
+                    </div>
+                  </div>
+
+                  {/* <button className="logout-btn" onClick={logout}>
+                    <FontAwesomeIcon
+                      icon={faRightFromBracket}
+                      width={20}
+                      style={{ height: "16px" }}
+                    />
+                  </button> */}
+                </div>
+                <div className="chat-body">
+                  {messages.length < 1 && <div class="loader"></div>}
+                  <div class="chat-info-banner">
+                    {/* <span class="chat-lock-icon">🔒</span> */}
+                    Our team will respond to your queries shortly. We appreciate
+                    your patience in the meantime.
+                  </div>
+
+                  {messages.map((msg, idx) => (
+                    <div
+                      key={idx}
+                      className={`chat-msg ${
+                        msg.from_user === "user" ? "user-msg" : "bot-msg"
+                      }`}
+                    >
+                      <div>{msg?.message}</div>
+                      <div className="msg-time">
+                        {new Date(msg.updated_at).toLocaleString("en-US", {
+                          day: "2-digit",
+                          month: "short",
+                          hour: "numeric",
+                          minute: "2-digit",
+                          hour12: true,
+                        })}
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* ✅ Only show if first user message sent (assuming welcome + user message = 2) */}
+                  {/* {messages.length === 2 &&
+                    messages[1]?.from_user === "user" && (
+                      <div className="chat-msg bot-msg">
+                        {`Thank you for reaching out to us and sharing your enquiry. Our team will review your query and respond with an appropriate answer shortly. You will also receive a copy of the response on your registered email address. We appreciate your patience in the meantime.`}
+                      </div>
+                    )} */}
+
+                  {/* Auto-scroll ref */}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                <div className="chat-input-area">
+                  <input
+                    type="text"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="Type your message and hit 'Enter'"
+                    onKeyDown={(e) => {
+                      if (
+                        e.key === "Enter" &&
+                        !isAdmin &&
+                        message.trim() !== ""
+                      ) {
+                        handleSend();
+                      }
+                    }}
+                    className="input chat-input"
+                    disabled={isAdmin}
+                    style={{
+                      backgroundColor: isAdmin ? "" : "",
+                      cursor: isAdmin ? "not-allowed" : "text",
+                      opacity: isAdmin ? 0.7 : 1,
+                    }}
+                  />
+
+                  <span
+                    className="send-icon"
+                    onClick={() => {
+                      if (!isAdmin && message.trim() !== "") handleSend();
+                    }}
+                    style={{
+                      cursor: isAdmin ? "not-allowed" : "pointer",
+                      color: isAdmin ? "#aaa" : "#0195a3",
+                      opacity: isAdmin ? 0.6 : 1,
+                    }}
+                  >
+                    <FontAwesomeIcon icon={faPaperPlane} />
+                  </span>
+
+                  {isAdmin && (
+                    <h6
+                      style={{
+                        color: "red",
+                        marginTop: "5px",
+                        fontSize: "13px",
+                      }}
+                    >
+                      You can’t send messages as an admin.
+                    </h6>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div
+                className="chat-toggle-floating"
+                onClick={toggleChat}
+                // onClick={() => setChatStep(1)}
+              >
+                <FontAwesomeIcon icon={faChevronDown} />
+                {/* ⌄ */}
+              </div>
+              <div className="chat-box">
+                <div className="chat-header" onClick={toggleChat}>
+                  {/* <span className="chat-avatar">C</span> */}
+                  {headerData?.logo && (
+                    <img
+                      src={baseFileURL + headerData?.logo}
+                      alt="Logo"
+                      width="40"
+                      height="40"
+                      style={{ borderRadius: "50%" }}
+                    />
+                  )}
+
+                  <div style={{ marginLeft: "8px" }}>
+                    {/* <div className="chat-title">Cea</div> */}
+                    <div className="chat-subtitle">{headerData?.name}</div>
+                  </div>
+                  {/* <span className="chat-toggle">⬇</span> */}
+                </div>
+
+                <div className="chat-form">
+                  <input
+                    type="text"
+                    placeholder="Enter Full Name (required)"
+                    className="input"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                  />
+                  <input
+                    type="email"
+                    placeholder="Enter Your Email Address (required)"
+                    className="input"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="Enter Your Phone Number (optional)"
+                    className="input"
+                  />
+
+                  <div className="btn-group">
+                    <button className="continue-btn" onClick={handleSubmit}>
+                      Continue
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </>
       )}
     </div>
   );
-}
+};
+
+export default ChatWidget;
