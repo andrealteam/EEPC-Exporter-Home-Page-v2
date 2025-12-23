@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import HeaderLive from "../components/live/HeaderLive";
 import BannerLive from "../components/live/BannerLive";
 import AboutLive from "../components/live/AboutLive";
@@ -32,6 +32,11 @@ const Live = () => {
     const stored = localStorage.getItem("sessionData");
     return stored ? JSON.parse(stored) : null;
   });
+  
+  // Check if current user is a member
+  const isMember = useMemo(() => {
+    return customer?.role === 'member' || !customer?.isAdmin;
+  }, [customer]);
   
   // Redirect to login if in edit mode without authentication
   useEffect(() => {
@@ -135,12 +140,13 @@ const Live = () => {
   }, []);
 
   useEffect(() => {
-    const allowedOrigin =
-      // "https://www.eepcindia.org";
-      "https://eepc-exporter-home-page-v2-whhx.vercel.app";
+    const allowedOrigins = [
+      "https://www.eepcindia.org",
+      "https://eepc-exporter-home-page-v2.vercel.app"
+    ];
 
     function onMessage(event) {
-      if (event.origin !== allowedOrigin) return;
+      if (!allowedOrigins.includes(event.origin)) return;
 
       const data = event.data;
 
@@ -351,9 +357,14 @@ const Live = () => {
         {/* {sectionData?.data?.includes(4) && (
           <WhoWeAreLive website_url={website_url} />
         )} */}
-        <MapReviewLive website_url={website_url} isAdmin={isAdmin} />
+        <MapReviewLive 
+          website_url={website_url} 
+          isAdmin={isAdmin} 
+          isMember={isMember}
+        />
       </div>
-      <ChatWidget website_url={website_url} isAdmin={isAdmin} />
+      
+      <ChatWidget website_url={website_url} isAdmin={isAdmin} isMember={isMember} />
       <WhatsAppPopUp website_url={website_url} />
       <FooterLive website_url={website_url} />
     </>
