@@ -157,26 +157,16 @@ const Live = () => {
 
         let decryptedData = {}; // use let instead of const
 
-        if (storedData && storedData.trim() !== '') {
+        if (storedData) {
           try {
             const decryptedBytes = CryptoJS.AES.decrypt(storedData, secretKey);
             const decryptedText = decryptedBytes.toString(CryptoJS.enc.Utf8);
 
-            if (decryptedText && decryptedText.trim() !== '') {
-              try {
-                decryptedData = JSON.parse(decryptedText);
-              } catch (parseError) {
-                console.error("❌ Error parsing decrypted data:", parseError);
-                console.log("Decrypted text that caused error:", decryptedText);
-                decryptedData = {}; // Initialize as empty object if parsing fails
-              }
-            } else {
-              console.warn("Decryption resulted in empty or invalid text");
-              decryptedData = {};
+            if (decryptedText) {
+              decryptedData = JSON.parse(decryptedText);
             }
           } catch (err) {
             console.error("❌ Error decrypting localStorage data:", err);
-            decryptedData = {}; // Ensure we always have a valid object
           }
         }
 

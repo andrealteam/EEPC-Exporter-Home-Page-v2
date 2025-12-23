@@ -66,37 +66,17 @@ const ChatWidget = ({ website_url, isAdmin }) => {
 
   useEffect(() => {
     const loadData = () => {
-      try {
-        const storedData = localStorage.getItem(`chat-user`);
-        if (!storedData) return;
-
-        try {
-          const decryptedBytes = CryptoJS.AES.decrypt(storedData, secretKey);
-          const decryptedText = decryptedBytes.toString(CryptoJS.enc.Utf8);
-          
-          if (!decryptedText) {
-            console.warn('Decryption returned empty result');
-            return;
-          }
-
-          const decryptedData = JSON.parse(decryptedText);
-          
-          // Only update state if decryptedData is an object and has the expected properties
-          if (decryptedData && typeof decryptedData === 'object') {
-            setName(decryptedData.name || "");
-            setEmail(decryptedData.email || "");
-            setPhone(decryptedData.phone || "");
-            setData(decryptedData.name || "");
-          } else {
-            console.warn('Invalid decrypted data format:', decryptedData);
-          }
-        } catch (parseError) {
-          console.error('Error parsing decrypted data:', parseError);
-          // Clear invalid data from localStorage
-          localStorage.removeItem(`chat-user`);
-        }
-      } catch (error) {
-        console.error('Error in loadData:', error);
+      const storedData = localStorage.getItem(`chat-user`);
+      if (storedData) {
+        const decryptedBytes = CryptoJS.AES.decrypt(storedData, secretKey);
+        const decryptedData = JSON.parse(
+          decryptedBytes.toString(CryptoJS.enc.Utf8)
+        );
+        // const parsedData = JSON.parse(storedData);
+        setName(decryptedData.name || "");
+        setEmail(decryptedData.email || "");
+        setPhone(decryptedData.phone || "");
+        setData(decryptedData.name || "");
       }
     };
 
@@ -271,6 +251,10 @@ const ChatWidget = ({ website_url, isAdmin }) => {
   // If data is not available (null/undefined), don't render
   if (!headerData) return null;
 
+  if (isAdmin) {
+    return null; // Don't show chat widget at all for admin
+  }
+
   return (
     <div className="chat-container">
       {!isOpen ? (
@@ -280,8 +264,20 @@ const ChatWidget = ({ website_url, isAdmin }) => {
             <p className="chat-subtext">How may I help you today?</p>
           </div>
           <div className="chat-icon" style={{ position: "relative" }}>
-            <FontAwesomeIcon icon={faCommentDots} size="lg" />
-
+            <button 
+              className="chat-button" 
+              onClick={toggleChat}
+              title={isAdmin ? "Chat is disabled for admin" : "Chat with us"}
+            >
+              {!isAdmin && msgNotificationLength > 0 && (
+                <span className="notification-badge">{msgNotificationLength}</span>
+              )}
+              <FontAwesomeIcon 
+                icon={faCommentDots} 
+                size="lg" 
+                style={{ opacity: isAdmin ? 0.5 : 1, cursor: isAdmin ? 'not-allowed' : 'pointer' }}
+              />
+            </button>
             {msgNotificationLength > 0 && (
               <span
                 className="notification-badge"
