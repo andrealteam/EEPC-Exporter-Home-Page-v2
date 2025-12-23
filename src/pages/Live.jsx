@@ -27,25 +27,16 @@ const Live = () => {
   
   // ✅ Persisted Set (shared across event calls)
   const companySetRef = useRef(new Set());
+  const [isAdmin, setIsAdmin] = useState(false);
   const [customer, setCustomer] = useState(() => {
-    try {
-      const stored = localStorage.getItem("sessionData");
-      return stored ? JSON.parse(stored) : null;
-    } catch (error) {
-      console.error("Error parsing session data:", error);
-      return null;
-    }
+    const stored = localStorage.getItem("sessionData");
+    return stored ? JSON.parse(stored) : null;
   });
-  
-  // Check if current user is an admin
-  const isAdmin = useMemo(() => {
-    return customer?.isAdmin === true;
-  }, [customer]);
   
   // Check if current user is a member
   const isMember = useMemo(() => {
-    return customer?.role === 'member' || !isAdmin;
-  }, [customer, isAdmin]);
+    return customer?.role === 'member' || !customer?.isAdmin;
+  }, [customer]);
   
   // Redirect to login if in edit mode without authentication
   useEffect(() => {
