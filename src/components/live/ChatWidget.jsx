@@ -66,17 +66,37 @@ const ChatWidget = ({ website_url, isAdmin }) => {
 
   useEffect(() => {
     const loadData = () => {
-      const storedData = localStorage.getItem(`chat-user`);
-      if (storedData) {
-        const decryptedBytes = CryptoJS.AES.decrypt(storedData, secretKey);
-        const decryptedData = JSON.parse(
-          decryptedBytes.toString(CryptoJS.enc.Utf8)
-        );
-        // const parsedData = JSON.parse(storedData);
-        setName(decryptedData.name || "");
-        setEmail(decryptedData.email || "");
-        setPhone(decryptedData.phone || "");
-        setData(decryptedData.name || "");
+      try {
+        const storedData = localStorage.getItem(`chat-user`);
+        if (!storedData) return;
+
+        try {
+          const decryptedBytes = CryptoJS.AES.decrypt(storedData, secretKey);
+          const decryptedText = decryptedBytes.toString(CryptoJS.enc.Utf8);
+          
+          if (!decryptedText) {
+            console.warn('Decryption returned empty result');
+            return;
+          }
+
+          const decryptedData = JSON.parse(decryptedText);
+          
+          // Only update state if decryptedData is an object and has the expected properties
+          if (decryptedData && typeof decryptedData === 'object') {
+            setName(decryptedData.name || "");
+            setEmail(decryptedData.email || "");
+            setPhone(decryptedData.phone || "");
+            setData(decryptedData.name || "");
+          } else {
+            console.warn('Invalid decrypted data format:', decryptedData);
+          }
+        } catch (parseError) {
+          console.error('Error parsing decrypted data:', parseError);
+          // Clear invalid data from localStorage
+          localStorage.removeItem(`chat-user`);
+        }
+      } catch (error) {
+        console.error('Error in loadData:', error);
       }
     };
 
