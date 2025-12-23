@@ -18,16 +18,6 @@ import CryptoJS from "crypto-js";
 const secretKey = "my-secret-key";
 
 const ChatWidget = ({ website_url, isAdmin }) => {
-  // Check if current domain is an admin domain
-  const isAdminDomain = () => {
-    const adminDomains = [
-      'eepc-exporter-home-page-v2-whhx.vercel.app',
-      'eepc-exporter-home-page-v2.vercel.app'
-    ];
-    return adminDomains.some(domain => window.location.hostname.includes(domain));
-  };
-
-  const shouldDisableChat = isAdmin || isAdminDomain();
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -261,8 +251,8 @@ const ChatWidget = ({ website_url, isAdmin }) => {
   // If data is not available (null/undefined), don't render
   if (!headerData) return null;
 
-  if (shouldDisableChat) {
-    return null; // Don't show chat widget for admin users or on admin domains
+  if (isAdmin) {
+    return null; // Don't show chat widget at all for admin
   }
 
   return (
@@ -277,8 +267,7 @@ const ChatWidget = ({ website_url, isAdmin }) => {
             <button 
               className="chat-button" 
               onClick={toggleChat}
-              disabled={shouldDisableChat}
-              title={shouldDisableChat ? "Chat is not available on admin domains" : "Chat with us"}
+              title={isAdmin ? "Chat is disabled for admin" : "Chat with us"}
             >
               {!isAdmin && msgNotificationLength > 0 && (
                 <span className="notification-badge">{msgNotificationLength}</span>
@@ -286,10 +275,7 @@ const ChatWidget = ({ website_url, isAdmin }) => {
               <FontAwesomeIcon 
                 icon={faCommentDots} 
                 size="lg" 
-                style={{ 
-                  opacity: shouldDisableChat ? 0.5 : 1, 
-                  cursor: shouldDisableChat ? 'not-allowed' : 'pointer' 
-                }}
+                style={{ opacity: isAdmin ? 0.5 : 1, cursor: isAdmin ? 'not-allowed' : 'pointer' }}
               />
             </button>
             {msgNotificationLength > 0 && (
