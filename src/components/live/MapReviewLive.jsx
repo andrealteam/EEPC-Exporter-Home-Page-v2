@@ -29,16 +29,32 @@ const MapReviewLive = ({ website_url, isAdmin, isMember: isMemberProp }) => {
 
   useEffect(() => {
     const loadData = () => {
-      const storedData = localStorage.getItem(website_url);
-      if (storedData) {
-        const decryptedBytes = CryptoJS.AES.decrypt(storedData, secretKey);
-        const decryptedData = JSON.parse(
-          decryptedBytes.toString(CryptoJS.enc.Utf8)
-        );
-        // const parsedData = JSON.parse(storedData);
-        setName(decryptedData.name || "");
-        setEmail(decryptedData.email || "");
-        setPhone(decryptedData.phone || "");
+      try {
+        const storedData = localStorage.getItem(website_url);
+        if (storedData) {
+          const decryptedBytes = CryptoJS.AES.decrypt(storedData, secretKey);
+          const decryptedString = decryptedBytes.toString(CryptoJS.enc.Utf8);
+          
+          // Check if the decrypted string is valid JSON
+          if (decryptedString) {
+            const decryptedData = JSON.parse(decryptedString);
+            setName(decryptedData.name || "");
+            setEmail(decryptedData.email || "");
+            setPhone(decryptedData.phone || "");
+          } else {
+            // If decryption fails, clear the stored data
+            console.warn('Invalid or empty decrypted data, clearing from localStorage');
+            localStorage.removeItem(website_url);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading data from localStorage:', error);
+        // Clear corrupted data
+        localStorage.removeItem(website_url);
+        // Reset form fields
+        setName("");
+        setEmail("");
+        setPhone("");
       }
     };
 
